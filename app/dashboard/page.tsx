@@ -16,6 +16,17 @@ export default async function DashboardPage() {
     .eq('user_id', user.id)
     .order('exam_date');
 
+  const { data: sessions } = await supabase
+    .from('quiz_sessions')
+    .select('*')
+    .eq('user_id', user.id)
+    .order('completed_at', { ascending: false })
+    .limit(5);
+
+  const totalQuestions = sessions?.reduce((s, r) => s + r.total_questions, 0) ?? 0;
+  const totalCorrect = sessions?.reduce((s, r) => s + r.correct_count, 0) ?? 0;
+  const accuracy = totalQuestions > 0 ? Math.round((totalCorrect / totalQuestions) * 100) : 0;
+
   return (
     <div className="min-h-screen bg-gray-50">
       <nav className="bg-white border-b px-8 py-4 flex items-center justify-between">
@@ -40,23 +51,27 @@ export default async function DashboardPage() {
         <div className="grid grid-cols-2 gap-4 mb-8">
           <div className="bg-white rounded-2xl border p-6">
             <p className="text-sm text-gray-400 mb-1">総学習問題数</p>
-            <p className="text-3xl font-semibold text-gray-900">0</p>
-            <p className="text-xs text-gray-400 mt-1">問題を解いて記録を作ろう</p>
+            <p className="text-3xl font-semibold text-gray-900">{totalQuestions}</p>
+            <p className="text-xs text-gray-400 mt-1">{totalQuestions === 0 ? '問題を解いて記録を作ろう' : '問題解いてます！'}</p>
           </div>
           <div className="bg-white rounded-2xl border p-6">
             <p className="text-sm text-gray-400 mb-1">総合正解率</p>
-            <p className="text-3xl font-semibold text-gray-900">--%</p>
-            <p className="text-xs text-gray-400 mt-1">演習を始めると表示されます</p>
+            <p className="text-3xl font-semibold text-gray-900">{totalQuestions > 0 ? `${accuracy}%` : '--%'}</p>
+            <p className="text-xs text-gray-400 mt-1">{totalQuestions === 0 ? '演習を始めると表示されます' : '頑張ってます！'}</p>
           </div>
           <div className="bg-white rounded-2xl border p-6">
-            <p className="text-sm text-gray-400 mb-1">連続学習日数</p>
-            <p className="text-3xl font-semibold text-gray-900">0日</p>
+            <p className="text-sm text-gray-400 mb-1">演習回数</p>
+            <p className="text-3xl font-semibold text-gray-900">{sessions?.length ?? 0}回</p>
             <p className="text-xs text-gray-400 mt-1">毎日続けよう🔥</p>
           </div>
           <div className="bg-white rounded-2xl border p-6">
-            <p className="text-sm text-gray-400 mb-1">今週の学習時間</p>
-            <p className="text-3xl font-semibold text-gray-900">0h</p>
-            <p className="text-xs text-gray-400 mt-1">目標：毎日30分</p>
+            <p className="text-sm text-gray-400 mb-1">最高正解率</p>
+            <p className="text-3xl font-semibold text-gray-900">
+              {sessions && sessions.length > 0
+                ? `${Math.max(...sessions.map(s => Math.round((s.correct_count / s.total_questions) * 100)))}%`
+                : '--%'}
+            </p>
+            <p className="text-xs text-gray-400 mt-1">自己ベストを更新しよう🏆</p>
           </div>
         </div>
 
@@ -65,10 +80,29 @@ export default async function DashboardPage() {
 
           <div className="bg-white rounded-2xl border p-6">
             <h2 className="font-semibold text-gray-900 mb-4">最近の演習</h2>
-            <div className="text-center py-6 text-gray-400">
-              <p className="text-sm">まだ演習履歴がありません</p>
-              <Link href="/quiz" className="text-xs text-green-600 hover:underline mt-2 inline-block">演習を始める</Link>
-            </div>
+            {sessions && sessions.length > 0 ? (
+              <div className="space-y-3">
+                {sessions.map(session => {
+                  const acc = Math.round((session.correct_count / session.total_questions) * 100);
+                  return (
+                    <div key={session.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">{session.subject ?? '演習'}</p>
+                        <p className="text-xs text-gray-400">{session.total_questions}問</p>
+                      </div>
+                      <span className={`text-sm font-semibold ${acc >= 60 ? 'text-green-600' : 'text-red-500'}`}>
+                        {acc}%
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-6 text-gray-400">
+                <p className="text-sm">まだ演習履歴がありません</p>
+                <Link href="/quiz" className="text-xs text-green-600 hover:underline mt-2 inline-block">演習を始める</Link>
+              </div>
+            )}
           </div>
         </div>
 
