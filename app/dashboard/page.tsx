@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
+import ExamSection from './ExamSection';
 
 export default async function DashboardPage() {
   const supabase = createClient();
@@ -8,6 +9,12 @@ export default async function DashboardPage() {
   if (!user) redirect('/auth/login');
 
   const name = user.user_metadata?.name ?? user.email ?? '';
+
+  const { data: exams } = await supabase
+    .from('exams')
+    .select('*')
+    .eq('user_id', user.id)
+    .order('exam_date');
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -20,9 +27,7 @@ export default async function DashboardPage() {
         </div>
         <div className="flex items-center gap-4">
           <span className="text-sm text-gray-500">{name}</span>
-          <form action="/auth/signout" method="post">
-            <button className="text-sm text-gray-500 hover:text-gray-700">ログアウト</button>
-          </form>
+          <Link href="/auth/login" className="text-sm text-gray-500 hover:text-gray-700">ログアウト</Link>
         </div>
       </nav>
 
@@ -56,13 +61,7 @@ export default async function DashboardPage() {
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-          <div className="bg-white rounded-2xl border p-6">
-            <h2 className="font-semibold text-gray-900 mb-4">試験カウントダウン</h2>
-            <div className="text-center py-6 text-gray-400">
-              <p className="text-sm">試験日が登録されていません</p>
-              <button className="text-xs text-green-600 hover:underline mt-2">試験日を追加する</button>
-            </div>
-          </div>
+          <ExamSection userId={user.id} initialExams={exams ?? []} />
 
           <div className="bg-white rounded-2xl border p-6">
             <h2 className="font-semibold text-gray-900 mb-4">最近の演習</h2>
