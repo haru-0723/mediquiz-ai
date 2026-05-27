@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { createClient } from '@/lib/supabase/client';
 
 const questions = [
   { id: 1, subject: '循環器系', difficulty: '標準', question: '心臓の左心室から収縮期に血液を全身へ送り出す血管はどれか。', options: ['A. 大静脈', 'B. 大動脈', 'C. 肺動脈', 'D. 肺静脈'], answer: 'B', explanation: '左心室は体循環の起点で、収縮時に大動脈弁を通じて大動脈へ血液を送り出します。' },
@@ -107,6 +108,7 @@ function QuizScreen({ q, current, total, accuracy, answered, selected, onAnswer,
 }
 
 export default function QuizPage() {
+  const supabase = createClient();
   const [current, setCurrent] = useState(0);
   const [selected, setSelected] = useState<string | null>(null);
   const [answered, setAnswered] = useState(false);
@@ -122,15 +124,26 @@ export default function QuizPage() {
     setAnswered(true);
   }
 
-  function handleNext() {
+  async function handleNext() {
     const isCorrect = selected?.charAt(0) === q.answer;
     const newResults = [...results, { correct: isCorrect }];
     setResults(newResults);
+
     if (current + 1 < questions.length) {
       setCurrent(current + 1);
       setSelected(null);
       setAnswered(false);
     } else {
+      const correct = newResults.filter(r => r.correct).length;
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase.from('quiz_sessions').insert({
+          user_id: user.id,
+          subject: '総合',
+          total_questions: newResults.length,
+          correct_count: correct,
+        });
+      }
       setPhase('result');
     }
   }
