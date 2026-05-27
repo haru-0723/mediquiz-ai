@@ -7,32 +7,14 @@ export default async function DashboardPage() {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/auth/login');
-
   const name = user.user_metadata?.name ?? user.email ?? '';
-
-  const { data: exams } = await supabase
-    .from('exams')
-    .select('*')
-    .eq('user_id', user.id)
-    .order('exam_date');
-
-  const { data: sessions } = await supabase
-    .from('quiz_sessions')
-    .select('*')
-    .eq('user_id', user.id)
-    .order('completed_at', { ascending: false })
-    .limit(5);
-
-  const { data: materials } = await supabase
-    .from('materials')
-    .select('*')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false });
-
+  const { data: exams } = await supabase.from('exams').select('*').eq('user_id', user.id).order('exam_date');
+  const { data: sessions } = await supabase.from('quiz_sessions').select('*').eq('user_id', user.id).order('completed_at', { ascending: false }).limit(5);
+  const { data: materials } = await supabase.from('materials').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
   const totalQuestions = sessions?.reduce((s, r) => s + r.total_questions, 0) ?? 0;
   const totalCorrect = sessions?.reduce((s, r) => s + r.correct_count, 0) ?? 0;
   const accuracy = totalQuestions > 0 ? Math.round((totalCorrect / totalQuestions) * 100) : 0;
-
+  const bestAccuracy = sessions && sessions.length > 0 ? Math.max(...sessions.map(s => Math.round((s.correct_count / s.total_questions) * 100))) : null;
   return (
     <div className="min-h-screen bg-gray-50">
       <nav className="bg-white border-b px-8 py-4 flex items-center justify-between">
@@ -48,13 +30,11 @@ export default async function DashboardPage() {
           <Link href="/auth/login" className="text-sm text-gray-500 hover:text-gray-700">ログアウト</Link>
         </div>
       </nav>
-
       <div className="max-w-4xl mx-auto p-8">
         <div className="mb-8">
           <h1 className="text-2xl font-semibold text-gray-900">こんにちは、{name.split(' ')[0]}さん 👋</h1>
           <p className="text-gray-500 mt-1 text-sm">今日も一緒に頑張りましょう。</p>
         </div>
-
         <div className="grid grid-cols-2 gap-4 mb-8">
           <div className="bg-white rounded-2xl border p-6">
             <p className="text-sm text-gray-400 mb-1">総学習問題数</p>
@@ -73,18 +53,12 @@ export default async function DashboardPage() {
           </div>
           <div className="bg-white rounded-2xl border p-6">
             <p className="text-sm text-gray-400 mb-1">最高正解率</p>
-            <p className="text-3xl font-semibold text-gray-900">
-              {sessions && sessions.length > 0
-                ? `${Math.max(...sessions.map(s => Math.round((s.correct_count / s.total_questions) * 100)))}%`
-                : '--%'}
-            </p>
+            <p className="text-3xl font-semibold text-gray-900">{bestAccuracy !== null ? `${bestAccuracy}%` : '--%'}</p>
             <p className="text-xs text-gray-400 mt-1">自己ベストを更新しよう🏆</p>
           </div>
         </div>
-
         <div className="grid grid-cols-2 gap-4 mb-8">
           <ExamSection userId={user.id} initialExams={exams ?? []} />
-
           <div className="bg-white rounded-2xl border p-6">
             <h2 className="font-semibold text-gray-900 mb-4">最近の演習</h2>
             {sessions && sessions.length > 0 ? (
@@ -97,9 +71,7 @@ export default async function DashboardPage() {
                         <p className="text-sm font-medium text-gray-900">{session.subject ?? '演習'}</p>
                         <p className="text-xs text-gray-400">{session.total_questions}問</p>
                       </div>
-                      <span className={`text-sm font-semibold ${acc >= 60 ? 'text-green-600' : 'text-red-500'}`}>
-                        {acc}%
-                      </span>
+                      <span className={`text-sm font-semibold ${acc >= 60 ? 'text-green-600' : 'text-red-500'}`}>{acc}%</span>
                     </div>
                   );
                 })}
@@ -112,11 +84,38 @@ export default async function DashboardPage() {
             )}
           </div>
         </div>
-
         <div className="bg-white rounded-2xl border p-6 mb-8">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-semibold text-gray-900">教材一覧</h2>
             <Link href="/upload" className="text-xs text-green-600 hover:underline">+ 追加</Link>
           </div>
           {materials && materials.length > 0 ? (
-            <div className="grid grid-cols-2 ga
+            <div className="grid grid-cols-2 gap-3">
+              {materials.map(material => (
+                <div key={material.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+                  <div className="w-8 h-8 bg-green-50 rounded-lg flex items-center justify-center flex-shrink-0 text-lg">
+                    {material.file_type?.includes('pdf') ? '📄' : '🖼️'}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">{material.title}</p>
+                    {material.subject && <p className="text-xs text-gray-400">{material.subject}</p>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-6 text-gray-400">
+              <p className="text-sm">教材がまだありません</p>
+              <Link href="/upload" className="text-xs text-green-600 hover:underline mt-2 inline-block">教材をアップロードする</Link>
+            </div>
+          )}
+        </div>
+        <div className="text-center">
+          <Link href="/quiz" className="inline-flex items-center gap-2 bg-green-600 text-white px-8 py-3 rounded-xl font-medium hover:bg-green-700 transition-colors">
+            ⚡ 演習を始める
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
