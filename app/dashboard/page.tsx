@@ -23,6 +23,12 @@ export default async function DashboardPage() {
     .order('completed_at', { ascending: false })
     .limit(5);
 
+  const { data: materials } = await supabase
+    .from('materials')
+    .select('*')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false });
+
   const totalQuestions = sessions?.reduce((s, r) => s + r.total_questions, 0) ?? 0;
   const totalCorrect = sessions?.reduce((s, r) => s + r.correct_count, 0) ?? 0;
   const accuracy = totalQuestions > 0 ? Math.round((totalCorrect / totalQuestions) * 100) : 0;
@@ -37,6 +43,7 @@ export default async function DashboardPage() {
           <span className="font-semibold">MediQuiz AI</span>
         </div>
         <div className="flex items-center gap-4">
+          <Link href="/upload" className="text-sm text-green-600 hover:underline">+ 教材追加</Link>
           <span className="text-sm text-gray-500">{name}</span>
           <Link href="/auth/login" className="text-sm text-gray-500 hover:text-gray-700">ログアウト</Link>
         </div>
@@ -75,7 +82,7 @@ export default async function DashboardPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-4 mb-8">
           <ExamSection userId={user.id} initialExams={exams ?? []} />
 
           <div className="bg-white rounded-2xl border p-6">
@@ -106,12 +113,10 @@ export default async function DashboardPage() {
           </div>
         </div>
 
-        <div className="mt-8 text-center">
-          <Link href="/quiz" className="inline-flex items-center gap-2 bg-green-600 text-white px-8 py-3 rounded-xl font-medium hover:bg-green-700 transition-colors">
-            ⚡ 演習を始める
-          </Link>
-        </div>
-      </div>
-    </div>
-  );
-}
+        <div className="bg-white rounded-2xl border p-6 mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-semibold text-gray-900">教材一覧</h2>
+            <Link href="/upload" className="text-xs text-green-600 hover:underline">+ 追加</Link>
+          </div>
+          {materials && materials.length > 0 ? (
+            <div className="grid grid-cols-2 ga
