@@ -24,13 +24,12 @@ export default async function DashboardPage() {
           </div>
           <span className="font-semibold">MediQuiz AI</span>
         </div>
-        <div className="flex items-center gap-4">
-         <Link href="/questions" className="text-sm text-green-600 hover:underline">問題一覧</Link>
-<Link href="/questions/new" className="text-sm text-green-600 hover:underline">+ 問題追加</Link>
-<Link href="/upload" className="text-sm text-green-600 hover:underline">+ 教材追加</Link>
-          <span className="text-sm text-gray-500">{name}</span>
-          <Link href="/auth/login" className="text-sm text-gray-500 hover:text-gray-700">ログアウト</Link>
-        </div>
+       <div className="flex items-center gap-2 flex-wrap justify-end">
+  <Link href="/questions" className="text-xs text-green-600 hover:underline hidden sm:inline">問題一覧</Link>
+  <Link href="/questions/new" className="text-xs bg-green-50 text-green-700 px-2 py-1 rounded-lg hover:bg-green-100">+ 問題</Link>
+  <Link href="/upload" className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-lg hover:bg-gray-200">+ 教材</Link>
+  <Link href="/auth/login" className="text-xs text-gray-400 hover:text-gray-600">ログアウト</Link>
+</div>
       </nav>
       <div className="max-w-4xl mx-auto p-8">
         <div className="mb-8">
