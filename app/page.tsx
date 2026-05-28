@@ -26,10 +26,18 @@ export default function HomePage() {
         <p className="text-lg text-gray-600 mb-10">
           看護・医学・薬学・リハビリ系の大学生向け。
         </p>
-        <Link href="/auth/signup" className="inline-block bg-green-600 text-white px-8 py-3 rounded-xl font-medium">
+       <Link href="/auth/signup" className="inline-block bg-green-600 text-white px-8 py-3 rounded-xl font-medium">
           無料で始める
         </Link>
       </section>
+
+      <footer className="border-t py-8 px-8 flex justify-between items-center text-sm text-gray-400">
+        <span>© 2026 MediQuiz AI</span>
+        <div className="flex gap-6">
+          <Link href="/terms" className="hover:text-gray-600">利用規約</Link>
+          <Link href="/privacy" className="hover:text-gray-600">プライバシーポリシー</Link>
+        </div>
+      </footer>
     </div>
   );
 }
