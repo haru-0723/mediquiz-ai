@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import ExamSection from './ExamSection';
+import LogoutButton from './LogoutButton';
 
 export default async function DashboardPage() {
   const supabase = createClient();
