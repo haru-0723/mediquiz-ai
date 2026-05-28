@@ -1,8 +1,9 @@
 import { createClient } from '@/lib/supabase/server';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
-export async function POST() {
+export async function POST(request: NextRequest) {
   const supabase = createClient();
   await supabase.auth.signOut();
-  return NextResponse.redirect(new URL('/', process.env.NEXT_PUBLIC_APP_URL!));
+  const origin = new URL(request.url).origin;
+  return NextResponse.redirect(`${origin}/`);
 }
