@@ -82,10 +82,14 @@ export default function QuestionsPage() {
                   </div>
                   <div className="flex items-center gap-3">
                     <span className="text-xs text-gray-400">Q{i + 1}</span>
-                    <button onClick={() => handleDelete(q.id)} disabled={deleting === q.id}
-                      className="text-xs text-red-400 hover:text-red-600 border border-red-200 hover:border-red-400 px-3 py-1 rounded-lg transition-colors disabled:opacity-60">
-                      {deleting === q.id ? '削除中...' : '削除'}
-                    </button>
+                    <Link href={`/questions/${q.id}/edit`}
+  className="text-xs text-blue-400 hover:text-blue-600 border border-blue-200 hover:border-blue-400 px-3 py-1 rounded-lg transition-colors">
+  編集
+</Link>
+<button onClick={() => handleDelete(q.id)} disabled={deleting === q.id}
+  className="text-xs text-red-400 hover:text-red-600 border border-red-200 hover:border-red-400 px-3 py-1 rounded-lg transition-colors disabled:opacity-60">
+  {deleting === q.id ? '削除中...' : '削除'}
+</button>
                   </div>
                 </div>
                 <p className="text-sm font-medium text-gray-900 mb-3">{q.question}</p>
