@@ -1,17 +1,50 @@
-import { createClient } from '@/lib/supabase/server';
-import { redirect } from 'next/navigation';
+'use client';
+
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { createClient } from '@/lib/supabase/client';
 
-export default async function QuestionsPage() {
+type Question = {
+  id: string;
+  subject: string | null;
+  question: string;
+  option_a: string;
+  option_b: string;
+  option_c: string;
+  option_d: string;
+  answer: string;
+  explanation: string | null;
+  difficulty: string;
+};
+
+export default function QuestionsPage() {
   const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect('/auth/login');
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState<string | null>(null);
 
-  const { data: questions } = await supabase
-    .from('questions')
-    .select('*')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false });
+  useEffect(() => {
+    supabase.from('questions').select('*').order('created_at', { ascending: false }).then(({ data }) => {
+      if (data) setQuestions(data);
+      setLoading(false);
+    });
+  }, []);
+
+  async function handleDelete(id: string) {
+    if (!confirm('この問題を削除しますか？')) return;
+    setDeleting(id);
+    await supabase.from('questions').delete().eq('id', id);
+    setQuestions(questions.filter(q => q.id !== id));
+    setDeleting(null);
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <p className="text-gray-500">読み込み中...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -29,14 +62,14 @@ export default async function QuestionsPage() {
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-2xl font-semibold text-gray-900">問題一覧</h1>
-            <p className="text-gray-500 text-sm mt-1">全{questions?.length ?? 0}問</p>
+            <p className="text-gray-500 text-sm mt-1">全{questions.length}問</p>
           </div>
           <Link href="/questions/new" className="bg-green-600 text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-green-700">
             + 問題を追加
           </Link>
         </div>
 
-        {questions && questions.length > 0 ? (
+        {questions.length > 0 ? (
           <div className="space-y-4">
             {questions.map((q, i) => (
               <div key={q.id} className="bg-white rounded-2xl border p-6">
@@ -47,7 +80,13 @@ export default async function QuestionsPage() {
                       {q.difficulty === 'easy' ? '基礎' : q.difficulty === 'hard' ? '応用' : '標準'}
                     </span>
                   </div>
-                  <span className="text-xs text-gray-400">Q{i + 1}</span>
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs text-gray-400">Q{i + 1}</span>
+                    <button onClick={() => handleDelete(q.id)} disabled={deleting === q.id}
+                      className="text-xs text-red-400 hover:text-red-600 border border-red-200 hover:border-red-400 px-3 py-1 rounded-lg transition-colors disabled:opacity-60">
+                      {deleting === q.id ? '削除中...' : '削除'}
+                    </button>
+                  </div>
                 </div>
                 <p className="text-sm font-medium text-gray-900 mb-3">{q.question}</p>
                 <div className="grid grid-cols-2 gap-2">
