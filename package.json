@@ -7,13 +7,14 @@
     "build": "next build",
     "start": "next start"
   },
- "dependencies": {
+"dependencies": {
   "next": "14.2.5",
   "react": "^18",
   "react-dom": "^18",
   "lucide-react": "^0.400.0",
   "@supabase/supabase-js": "^2.43.4",
-  "@supabase/ssr": "^0.4.0"
+  "@supabase/ssr": "^0.4.0",
+  "@anthropic-ai/sdk": "^0.24.3"
 },
   "devDependencies": {
     "typescript": "^5",
