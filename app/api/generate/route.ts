@@ -21,29 +21,48 @@ export async function POST(request: NextRequest) {
 
     if (!material) return NextResponse.json({ error: '教材が見つかりません' }, { status: 404 });
 
+    // 画像をfetchしてbase64に変換
+    const imageResponse = await fetch(material.file_url);
+    const imageBuffer = await imageResponse.arrayBuffer();
+    const base64Image = Buffer.from(imageBuffer).toString('base64');
+    const mediaType = (material.file_type || 'image/jpeg') as 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp';
+
     const response = await anthropic.messages.create({
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 4096,
       messages: [{
         role: 'user',
-        content: `Create ${count} multiple choice questions for medical students about "${material.title}" (subject: ${material.subject ?? 'medical'}).
+        content: [
+          {
+            type: 'image',
+            source: {
+              type: 'base64',
+              media_type: mediaType,
+              data: base64Image,
+            },
+          },
+          {
+            type: 'text',
+            text: `この画像は医療系大学生の教材です。画像の内容をもとに4択問題を${count}問作成してください。
 
 IMPORTANT: Return ONLY a JSON object. No explanation, no markdown, no code blocks. Just raw JSON.
 
 Required format:
-{"questions":[{"question":"Question text here","options":["A. option1","B. option2","C. option3","D. option4"],"answer":"A","explanation":"Explanation in Japanese","difficulty":"easy"}]}
+{"questions":[{"question":"問題文","options":["A. 選択肢1","B. 選択肢2","C. 選択肢3","D. 選択肢4"],"answer":"A","explanation":"解説文","difficulty":"easy"}]}
 
 Rules:
 - difficulty must be: easy, medium, or hard
 - answer must be: A, B, C, or D (letter only)
-- Write questions and explanations in Japanese
-- Questions should be at medical/nursing national exam level`
+- 問題文・選択肢・解説はすべて日本語で書く
+- 国家試験レベルを意識した問題を作成する
+- 画像に写っている内容から問題を作成する`
+          }
+        ]
       }]
     });
 
     const text = response.content[0].type === 'text' ? response.content[0].text.trim() : '';
     
-    // JSONのみ抽出
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) throw new Error('JSONが見つかりません');
     
