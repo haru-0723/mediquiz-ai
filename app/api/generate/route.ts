@@ -21,38 +21,35 @@ export async function POST(request: NextRequest) {
 
     if (!material) return NextResponse.json({ error: '教材が見つかりません' }, { status: 404 });
 
-    const prompt = `あなたは医療系大学生の国家試験・定期試験対策を支援するAIです。
-「${material.title}」（科目：${material.subject ?? '医療系'}）に関する4択問題を${count}問作成してください。
-
-以下のJSON形式で返してください（コードブロックなし、JSONのみ）：
-{
-  "questions": [
-    {
-      "question": "問題文",
-      "options": ["A. 選択肢1", "B. 選択肢2", "C. 選択肢3", "D. 選択肢4"],
-      "answer": "A",
-      "explanation": "解説文",
-      "difficulty": "easy"
-    }
-  ]
-}
-
-注意：
-- 医療・看護・薬学・リハビリ分野の専門的な問題を作成
-- 国家試験レベルを意識した問題
-- 解説は理解が深まるよう丁寧に
-- difficulty は easy/medium/hard のいずれか`;
-
     const response = await anthropic.messages.create({
-     model: 'claude-haiku-4-5-20251001',
+      model: 'claude-haiku-4-5-20251001',
       max_tokens: 4096,
-      messages: [{ role: 'user', content: prompt }],
+      messages: [{
+        role: 'user',
+        content: `Create ${count} multiple choice questions for medical students about "${material.title}" (subject: ${material.subject ?? 'medical'}).
+
+IMPORTANT: Return ONLY a JSON object. No explanation, no markdown, no code blocks. Just raw JSON.
+
+Required format:
+{"questions":[{"question":"Question text here","options":["A. option1","B. option2","C. option3","D. option4"],"answer":"A","explanation":"Explanation in Japanese","difficulty":"easy"}]}
+
+Rules:
+- difficulty must be: easy, medium, or hard
+- answer must be: A, B, C, or D (letter only)
+- Write questions and explanations in Japanese
+- Questions should be at medical/nursing national exam level`
+      }]
     });
 
-    const text = response.content[0].type === 'text' ? response.content[0].text : '';
-    const parsed = JSON.parse(text.trim());
-
+    const text = response.content[0].type === 'text' ? response.content[0].text.trim() : '';
+    
+    // JSONのみ抽出
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error('JSONが見つかりません');
+    
+    const parsed = JSON.parse(jsonMatch[0]);
     return NextResponse.json({ questions: parsed.questions });
+
   } catch (e) {
     console.error(e);
     return NextResponse.json({ error: '問題生成に失敗しました' }, { status: 500 });
