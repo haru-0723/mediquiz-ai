@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
     const mediaType = (material.file_type || 'image/jpeg') as 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp';
 
     const response = await anthropic.messages.create({
-     model: 'claude-sonnet-4-20250514',
+   model: 'claude-sonnet-4-5',
       max_tokens: 4096,
       messages: [{
         role: 'user',
