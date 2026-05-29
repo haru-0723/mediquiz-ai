@@ -21,14 +21,25 @@ export async function POST(request: NextRequest) {
 
     if (!material) return NextResponse.json({ error: '教材が見つかりません' }, { status: 404 });
 
-    // 画像をfetchしてbase64に変換
-    const imageResponse = await fetch(material.file_url);
-    const imageBuffer = await imageResponse.arrayBuffer();
-    const base64Image = Buffer.from(imageBuffer).toString('base64');
+    // ファイルパスを取得してSupabaseから直接ダウンロード
+    const urlParts = material.file_url.split('/storage/v1/object/public/materials/');
+    const filePath = urlParts[1];
+
+    const { data: fileData, error: downloadError } = await supabase
+      .storage
+      .from('materials')
+      .download(filePath);
+
+    if (downloadError || !fileData) {
+      throw new Error('画像の取得に失敗しました');
+    }
+
+    const arrayBuffer = await fileData.arrayBuffer();
+    const base64Image = Buffer.from(arrayBuffer).toString('base64');
     const mediaType = (material.file_type || 'image/jpeg') as 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp';
 
     const response = await anthropic.messages.create({
-   model: 'claude-sonnet-4-5',
+      model: 'claude-sonnet-4-5',
       max_tokens: 4096,
       messages: [{
         role: 'user',
@@ -62,15 +73,13 @@ Rules:
     });
 
     const text = response.content[0].type === 'text' ? response.content[0].text.trim() : '';
-    
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) throw new Error('JSONが見つかりません');
-    
     const parsed = JSON.parse(jsonMatch[0]);
     return NextResponse.json({ questions: parsed.questions });
 
   } catch (e) {
     console.error(e);
-    return NextResponse.json({ error: '問題生成に失敗しました' }, { status: 500 });
+    return NextResponse.json({ error: e instanceof Error ? e.message : '問題生成に失敗しました' }, { status: 500 });
   }
 }
