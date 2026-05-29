@@ -12,8 +12,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <script
           async
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5060063469296808"
-     crossorigin="anonymous"></script>"
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5060063469296808"
           crossOrigin="anonymous"
         />
       </head>
