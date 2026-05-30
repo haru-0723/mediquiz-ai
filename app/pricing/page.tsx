@@ -7,16 +7,26 @@ export default function PricingPage() {
   const [loading, setLoading] = useState(false);
 
   async function handleUpgrade() {
-    setLoading(true);
+  setLoading(true);
+  try {
     const res = await fetch('/api/stripe/checkout', { method: 'POST' });
-    const { url, error } = await res.json();
-    if (error) {
-      alert(error);
+    const data = await res.json();
+    if (data.error) {
+      alert('エラー：' + data.error);
       setLoading(false);
       return;
     }
-    window.location.href = url;
+    if (data.url) {
+      window.location.href = data.url;
+    } else {
+      alert('URLが取得できませんでした');
+      setLoading(false);
+    }
+  } catch (e) {
+    alert('通信エラーが発生しました：' + e);
+    setLoading(false);
   }
+}
 
   return (
     <div className="min-h-screen bg-gray-50">
