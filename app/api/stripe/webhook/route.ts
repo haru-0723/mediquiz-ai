@@ -21,8 +21,11 @@ export async function POST(request: NextRequest) {
   );
 
   if (event.type === 'checkout.session.completed') {
-    const session = event.data.object as Stripe.CheckoutSession;
-    const email = session.customer_email;
+    const session = event.data.object;
+    const email = (session as { customer_email?: string }).customer_email;
+    const customerId = (session as { customer?: string }).customer;
+    const subscriptionId = (session as { subscription?: string }).subscription;
+
     if (email) {
       const { data: users } = await supabase.auth.admin.listUsers();
       const user = users?.users.find(u => u.email === email);
@@ -31,20 +34,21 @@ export async function POST(request: NextRequest) {
           id: user.id,
           email: user.email,
           plan: 'standard',
-          stripe_customer_id: session.customer as string,
-          stripe_subscription_id: session.subscription as string,
+          stripe_customer_id: customerId,
+          stripe_subscription_id: subscriptionId,
         });
       }
     }
   }
 
   if (event.type === 'customer.subscription.deleted') {
-    const sub = event.data.object as Stripe.Subscription;
-    const customerId = sub.customer as string;
+    const sub = event.data.object;
+    const customerId = (sub as { customer?: string }).customer;
     await supabase.from('profiles')
       .update({ plan: 'free', stripe_subscription_id: null })
       .eq('stripe_customer_id', customerId);
   }
 
   return NextResponse.json({ received: true });
+}on({ received: true });
 }
