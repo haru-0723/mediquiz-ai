@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
   if (event.type === 'checkout.session.completed') {
-    const session = event.data.object as Record<string, unknown>;
+   const session = event.data.object as unknown as Record<string, unknown>;
     const email = session.customer_email as string;
     const customerId = session.customer as string;
     const subscriptionId = session.subscription as string;
@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
     }
   }
   if (event.type === 'customer.subscription.deleted') {
-    const sub = event.data.object as Record<string, unknown>;
+   const sub = event.data.object as unknown as Record<string, unknown>;
     const customerId = sub.customer as string;
     await supabase.from('profiles')
       .update({ plan: 'free', stripe_subscription_id: null })
