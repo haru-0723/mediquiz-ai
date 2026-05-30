@@ -27,7 +27,7 @@ export default function ReviewPage() {
   const [answered, setAnswered] = useState(false);
   const [results, setResults] = useState<{ correct: boolean }[]>([]);
   const [phase, setPhase] = useState<'select' | 'quiz' | 'result'>('select');
-  const [wrongIds, setWrongIds] = useState<Set<string>>(new Set());
+  const [wrongIds, setWrongIds] = useState<string[]>([]);
 
   useEffect(() => {
     supabase.from('questions').select('*').order('created_at', { ascending: false }).then(({ data }) => {
@@ -53,7 +53,7 @@ export default function ReviewPage() {
     setAnswered(true);
     const q = wrongQuestions[current];
     if (letter !== q.answer) {
-      setWrongIds(prev => new Set([...prev, q.id]));
+      setWrongIds(prev => [...prev, q.id]);
     }
   }
 
@@ -82,7 +82,7 @@ export default function ReviewPage() {
   if (phase === 'result') {
     const correct = results.filter(r => r.correct).length;
     const accuracy = Math.round((correct / results.length) * 100);
-    const stillWrong = wrongQuestions.filter(q => wrongIds.has(q.id));
+    const stillWrong = wrongQuestions.filter(q => wrongIds.includes(q.id));
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-8">
         <div className="bg-white rounded-2xl border p-8 max-w-md w-full text-center">
