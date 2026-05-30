@@ -43,7 +43,7 @@ export default function ReviewPage() {
     setSelected(null);
     setAnswered(false);
     setResults([]);
-    setWrongIds(new Set());
+    setWrongIds([]);
     setPhase('quiz');
   }
 
