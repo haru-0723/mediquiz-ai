@@ -11,6 +11,7 @@ export default function GeneratePage() {
   const supabase = createClient();
   const [materials, setMaterials] = useState<Material[]>([]);
   const [selectedId, setSelectedId] = useState('');
+  const [selectedMaterial, setSelectedMaterial] = useState<Material | null>(null);
   const [count, setCount] = useState(5);
   const [generating, setGenerating] = useState(false);
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -20,6 +21,8 @@ export default function GeneratePage() {
   const [answered, setAnswered] = useState(false);
   const [results, setResults] = useState<{ correct: boolean }[]>([]);
   const [phase, setPhase] = useState<'select' | 'quiz' | 'result'>('select');
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
 
   useEffect(() => {
     supabase.from('materials').select('*').order('created_at', { ascending: false }).then(({ data }) => {
@@ -31,6 +34,8 @@ export default function GeneratePage() {
     if (!selectedId) return;
     setGenerating(true);
     setError('');
+    const material = materials.find(m => m.id === selectedId);
+    setSelectedMaterial(material ?? null);
     try {
       const res = await fetch('/api/generate', {
         method: 'POST',
@@ -44,11 +49,39 @@ export default function GeneratePage() {
       setResults([]);
       setSelected(null);
       setAnswered(false);
+      setSaved(false);
       setPhase('quiz');
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : '問題生成に失敗しました');
     } finally {
       setGenerating(false);
+    }
+  }
+
+  async function handleSaveAll() {
+    setSaving(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('ログインが必要です');
+      for (const q of questions) {
+        await supabase.from('questions').insert({
+          user_id: user.id,
+          subject: selectedMaterial?.subject ?? null,
+          question: q.question,
+          option_a: q.options[0]?.slice(3) ?? '',
+          option_b: q.options[1]?.slice(3) ?? '',
+          option_c: q.options[2]?.slice(3) ?? '',
+          option_d: q.options[3]?.slice(3) ?? '',
+          answer: q.answer,
+          explanation: q.explanation,
+          difficulty: q.difficulty,
+        });
+      }
+      setSaved(true);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -81,12 +114,25 @@ export default function GeneratePage() {
           <div className="text-5xl mb-4">🏆</div>
           <h2 className="text-2xl font-semibold text-gray-900 mb-2">演習完了！</h2>
           <p className="text-5xl font-bold text-green-600 mb-2">{accuracy}%</p>
-          <p className="text-gray-500 mb-8">{results.length}問中 {correct}問正解</p>
+          <p className="text-gray-500 mb-6">{results.length}問中 {correct}問正解</p>
+          <div className="bg-gray-50 rounded-xl p-4 mb-6">
+            {saved ? (
+              <p className="text-sm text-green-600 font-medium">✅ 問題を保存しました！</p>
+            ) : (
+              <div>
+                <p className="text-sm text-gray-600 mb-3">この問題を問題一覧に保存しますか？</p>
+                <button onClick={handleSaveAll} disabled={saving}
+                  className="w-full bg-green-600 text-white py-2.5 rounded-xl text-sm font-medium hover:bg-green-700 disabled:opacity-60">
+                  {saving ? '保存中...' : `${questions.length}問を保存する`}
+                </button>
+              </div>
+            )}
+          </div>
           <div className="flex gap-3">
             <Link href="/dashboard" className="flex-1 border border-gray-200 rounded-xl py-3 text-sm text-gray-600 text-center">
               ダッシュボードへ
             </Link>
-            <button onClick={() => { setPhase('select'); setQuestions([]); }}
+            <button onClick={() => { setPhase('select'); setQuestions([]); setSaved(false); }}
               className="flex-1 bg-green-600 text-white rounded-xl py-3 text-sm font-medium">
               もう一度生成
             </button>
@@ -176,7 +222,7 @@ export default function GeneratePage() {
       </nav>
       <div className="max-w-xl mx-auto p-8">
         <h1 className="text-2xl font-semibold text-gray-900 mb-2">AI問題生成</h1>
-        <p className="text-gray-500 text-sm mb-8">教材を選んでAIが問題を自動生成します。</p>
+        <p className="text-gray-500 text-sm mb-8">教材の画像を選んでAIが問題を自動生成します。</p>
         <div className="bg-white rounded-2xl border p-8 space-y-5">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">教材を選択</label>
@@ -211,4 +257,3 @@ export default function GeneratePage() {
     </div>
   );
 }
- 
