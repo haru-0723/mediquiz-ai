@@ -43,7 +43,12 @@ export default function GeneratePage() {
         body: JSON.stringify({ materialId: selectedId, count }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
+    if (data.upgrade) {
+      setError(data.error);
+      setGenerating(false);
+      return;
+    }
+    if (!res.ok) throw new Error(data.error);
       setQuestions(data.questions);
       setCurrent(0);
       setResults([]);
@@ -247,7 +252,14 @@ export default function GeneratePage() {
             <input type="range" min={3} max={10} value={count} onChange={e => setCount(Number(e.target.value))} className="w-full accent-green-600" />
             <div className="flex justify-between text-xs text-gray-400 mt-1"><span>3問</span><span>10問</span></div>
           </div>
-          {error && <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-xl">{error}</div>}
+         {error && (
+  <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-xl">
+    <p>{error}</p>
+    <a href="/pricing" className="underline font-medium mt-1 inline-block">
+      プランをアップグレードする →
+    </a>
+  </div>
+)}
           <button onClick={handleGenerate} disabled={!selectedId || generating}
             className="w-full bg-green-600 text-white py-3 rounded-xl text-sm font-medium hover:bg-green-700 disabled:opacity-60">
             {generating ? '🤖 AIが問題を生成中...' : '✨ 問題を生成する'}
