@@ -10,6 +10,33 @@ export async function POST(request: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: 'ログインが必要です' }, { status: 401 });
 
+    // プランを確認
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('plan')
+      .eq('id', user.id)
+      .single();
+
+    // 無料プランの場合、今月の生成回数を確認
+    if (!profile || profile.plan === 'free') {
+      const startOfMonth = new Date();
+      startOfMonth.setDate(1);
+      startOfMonth.setHours(0, 0, 0, 0);
+
+      const { count } = await supabase
+        .from('generate_logs')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .gte('created_at', startOfMonth.toISOString());
+
+      if ((count ?? 0) >= 3) {
+        return NextResponse.json({
+          error: '無料プランのAI問題生成は月3回までです。スタンダードプランにアップグレードしてください。',
+          upgrade: true
+        }, { status: 403 });
+      }
+    }
+
     const { materialId, count = 5 } = await request.json();
 
     const { data: material } = await supabase
@@ -21,7 +48,6 @@ export async function POST(request: NextRequest) {
 
     if (!material) return NextResponse.json({ error: '教材が見つかりません' }, { status: 404 });
 
-    // ファイルパスを取得してSupabaseから直接ダウンロード
     const urlParts = material.file_url.split('/storage/v1/object/public/materials/');
     const filePath = urlParts[1];
 
@@ -76,6 +102,10 @@ Rules:
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) throw new Error('JSONが見つかりません');
     const parsed = JSON.parse(jsonMatch[0]);
+
+    // 生成ログを記録
+    await supabase.from('generate_logs').insert({ user_id: user.id });
+
     return NextResponse.json({ questions: parsed.questions });
 
   } catch (e) {
