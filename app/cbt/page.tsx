@@ -28,6 +28,7 @@ export default function CBTPage() {
   const [allQuestions, setAllQuestions] = useState<Question[]>([]);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(false);
   const [phase, setPhase] = useState<'select' | 'quiz' | 'result'>('select');
   const [questionCount, setQuestionCount] = useState(10);
   const [timeLimit, setTimeLimit] = useState(10);
@@ -37,6 +38,7 @@ export default function CBTPage() {
   const [selected, setSelected] = useState<string | null>(null);
   const [timeLeft, setTimeLeft] = useState(0);
   const [showResult, setShowResult] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     supabase.from('questions').select('*').order('created_at', { ascending: false }).then(({ data }) => {
@@ -46,7 +48,6 @@ export default function CBTPage() {
   }, []);
 
   const handleFinish = useCallback((currentAnswers: Answer[], currentQuestions: Question[]) => {
-    // 未回答の問題を不正解として記録
     const remaining = currentQuestions.slice(currentAnswers.length);
     const finalAnswers = [
       ...currentAnswers,
@@ -66,13 +67,39 @@ export default function CBTPage() {
     return () => clearTimeout(timer);
   }, [phase, timeLeft, answers, questions, handleFinish]);
 
-  function handleStart() {
+  async function handleStart() {
+    setError('');
     const filtered = selectedSubject === 'すべて'
       ? allQuestions
       : allQuestions.filter(q => (q.subject ?? 'その他') === selectedSubject);
-    const shuffled = [...filtered].sort(() => Math.random() - 0.5);
-    const selected = shuffled.slice(0, Math.min(questionCount, shuffled.length));
-    setQuestions(selected);
+
+    let finalQuestions = [...filtered].sort(() => Math.random() - 0.5).slice(0, questionCount);
+
+    // 問題が足りない場合はAIで生成
+    if (finalQuestions.length < questionCount) {
+      setGenerating(true);
+      try {
+        const needed = questionCount - finalQuestions.length;
+        const res = await fetch('/api/cbt-generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ subject: selectedSubject, count: needed }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error);
+        finalQuestions = [...finalQuestions, ...data.questions];
+
+        // allQuestionsを更新
+        setAllQuestions(prev => [...prev, ...data.questions]);
+      } catch (e: unknown) {
+        setError(e instanceof Error ? e.message : '問題生成に失敗しました');
+        setGenerating(false);
+        return;
+      }
+      setGenerating(false);
+    }
+
+    setQuestions(finalQuestions);
     setAnswers([]);
     setCurrent(0);
     setSelected(null);
@@ -90,7 +117,6 @@ export default function CBTPage() {
     const isCorrect = selected === q.answer;
     const newAnswers = [...answers, { questionId: q.id, selected, isCorrect }];
     setAnswers(newAnswers);
-
     if (current + 1 < questions.length) {
       setCurrent(current + 1);
       setSelected(null);
@@ -107,6 +133,9 @@ export default function CBTPage() {
   }
 
   const subjects = ['すべて', ...Array.from(new Set(allQuestions.map(q => q.subject ?? 'その他')))];
+  const availableCount = selectedSubject === 'すべて'
+    ? allQuestions.length
+    : allQuestions.filter(q => (q.subject ?? 'その他') === selectedSubject).length;
 
   if (loading) {
     return (
@@ -116,10 +145,23 @@ export default function CBTPage() {
     );
   }
 
+  if (generating) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div style={{ width: 40, height: 40, border: '3px solid #2563EB', borderTopColor: 'transparent', borderRadius: '50%', margin: '0 auto 20px', animation: 'spin 0.8s linear infinite' }} />
+          <p className="text-gray-600 font-medium">AIが問題を生成しています...</p>
+          <p className="text-sm text-gray-400 mt-2">少々お待ちください</p>
+        </div>
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
+    );
+  }
+
   if (phase === 'result') {
     const correct = answers.filter(a => a.isCorrect).length;
     const accuracy = Math.round((correct / answers.length) * 100);
-    const subjectStats = allQuestions.reduce((acc, q) => {
+    const subjectStats = questions.reduce((acc, q) => {
       const subject = q.subject ?? 'その他';
       const answer = answers.find(a => a.questionId === q.id);
       if (!answer) return acc;
@@ -140,7 +182,6 @@ export default function CBTPage() {
           </div>
           <Link href="/dashboard" className="text-sm text-gray-500">ダッシュボードへ</Link>
         </nav>
-
         <div className="max-w-2xl mx-auto p-8">
           <div className="bg-white rounded-2xl border p-8 text-center mb-6">
             <div className="text-5xl mb-4">📊</div>
@@ -185,9 +226,7 @@ export default function CBTPage() {
                 return (
                   <div key={q.id} className={`p-4 rounded-xl border ${answer?.isCorrect ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}`}>
                     <div className="flex items-start gap-3">
-                      <span className={`text-lg flex-shrink-0 ${answer?.isCorrect ? '✅' : '❌'}`}>
-                        {answer?.isCorrect ? '✅' : '❌'}
-                      </span>
+                      <span className="text-lg flex-shrink-0">{answer?.isCorrect ? '✅' : '❌'}</span>
                       <div className="min-w-0">
                         <p className="text-sm font-medium text-gray-900 mb-1">Q{i + 1}. {q.question}</p>
                         <p className="text-xs text-gray-500">正解：{q.answer}　あなた：{answer?.selected ?? '未回答'}</p>
@@ -352,25 +391,21 @@ export default function CBTPage() {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-3">問題数</label>
             <div className="grid grid-cols-4 gap-2">
-              {[10, 20, 40, 100].map(n => {
-                const available = selectedSubject === 'すべて'
-                  ? allQuestions.length
-                  : allQuestions.filter(q => (q.subject ?? 'その他') === selectedSubject).length;
-                return (
-                  <button key={n} onClick={() => setQuestionCount(n)} disabled={n > available}
-                    className={`py-2.5 rounded-xl text-sm border transition-colors ${questionCount === n ? 'bg-blue-600 text-white border-blue-600' : n > available ? 'border-gray-100 text-gray-300 cursor-not-allowed' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}>
-                    {n}問
-                  </button>
-                );
-              })}
+              {[10, 20, 40, 100].map(n => (
+                <button key={n} onClick={() => setQuestionCount(n)}
+                  className={`py-2.5 rounded-xl text-sm border transition-colors ${questionCount === n ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}>
+                  {n}問
+                </button>
+              ))}
             </div>
             <p className="text-xs text-gray-400 mt-2">
-              現在の問題数：{selectedSubject === 'すべて' ? allQuestions.length : allQuestions.filter(q => (q.subject ?? 'その他') === selectedSubject).length}問
+              ストック問題数：{availableCount}問
+              {availableCount < questionCount && <span className="text-blue-500 ml-2">（不足分はAIが生成します）</span>}
             </p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-3">制限時間：{timeLimit}分</label>
+            <label className="block text-sm font-medium text-gray-700 mb-3">制限時間</label>
             <div className="grid grid-cols-4 gap-2">
               {[10, 20, 30, 60].map(t => (
                 <button key={t} onClick={() => setTimeLimit(t)}
@@ -381,19 +416,13 @@ export default function CBTPage() {
             </div>
           </div>
 
+          {error && <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-xl">{error}</div>}
+
           <button onClick={handleStart}
-            disabled={allQuestions.length === 0}
-            className="w-full bg-blue-600 text-white py-3 rounded-xl text-sm font-medium hover:bg-blue-700 disabled:opacity-60">
-            {allQuestions.length === 0 ? '問題がありません' : '🎯 模試を開始する'}
+            className="w-full bg-blue-600 text-white py-3 rounded-xl text-sm font-medium hover:bg-blue-700">
+            🎯 模試を開始する
           </button>
         </div>
-
-        {allQuestions.length < 10 && (
-          <div className="mt-4 p-4 bg-yellow-50 rounded-xl border border-yellow-200">
-            <p className="text-sm text-yellow-700">⚠️ 問題数が少ないです。より充実した模試のために問題を追加しましょう。</p>
-            <Link href="/questions/new" className="text-xs text-yellow-600 hover:underline mt-1 inline-block">+ 問題を追加する</Link>
-          </div>
-        )}
       </div>
     </div>
   );
