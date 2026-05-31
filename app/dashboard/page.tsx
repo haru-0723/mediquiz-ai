@@ -39,6 +39,7 @@ const plan = profile?.plan ?? 'free';
 </Link>
   <Link href="/questions" className="text-xs text-green-600 hover:underline hidden sm:inline">問題一覧</Link>
 <Link href="/review" className="text-xs bg-orange-500 text-white px-2 py-1 rounded-lg hover:bg-orange-600">復習</Link>
+<Link href="/cbt" className="text-xs bg-blue-600 text-white px-2 py-1 rounded-lg hover:bg-blue-700">CBT模試</Link>
   <Link href="/generate" className="text-xs bg-green-600 text-white px-2 py-1 rounded-lg hover:bg-green-700">AI生成</Link>
   <Link href="/questions/new" className="text-xs bg-green-50 text-green-700 px-2 py-1 rounded-lg hover:bg-green-100">+ 問題</Link>
   <Link href="/materials" className="text-xs text-green-600 hover:underline hidden sm:inline">教材一覧</Link>
