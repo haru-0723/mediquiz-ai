@@ -85,9 +85,9 @@ const plan = profile?.plan ?? 'free';
                         <p className="text-xs text-gray-400">{session.total_questions}問</p>
                       </div>
                      <span className="text-sm text-gray-500">{name}</span>
-<span className={`text-xs px-2 py-1 rounded-full font-medium ${plan === 'standard' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
-  {plan === 'standard' ? '⭐ スタンダード' : '無料プラン'}
-</span>
+<Link href="/pricing" className={`text-xs px-2 py-1 rounded-full font-medium ${plan === 'standard' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-600'}`}>
+  {plan === 'standard' ? '⭐ スタンダード' : '🔓 無料プラン'}
+</Link>
                     </div>
                   );
                 })}
