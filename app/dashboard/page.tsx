@@ -9,6 +9,14 @@ export default async function DashboardPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/auth/login');
   const name = user.user_metadata?.name ?? user.email ?? '';
+
+const { data: profile } = await supabase
+  .from('profiles')
+  .select('plan')
+  .eq('id', user.id)
+  .single();
+
+const plan = profile?.plan ?? 'free';
   const { data: exams } = await supabase.from('exams').select('*').eq('user_id', user.id).order('exam_date');
   const { data: sessions } = await supabase.from('quiz_sessions').select('*').eq('user_id', user.id).order('completed_at', { ascending: false }).limit(5);
   const { data: materials } = await supabase.from('materials').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
@@ -76,7 +84,10 @@ export default async function DashboardPage() {
                         <p className="text-sm font-medium text-gray-900">{session.subject ?? '演習'}</p>
                         <p className="text-xs text-gray-400">{session.total_questions}問</p>
                       </div>
-                      <span className={`text-sm font-semibold ${acc >= 60 ? 'text-green-600' : 'text-red-500'}`}>{acc}%</span>
+                     <span className="text-sm text-gray-500">{name}</span>
+<span className={`text-xs px-2 py-1 rounded-full font-medium ${plan === 'standard' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+  {plan === 'standard' ? '⭐ スタンダード' : '無料プラン'}
+</span>
                     </div>
                   );
                 })}
