@@ -15,6 +15,7 @@ type Question = {
   answer: string;
   explanation: string | null;
   difficulty: string;
+  user_id: string;
 };
 
 export default function QuestionsPage() {
@@ -22,12 +23,20 @@ export default function QuestionsPage() {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [reporting, setReporting] = useState<string | null>(null);
+  const [reportReason, setReportReason] = useState('');
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [reported, setReported] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    supabase.from('questions').select('*').order('created_at', { ascending: false }).then(({ data }) => {
+    async function load() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) setCurrentUserId(user.id);
+      const { data } = await supabase.from('questions').select('*').order('created_at', { ascending: false });
       if (data) setQuestions(data);
       setLoading(false);
-    });
+    }
+    load();
   }, []);
 
   async function handleDelete(id: string) {
@@ -36,6 +45,21 @@ export default function QuestionsPage() {
     await supabase.from('questions').delete().eq('id', id);
     setQuestions(questions.filter(q => q.id !== id));
     setDeleting(null);
+  }
+
+  async function handleReport(questionId: string) {
+    if (!reportReason.trim()) return;
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    await supabase.from('question_reports').insert({
+      question_id: questionId,
+      user_id: user.id,
+      reason: reportReason,
+    });
+    setReported(prev => new Set([...Array.from(prev), questionId]));
+    setReporting(null);
+    setReportReason('');
+    alert('レポートを送信しました。ご協力ありがとうございます。');
   }
 
   if (loading) {
@@ -80,18 +104,29 @@ export default function QuestionsPage() {
                       {q.difficulty === 'easy' ? '基礎' : q.difficulty === 'hard' ? '応用' : '標準'}
                     </span>
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
                     <span className="text-xs text-gray-400">Q{i + 1}</span>
-                    <Link href={`/questions/${q.id}/edit`}
-  className="text-xs text-blue-400 hover:text-blue-600 border border-blue-200 hover:border-blue-400 px-3 py-1 rounded-lg transition-colors">
-  編集
-</Link>
-<button onClick={() => handleDelete(q.id)} disabled={deleting === q.id}
-  className="text-xs text-red-400 hover:text-red-600 border border-red-200 hover:border-red-400 px-3 py-1 rounded-lg transition-colors disabled:opacity-60">
-  {deleting === q.id ? '削除中...' : '削除'}
-</button>
+                    {currentUserId === q.user_id && (
+                      <>
+                        <Link href={`/questions/${q.id}/edit`}
+                          className="text-xs text-blue-400 hover:text-blue-600 border border-blue-200 hover:border-blue-400 px-3 py-1 rounded-lg transition-colors">
+                          編集
+                        </Link>
+                        <button onClick={() => handleDelete(q.id)} disabled={deleting === q.id}
+                          className="text-xs text-red-400 hover:text-red-600 border border-red-200 hover:border-red-400 px-3 py-1 rounded-lg transition-colors disabled:opacity-60">
+                          {deleting === q.id ? '削除中...' : '削除'}
+                        </button>
+                      </>
+                    )}
+                    {currentUserId !== q.user_id && (
+                      <button onClick={() => reported.has(q.id) ? null : setReporting(q.id)}
+                        className={`text-xs px-3 py-1 rounded-lg border transition-colors ${reported.has(q.id) ? 'text-gray-300 border-gray-100 cursor-not-allowed' : 'text-orange-400 hover:text-orange-600 border-orange-200 hover:border-orange-400'}`}>
+                        {reported.has(q.id) ? '報告済み' : '報告'}
+                      </button>
+                    )}
                   </div>
                 </div>
+
                 <p className="text-sm font-medium text-gray-900 mb-3">{q.question}</p>
                 <div className="grid grid-cols-2 gap-2">
                   {[
@@ -111,6 +146,30 @@ export default function QuestionsPage() {
                 {q.explanation && (
                   <div className="mt-3 p-3 bg-gray-50 rounded-xl">
                     <p className="text-xs text-gray-500"><span className="font-medium text-green-600">💡 解説：</span>{q.explanation}</p>
+                  </div>
+                )}
+
+                {reporting === q.id && (
+                  <div className="mt-4 p-4 bg-orange-50 rounded-xl border border-orange-200">
+                    <p className="text-sm font-medium text-orange-700 mb-2">問題を報告する</p>
+                    <div className="space-y-2 mb-3">
+                      {['問題文・選択肢が不正確', '解説が間違っている', '不適切なコンテンツ', 'その他'].map(reason => (
+                        <button key={reason} onClick={() => setReportReason(reason)}
+                          className={`block w-full text-left px-3 py-2 rounded-lg text-sm border transition-colors ${reportReason === reason ? 'bg-orange-200 border-orange-400 text-orange-800' : 'bg-white border-orange-200 text-gray-600 hover:border-orange-300'}`}>
+                          {reason}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="flex gap-2">
+                      <button onClick={() => { setReporting(null); setReportReason(''); }}
+                        className="flex-1 border border-gray-200 rounded-xl py-2 text-sm text-gray-500">
+                        キャンセル
+                      </button>
+                      <button onClick={() => handleReport(q.id)} disabled={!reportReason}
+                        className="flex-1 bg-orange-500 text-white rounded-xl py-2 text-sm font-medium disabled:opacity-60">
+                        報告する
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
