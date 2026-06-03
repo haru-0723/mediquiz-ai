@@ -125,15 +125,6 @@ async function handleStart() {
     setGenerating(false);
   }
 
-    setQuestions(finalQuestions);
-    setAnswers([]);
-    setCurrent(0);
-    setSelected(null);
-    setTimeLeft(timeLimit * 60);
-    setShowResult(false);
-    setPhase('quiz');
-  }
-
   function handleAnswer(letter: string) {
     setSelected(letter);
   }
