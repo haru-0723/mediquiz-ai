@@ -17,6 +17,7 @@ const { data: profile } = await supabase
   .single();
 
 const plan = profile?.plan ?? 'free';
+  const isAdmin = user.email === 'harumaru0723@yahoo.co.jp';
   const { data: exams } = await supabase.from('exams').select('*').eq('user_id', user.id).order('exam_date');
   const { data: sessions } = await supabase.from('quiz_sessions').select('*').eq('user_id', user.id).order('completed_at', { ascending: false }).limit(5);
   const { data: materials } = await supabase.from('materials').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
@@ -44,6 +45,9 @@ const plan = profile?.plan ?? 'free';
   <Link href="/questions/new" className="text-xs bg-green-50 text-green-700 px-2 py-1 rounded-lg hover:bg-green-100">+ 問題</Link>
   <Link href="/materials" className="text-xs text-green-600 hover:underline hidden sm:inline">教材一覧</Link>
 <Link href="/upload" className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-lg hover:bg-gray-200">+ 教材</Link>
+{isAdmin && (
+  <Link href="/admin" className="text-xs bg-red-500 text-white px-2 py-1 rounded-lg hover:bg-red-600">管理者</Link>
+)}
  <Link href="/settings" className="text-xs text-gray-400 hover:text-gray-600">設定</Link>
 <LogoutButton />
 </div>
