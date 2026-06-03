@@ -67,7 +67,7 @@ export default function CBTPage() {
     return () => clearTimeout(timer);
   }, [phase, timeLeft, answers, questions, handleFinish]);
 
- async function handleStart() {
+async function handleStart() {
   setError('');
 
   // プラン制限チェック
@@ -78,35 +78,52 @@ export default function CBTPage() {
     return;
   }
 
-  const filtered = selectedSubject === 'すべて'
-      ? allQuestions
-      : allQuestions.filter(q => (q.subject ?? 'その他') === selectedSubject);
+  setGenerating(true);
 
-    let finalQuestions = [...filtered].sort(() => Math.random() - 0.5).slice(0, questionCount);
+  try {
+    // 60%は新しくAIで生成
+    const newCount = Math.ceil(questionCount * 0.6);
+    // 40%はストックから出題
+    const stockCount = questionCount - newCount;
 
-    // 問題が足りない場合はAIで生成
-    if (finalQuestions.length < questionCount) {
-      setGenerating(true);
-      try {
-        const needed = questionCount - finalQuestions.length;
-        const res = await fetch('/api/cbt-generate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ subject: selectedSubject, count: needed }),
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error);
-        finalQuestions = [...finalQuestions, ...data.questions];
+    // AIで新しい問題を生成
+    const generateRes = await fetch('/api/cbt-generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ subject: selectedSubject, count: newCount }),
+    });
+    const generateData = await generateRes.json();
+    if (!generateRes.ok) throw new Error(generateData.error);
+    const newQuestions = generateData.questions;
 
-        // allQuestionsを更新
-        setAllQuestions(prev => [...prev, ...data.questions]);
-      } catch (e: unknown) {
-        setError(e instanceof Error ? e.message : '問題生成に失敗しました');
-        setGenerating(false);
-        return;
-      }
-      setGenerating(false);
-    }
+    // ストックから出題（新しく生成した問題以外）
+    const newIds = new Set(newQuestions.map((q: Question) => q.id));
+    const filtered = selectedSubject === 'すべて'
+      ? allQuestions.filter(q => !newIds.has(q.id))
+      : allQuestions.filter(q => (q.subject ?? 'その他') === selectedSubject && !newIds.has(q.id));
+    const stockQuestions = [...filtered]
+      .sort(() => Math.random() - 0.5)
+      .slice(0, Math.min(stockCount, filtered.length));
+
+    // 合わせてシャッフル
+    const finalQuestions = [...newQuestions, ...stockQuestions]
+      .sort(() => Math.random() - 0.5);
+
+    // allQuestionsを更新
+    setAllQuestions(prev => [...prev, ...newQuestions]);
+
+    setQuestions(finalQuestions);
+    setAnswers([]);
+    setCurrent(0);
+    setSelected(null);
+    setTimeLeft(timeLimit * 60);
+    setShowResult(false);
+    setPhase('quiz');
+  } catch (e: unknown) {
+    setError(e instanceof Error ? e.message : '問題生成に失敗しました');
+  } finally {
+    setGenerating(false);
+  }
 
     setQuestions(finalQuestions);
     setAnswers([]);
