@@ -4,14 +4,17 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 
-type Material = { id: string; title: string; subject: string | null; };
+type Folder = { id: string; name: string; };
+type Material = { id: string; title: string; subject: string | null; folder_id: string | null; };
 type Question = { question: string; options: string[]; answer: string; explanation: string; difficulty: string; };
 
 export default function GeneratePage() {
   const supabase = createClient();
+  const [folders, setFolders] = useState<Folder[]>([]);
   const [materials, setMaterials] = useState<Material[]>([]);
-  const [selectedId, setSelectedId] = useState('');
-  const [selectedMaterial, setSelectedMaterial] = useState<Material | null>(null);
+  const [selectedFolder, setSelectedFolder] = useState('すべて');
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [selectedMaterials, setSelectedMaterials] = useState<Material[]>([]);
   const [count, setCount] = useState(5);
   const [generating, setGenerating] = useState(false);
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -23,33 +26,67 @@ export default function GeneratePage() {
   const [phase, setPhase] = useState<'select' | 'quiz' | 'result'>('select');
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [progress, setProgress] = useState(0);
 
   useEffect(() => {
-    supabase.from('materials').select('*').order('created_at', { ascending: false }).then(({ data }) => {
-      if (data) setMaterials(data);
-    });
+    async function load() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data: folderData } = await supabase.from('folders').select('*').eq('user_id', user.id).order('created_at');
+      if (folderData) setFolders(folderData);
+      const { data: materialData } = await supabase.from('materials').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
+      if (materialData) setMaterials(materialData);
+    }
+    load();
   }, []);
 
+  const filteredMaterials = selectedFolder === 'すべて'
+    ? materials
+    : selectedFolder === 'なし'
+    ? materials.filter(m => !m.folder_id)
+    : materials.filter(m => m.folder_id === selectedFolder);
+
+  function toggleMaterial(id: string) {
+    setSelectedIds(prev =>
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    );
+  }
+
+  function selectAll() {
+    setSelectedIds(filteredMaterials.map(m => m.id));
+  }
+
+  function clearAll() {
+    setSelectedIds([]);
+  }
+
   async function handleGenerate() {
-    if (!selectedId) return;
+    if (selectedIds.length === 0) return;
     setGenerating(true);
     setError('');
-    const material = materials.find(m => m.id === selectedId);
-    setSelectedMaterial(material ?? null);
+    setProgress(0);
+    const selected = materials.filter(m => selectedIds.includes(m.id));
+    setSelectedMaterials(selected);
+
     try {
-      const res = await fetch('/api/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ materialId: selectedId, count }),
-      });
-      const data = await res.json();
-    if (data.upgrade) {
-      setError(data.error);
-      setGenerating(false);
-      return;
-    }
-    if (!res.ok) throw new Error(data.error);
-      setQuestions(data.questions);
+      const allQuestions: Question[] = [];
+      for (let i = 0; i < selectedIds.length; i++) {
+        const res = await fetch('/api/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ materialId: selectedIds[i], count }),
+        });
+        const data = await res.json();
+        if (data.upgrade) {
+          setError(data.error);
+          setGenerating(false);
+          return;
+        }
+        if (!res.ok) throw new Error(data.error);
+        allQuestions.push(...data.questions);
+        setProgress(Math.round(((i + 1) / selectedIds.length) * 100));
+      }
+      setQuestions(allQuestions);
       setCurrent(0);
       setResults([]);
       setSelected(null);
@@ -71,7 +108,7 @@ export default function GeneratePage() {
       for (const q of questions) {
         await supabase.from('questions').insert({
           user_id: user.id,
-          subject: selectedMaterial?.subject ?? null,
+          subject: selectedMaterials[0]?.subject ?? null,
           question: q.question,
           option_a: q.options[0]?.slice(3) ?? '',
           option_b: q.options[1]?.slice(3) ?? '',
@@ -110,6 +147,22 @@ export default function GeneratePage() {
     }
   }
 
+  if (generating) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center max-w-sm w-full px-8">
+          <div style={{ width: 40, height: 40, border: '3px solid #16a34a', borderTopColor: 'transparent', borderRadius: '50%', margin: '0 auto 20px', animation: 'spin 0.8s linear infinite' }} />
+          <p className="text-gray-600 font-medium mb-4">AIが問題を生成しています...</p>
+          <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+            <div className="h-full bg-green-600 rounded-full transition-all" style={{ width: `${progress}%` }} />
+          </div>
+          <p className="text-sm text-gray-400 mt-2">{progress}%</p>
+        </div>
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
+    );
+  }
+
   if (phase === 'result') {
     const correct = results.filter(r => r.correct).length;
     const accuracy = Math.round((correct / results.length) * 100);
@@ -122,7 +175,7 @@ export default function GeneratePage() {
           <p className="text-gray-500 mb-6">{results.length}問中 {correct}問正解</p>
           <div className="bg-gray-50 rounded-xl p-4 mb-6">
             {saved ? (
-              <p className="text-sm text-green-600 font-medium">✅ 問題を保存しました！</p>
+              <p className="text-sm text-green-600 font-medium">✅ {questions.length}問を保存しました！</p>
             ) : (
               <div>
                 <p className="text-sm text-gray-600 mb-3">この問題を問題一覧に保存しますか？</p>
@@ -227,42 +280,80 @@ export default function GeneratePage() {
       </nav>
       <div className="max-w-xl mx-auto p-8">
         <h1 className="text-2xl font-semibold text-gray-900 mb-2">AI問題生成</h1>
-        <p className="text-gray-500 text-sm mb-8">教材の画像を選んでAIが問題を自動生成します。</p>
+        <p className="text-gray-500 text-sm mb-8">複数の教材を選んで一気に問題を生成できます。</p>
         <div className="bg-white rounded-2xl border p-8 space-y-5">
+
+          {/* フォルダフィルター */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">教材を選択</label>
-            {materials.length === 0 ? (
+            <label className="block text-sm font-medium text-gray-700 mb-2">フォルダで絞り込み</label>
+            <div className="flex flex-wrap gap-2">
+              {['すべて', 'なし', ...folders.map(f => f.name)].map((name, i) => {
+                const folderId = i === 0 ? 'すべて' : i === 1 ? 'なし' : folders[i - 2]?.id;
+                return (
+                  <button key={name} onClick={() => setSelectedFolder(folderId)}
+                    className={`px-3 py-1.5 rounded-xl text-xs border transition-colors ${selectedFolder === folderId ? 'bg-green-600 text-white border-green-600' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}>
+                    📁 {name}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 教材選択 */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-sm font-medium text-gray-700">教材を選択（複数可）</label>
+              <div className="flex gap-2">
+                <button onClick={selectAll} className="text-xs text-green-600 hover:underline">全選択</button>
+                <button onClick={clearAll} className="text-xs text-gray-400 hover:underline">解除</button>
+              </div>
+            </div>
+            {filteredMaterials.length === 0 ? (
               <div className="p-4 bg-gray-50 rounded-xl text-sm text-gray-500 text-center">
                 教材がありません。<Link href="/upload" className="text-green-600 hover:underline">アップロード</Link>してください。
               </div>
             ) : (
-              <div className="space-y-2">
-                {materials.map(m => (
-                  <button key={m.id} onClick={() => setSelectedId(m.id)}
-                    className={`w-full text-left p-4 rounded-xl border transition-colors ${selectedId === m.id ? 'border-green-500 bg-green-50' : 'border-gray-200 hover:border-gray-300'}`}>
-                    <p className="text-sm font-medium text-gray-900">{m.title}</p>
-                    {m.subject && <p className="text-xs text-gray-400 mt-0.5">{m.subject}</p>}
+              <div className="space-y-2 max-h-48 overflow-y-auto">
+                {filteredMaterials.map(m => (
+                  <button key={m.id} onClick={() => toggleMaterial(m.id)}
+                    className={`w-full text-left flex items-center gap-3 p-3 rounded-xl border transition-colors ${selectedIds.includes(m.id) ? 'border-green-500 bg-green-50' : 'border-gray-200 hover:border-gray-300'}`}>
+                    <div className={`w-5 h-5 rounded border flex items-center justify-center flex-shrink-0 ${selectedIds.includes(m.id) ? 'bg-green-600 border-green-600' : 'border-gray-300'}`}>
+                      {selectedIds.includes(m.id) && <span className="text-white text-xs">✓</span>}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">{m.title}</p>
+                      {m.subject && <p className="text-xs text-gray-400">{m.subject}</p>}
+                    </div>
                   </button>
                 ))}
               </div>
             )}
+            {selectedIds.length > 0 && (
+              <p className="text-xs text-green-600 mt-2 font-medium">{selectedIds.length}件選択中</p>
+            )}
           </div>
+
+          {/* 問題数 */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">問題数：{count}問</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">教材1件あたりの問題数：{count}問</label>
             <input type="range" min={3} max={10} value={count} onChange={e => setCount(Number(e.target.value))} className="w-full accent-green-600" />
-            <div className="flex justify-between text-xs text-gray-400 mt-1"><span>3問</span><span>10問</span></div>
+            <div className="flex justify-between text-xs text-gray-400 mt-1">
+              <span>3問</span>
+              <span>合計 {selectedIds.length * count}問生成</span>
+              <span>10問</span>
+            </div>
           </div>
-         {error && (
-  <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-xl">
-    <p>{error}</p>
-    <a href="/pricing" className="underline font-medium mt-1 inline-block">
-      プランをアップグレードする →
-    </a>
-  </div>
-)}
-          <button onClick={handleGenerate} disabled={!selectedId || generating}
+
+          {error && (
+            <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-xl">
+              <p>{error}</p>
+              <a href="/pricing" className="underline font-medium mt-1 inline-block">プランをアップグレードする →</a>
+            </div>
+          )}
+
+          <button onClick={handleGenerate} disabled={selectedIds.length === 0 || generating}
             className="w-full bg-green-600 text-white py-3 rounded-xl text-sm font-medium hover:bg-green-700 disabled:opacity-60">
-            {generating ? '🤖 AIが問題を生成中...' : '✨ 問題を生成する'}
+            ✨ {selectedIds.length > 0 ? `${selectedIds.length}件の教材から問題を生成する` : '教材を選択してください'}
           </button>
         </div>
       </div>
