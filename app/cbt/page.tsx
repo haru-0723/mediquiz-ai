@@ -67,9 +67,18 @@ export default function CBTPage() {
     return () => clearTimeout(timer);
   }, [phase, timeLeft, answers, questions, handleFinish]);
 
-  async function handleStart() {
-    setError('');
-    const filtered = selectedSubject === 'すべて'
+ async function handleStart() {
+  setError('');
+
+  // プラン制限チェック
+  const checkRes = await fetch('/api/cbt-check', { method: 'POST' });
+  const checkData = await checkRes.json();
+  if (!checkData.allowed) {
+    setError(checkData.error);
+    return;
+  }
+
+  const filtered = selectedSubject === 'すべて'
       ? allQuestions
       : allQuestions.filter(q => (q.subject ?? 'その他') === selectedSubject);
 
@@ -416,7 +425,14 @@ export default function CBTPage() {
             </div>
           </div>
 
-          {error && <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-xl">{error}</div>}
+         {error && (
+  <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-xl">
+    <p>{error}</p>
+    <a href="/pricing" className="underline font-medium mt-1 inline-block">
+      プランをアップグレードする →
+    </a>
+  </div>
+)}
 
           <button onClick={handleStart}
             className="w-full bg-blue-600 text-white py-3 rounded-xl text-sm font-medium hover:bg-blue-700">
