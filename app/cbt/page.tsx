@@ -124,6 +124,7 @@ async function handleStart() {
   } finally {
     setGenerating(false);
   }
+}
 
   function handleAnswer(letter: string) {
     setSelected(letter);
