@@ -1,52 +1,79 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 
+type Folder = { id: string; name: string; };
+
 export default function UploadPage() {
   const supabase = createClient();
-  const [file, setFile] = useState<File | null>(null);
-  const [title, setTitle] = useState('');
+  const [files, setFiles] = useState<File[]>([]);
+  const [folders, setFolders] = useState<Folder[]>([]);
+  const [selectedFolder, setSelectedFolder] = useState('');
+  const [newFolderName, setNewFolderName] = useState('');
+  const [showNewFolder, setShowNewFolder] = useState(false);
   const [subject, setSubject] = useState('');
   const [uploading, setUploading] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState('');
 
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return;
+      supabase.from('folders').select('*').eq('user_id', user.id).order('created_at').then(({ data }) => {
+        if (data) setFolders(data);
+      });
+    });
+  }, []);
+
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const f = e.target.files?.[0];
-    if (f) {
-      setFile(f);
-      if (!title) setTitle(f.name.replace(/\.[^/.]+$/, ''));
+    const newFiles = Array.from(e.target.files ?? []);
+    setFiles(prev => [...prev, ...newFiles]);
+  }
+
+  function removeFile(index: number) {
+    setFiles(files.filter((_, i) => i !== index));
+  }
+
+  async function createFolder() {
+    if (!newFolderName.trim()) return;
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const { data } = await supabase.from('folders').insert({
+      user_id: user.id,
+      name: newFolderName,
+    }).select().single();
+    if (data) {
+      setFolders([...folders, data]);
+      setSelectedFolder(data.id);
+      setNewFolderName('');
+      setShowNewFolder(false);
     }
   }
 
   async function handleUpload() {
-    if (!file) return;
+    if (files.length === 0) return;
     setUploading(true);
     setError('');
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('ログインが必要です');
 
-      const path = `${user.id}/${Date.now()}_${file.name}`;
-      const { error: uploadError } = await supabase.storage
-        .from('materials')
-        .upload(path, file);
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('materials')
-        .getPublicUrl(path);
-
-      await supabase.from('materials').insert({
-        user_id: user.id,
-        title: title || file.name,
-        file_url: publicUrl,
-        file_type: file.type,
-        subject: subject || null,
-      });
-
+      for (const file of files) {
+        const path = `${user.id}/${Date.now()}_${file.name}`;
+        const { error: uploadError } = await supabase.storage.from('materials').upload(path, file);
+        if (uploadError) throw uploadError;
+        const { data: { publicUrl } } = supabase.storage.from('materials').getPublicUrl(path);
+        await supabase.from('materials').insert({
+          user_id: user.id,
+          title: file.name.replace(/\.[^/.]+$/, ''),
+          file_url: publicUrl,
+          file_type: file.type,
+          subject: subject || null,
+          folder_id: selectedFolder || null,
+        });
+      }
       setDone(true);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'アップロードに失敗しました');
@@ -61,14 +88,14 @@ export default function UploadPage() {
         <div className="bg-white rounded-2xl border p-8 max-w-md w-full text-center">
           <div className="text-5xl mb-4">✅</div>
           <h2 className="text-xl font-semibold text-gray-900 mb-2">アップロード完了！</h2>
-          <p className="text-gray-500 text-sm mb-6">教材が保存されました。</p>
+          <p className="text-gray-500 text-sm mb-6">{files.length}件の教材が保存されました。</p>
           <div className="flex gap-3">
-            <button onClick={() => { setFile(null); setDone(false); setTitle(''); setSubject(''); }}
+            <button onClick={() => { setFiles([]); setDone(false); setSubject(''); }}
               className="flex-1 border border-gray-200 rounded-xl py-3 text-sm text-gray-600">
               続けてアップロード
             </button>
-            <Link href="/dashboard" className="flex-1 bg-green-600 text-white rounded-xl py-3 text-sm font-medium text-center">
-              ダッシュボードへ
+            <Link href="/generate" className="flex-1 bg-green-600 text-white rounded-xl py-3 text-sm font-medium text-center">
+              問題生成へ
             </Link>
           </div>
         </div>
@@ -90,23 +117,60 @@ export default function UploadPage() {
 
       <div className="max-w-xl mx-auto p-8">
         <h1 className="text-2xl font-semibold text-gray-900 mb-2">教材をアップロード</h1>
-        <p className="text-gray-500 text-sm mb-8">PDFや画像をアップロードしてください。</p>
+        <p className="text-gray-500 text-sm mb-8">複数の画像・PDFをまとめてアップロードできます。</p>
 
         <div className="bg-white rounded-2xl border p-8 space-y-5">
+
+          {/* ファイル選択 */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">ファイルを選択</label>
-            <input type="file" accept=".pdf,image/*" onChange={handleFileChange}
+            <label className="block text-sm font-medium text-gray-700 mb-2">ファイルを選択（複数可）</label>
+            <input type="file" accept=".pdf,image/*" multiple onChange={handleFileChange}
               className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-green-50 file:text-green-700 file:font-medium hover:file:bg-green-100" />
-            {file && <p className="text-xs text-gray-400 mt-2">{file.name} ({(file.size / 1024 / 1024).toFixed(1)}MB)</p>}
+            {files.length > 0 && (
+              <div className="mt-3 space-y-2">
+                {files.map((file, i) => (
+                  <div key={i} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+                    <span className="text-lg">{file.type.includes('pdf') ? '📄' : '🖼️'}</span>
+                    <span className="text-sm text-gray-700 flex-1 truncate">{file.name}</span>
+                    <span className="text-xs text-gray-400">{(file.size / 1024 / 1024).toFixed(1)}MB</span>
+                    <button onClick={() => removeFile(i)} className="text-gray-300 hover:text-red-400 text-lg">×</button>
+                  </div>
+                ))}
+                <p className="text-xs text-green-600 font-medium">合計 {files.length}件選択中</p>
+              </div>
+            )}
           </div>
 
+          {/* フォルダ選択 */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">教材タイトル</label>
-            <input type="text" value={title} onChange={e => setTitle(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-              placeholder="例：解剖生理学 第3章 循環器系" />
+            <label className="block text-sm font-medium text-gray-700 mb-2">フォルダ（任意）</label>
+            <div className="flex gap-2">
+              <select value={selectedFolder} onChange={e => setSelectedFolder(e.target.value)}
+                className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
+                <option value="">フォルダなし</option>
+                {folders.map(f => (
+                  <option key={f.id} value={f.id}>{f.name}</option>
+                ))}
+              </select>
+              <button onClick={() => setShowNewFolder(!showNewFolder)}
+                className="px-4 py-2.5 bg-gray-100 text-gray-600 rounded-xl text-sm hover:bg-gray-200">
+                + 新規
+              </button>
+            </div>
+            {showNewFolder && (
+              <div className="flex gap-2 mt-2">
+                <input type="text" value={newFolderName} onChange={e => setNewFolderName(e.target.value)}
+                  placeholder="フォルダ名を入力"
+                  className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-green-500" />
+                <button onClick={createFolder} disabled={!newFolderName.trim()}
+                  className="px-4 py-2.5 bg-green-600 text-white rounded-xl text-sm font-medium disabled:opacity-60">
+                  作成
+                </button>
+              </div>
+            )}
           </div>
 
+          {/* 科目 */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">科目（任意）</label>
             <input type="text" value={subject} onChange={e => setSubject(e.target.value)}
@@ -116,9 +180,9 @@ export default function UploadPage() {
 
           {error && <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-xl">{error}</div>}
 
-          <button onClick={handleUpload} disabled={!file || uploading}
+          <button onClick={handleUpload} disabled={files.length === 0 || uploading}
             className="w-full bg-green-600 text-white py-3 rounded-xl text-sm font-medium hover:bg-green-700 disabled:opacity-60">
-            {uploading ? 'アップロード中...' : 'アップロードする'}
+            {uploading ? `アップロード中...` : `📤 ${files.length > 0 ? `${files.length}件を` : ''}アップロードする`}
           </button>
         </div>
       </div>
