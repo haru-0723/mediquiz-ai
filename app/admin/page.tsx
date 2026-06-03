@@ -1,0 +1,35 @@
+import { createClient } from '@/lib/supabase/server';
+import { redirect } from 'next/navigation';
+import AdminClient from './AdminClient';
+
+export default async function AdminPage() {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  // 管理者チェック
+  if (!user || user.email !== 'harumaru0723@yahoo.co.jp') {
+    redirect('/dashboard');
+  }
+
+  // レポート一覧を取得
+  const { data: reports } = await supabase
+    .from('question_reports')
+    .select(`
+      *,
+      questions (
+        id,
+        question,
+        option_a,
+        option_b,
+        option_c,
+        option_d,
+        answer,
+        explanation,
+        subject,
+        difficulty
+      )
+    `)
+    .order('created_at', { ascending: false });
+
+  return <AdminClient reports={reports ?? []} />;
+}
