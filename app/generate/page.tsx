@@ -24,9 +24,12 @@ export default function GeneratePage() {
   const [answered, setAnswered] = useState(false);
   const [results, setResults] = useState<{ correct: boolean }[]>([]);
   const [phase, setPhase] = useState<'select' | 'quiz' | 'result'>('select');
-  const [saving, setSaving] = useState(false);
+ const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [saveFolderId, setSaveFolderId] = useState('');
+  const [newSaveFolderName, setNewSaveFolderName] = useState('');
+  const [showNewSaveFolder, setShowNewSaveFolder] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -105,6 +108,21 @@ export default function GeneratePage() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('ログインが必要です');
+
+      let folderId = saveFolderId || null;
+
+      // 新しいフォルダを作成する場合
+      if (showNewSaveFolder && newSaveFolderName.trim()) {
+        const { data: newFolder } = await supabase.from('folders').insert({
+          user_id: user.id,
+          name: newSaveFolderName.trim(),
+        }).select().single();
+        if (newFolder) {
+          folderId = newFolder.id;
+          setFolders(prev => [...prev, newFolder]);
+        }
+      }
+
       for (const q of questions) {
         await supabase.from('questions').insert({
           user_id: user.id,
@@ -117,6 +135,7 @@ export default function GeneratePage() {
           answer: q.answer,
           explanation: q.explanation,
           difficulty: q.difficulty,
+          folder_id: folderId,
         });
       }
       setSaved(true);
@@ -177,8 +196,33 @@ export default function GeneratePage() {
             {saved ? (
               <p className="text-sm text-green-600 font-medium">✅ {questions.length}問を保存しました！</p>
             ) : (
-              <div>
-                <p className="text-sm text-gray-600 mb-3">この問題を問題一覧に保存しますか？</p>
+              <div className="space-y-3">
+                <p className="text-sm text-gray-600">この問題を問題一覧に保存しますか？</p>
+
+                {/* フォルダ選択 */}
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">保存先フォルダ（任意）</label>
+                  <select value={saveFolderId} onChange={e => setSaveFolderId(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
+                    <option value="">フォルダなし</option>
+                    {folders.map(f => (
+                      <option key={f.id} value={f.id}>{f.name}</option>
+                    ))}
+                    <option value="__new__">+ 新しいフォルダを作成</option>
+                  </select>
+                </div>
+
+                {/* 新しいフォルダ名入力 */}
+                {(saveFolderId === '__new__' || showNewSaveFolder) && (
+                  <input
+                    type="text"
+                    value={newSaveFolderName}
+                    onChange={e => { setNewSaveFolderName(e.target.value); setShowNewSaveFolder(true); }}
+                    placeholder="新しいフォルダ名を入力"
+                    className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                  />
+                )}
+
                 <button onClick={handleSaveAll} disabled={saving}
                   className="w-full bg-green-600 text-white py-2.5 rounded-xl text-sm font-medium hover:bg-green-700 disabled:opacity-60">
                   {saving ? '保存中...' : `${questions.length}問を保存する`}
