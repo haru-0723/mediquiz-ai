@@ -15,30 +15,47 @@ type Question = {
   answer: string;
   explanation: string | null;
   difficulty: string;
+  folder_id: string | null;
 };
+
+type Folder = { id: string; name: string; };
 
 export default function ReviewPage() {
   const supabase = createClient();
   const [questions, setQuestions] = useState<Question[]>([]);
-  const [wrongQuestions, setWrongQuestions] = useState<Question[]>([]);
+  const [folders, setFolders] = useState<Folder[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedFolder, setSelectedFolder] = useState('すべて');
   const [current, setCurrent] = useState(0);
   const [selected, setSelected] = useState<string | null>(null);
   const [answered, setAnswered] = useState(false);
   const [results, setResults] = useState<{ correct: boolean }[]>([]);
   const [phase, setPhase] = useState<'select' | 'quiz' | 'result'>('select');
   const [wrongIds, setWrongIds] = useState<string[]>([]);
+  const [quizQuestions, setQuizQuestions] = useState<Question[]>([]);
 
   useEffect(() => {
-    supabase.from('questions').select('*').order('created_at', { ascending: false }).then(({ data }) => {
-      if (data) setQuestions(data);
+    async function load() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data: qData } = await supabase.from('questions').select('*').order('created_at', { ascending: false });
+      if (qData) setQuestions(qData);
+      const { data: fData } = await supabase.from('folders').select('*').eq('user_id', user.id).order('created_at');
+      if (fData) setFolders(fData);
       setLoading(false);
-    });
+    }
+    load();
   }, []);
 
+  const filteredQuestions = selectedFolder === 'すべて'
+    ? questions
+    : selectedFolder === 'なし'
+    ? questions.filter(q => !q.folder_id)
+    : questions.filter(q => q.folder_id === selectedFolder);
+
   function handleStart(qs: Question[]) {
-    const shuffled = qs.sort(() => Math.random() - 0.5);
-    setWrongQuestions(shuffled);
+    const shuffled = [...qs].sort(() => Math.random() - 0.5);
+    setQuizQuestions(shuffled);
     setCurrent(0);
     setSelected(null);
     setAnswered(false);
@@ -51,18 +68,18 @@ export default function ReviewPage() {
     if (answered) return;
     setSelected(letter);
     setAnswered(true);
-    const q = wrongQuestions[current];
+    const q = quizQuestions[current];
     if (letter !== q.answer) {
       setWrongIds(prev => [...prev, q.id]);
     }
   }
 
   function handleNext() {
-    const q = wrongQuestions[current];
+    const q = quizQuestions[current];
     const isCorrect = selected === q.answer;
     const newResults = [...results, { correct: isCorrect }];
     setResults(newResults);
-    if (current + 1 < wrongQuestions.length) {
+    if (current + 1 < quizQuestions.length) {
       setCurrent(current + 1);
       setSelected(null);
       setAnswered(false);
@@ -82,7 +99,7 @@ export default function ReviewPage() {
   if (phase === 'result') {
     const correct = results.filter(r => r.correct).length;
     const accuracy = Math.round((correct / results.length) * 100);
-    const stillWrong = wrongQuestions.filter(q => wrongIds.includes(q.id));
+    const stillWrong = quizQuestions.filter(q => wrongIds.includes(q.id));
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-8">
         <div className="bg-white rounded-2xl border p-8 max-w-md w-full text-center">
@@ -119,7 +136,7 @@ export default function ReviewPage() {
   }
 
   if (phase === 'quiz') {
-    const q = wrongQuestions[current];
+    const q = quizQuestions[current];
     const accuracy = results.length > 0 ? Math.round((results.filter(r => r.correct).length / results.length) * 100) : 0;
     const options = [
       { label: 'A', text: q.option_a },
@@ -140,11 +157,11 @@ export default function ReviewPage() {
         </nav>
         <div className="max-w-2xl mx-auto p-8">
           <div className="flex justify-between items-center mb-2 text-sm text-gray-500">
-            <span>{current + 1} / {wrongQuestions.length}問</span>
+            <span>{current + 1} / {quizQuestions.length}問</span>
             <span>正解率 {accuracy}%</span>
           </div>
           <div className="h-2 bg-gray-200 rounded-full mb-8 overflow-hidden">
-            <div className="h-full bg-orange-500 rounded-full transition-all" style={{ width: `${(current / wrongQuestions.length) * 100}%` }} />
+            <div className="h-full bg-orange-500 rounded-full transition-all" style={{ width: `${(current / quizQuestions.length) * 100}%` }} />
           </div>
           <div className="bg-white rounded-2xl border p-6 mb-4">
             <div className="flex gap-2 mb-4">
@@ -183,7 +200,7 @@ export default function ReviewPage() {
           <div className="flex justify-end">
             {answered && (
               <button onClick={handleNext} className="bg-orange-500 text-white px-6 py-2.5 rounded-xl text-sm font-medium hover:bg-orange-600">
-                {current + 1 < wrongQuestions.length ? '次の問題 →' : '結果を見る'}
+                {current + 1 < quizQuestions.length ? '次の問題 →' : '結果を見る'}
               </button>
             )}
           </div>
@@ -205,15 +222,32 @@ export default function ReviewPage() {
       </nav>
       <div className="max-w-xl mx-auto p-8">
         <h1 className="text-2xl font-semibold text-gray-900 mb-2">復習モード</h1>
-        <p className="text-gray-500 text-sm mb-8">問題を選んで復習しましょう。間違えた問題は繰り返し出題されます。</p>
+        <p className="text-gray-500 text-sm mb-8">フォルダや科目を選んで復習しましょう。</p>
         <div className="space-y-4">
+
+          {/* フォルダ絞り込み */}
+          <div className="bg-white rounded-2xl border p-6">
+            <h2 className="font-semibold text-gray-900 mb-3">フォルダで絞り込み</h2>
+            <div className="flex flex-wrap gap-2">
+              {['すべて', 'なし', ...folders.map(f => f.id)].map((id, i) => {
+                const label = i === 0 ? 'すべて' : i === 1 ? 'フォルダなし' : folders[i - 2]?.name;
+                return (
+                  <button key={id} onClick={() => setSelectedFolder(id)}
+                    className={`px-3 py-1.5 rounded-xl text-xs border transition-colors ${selectedFolder === id ? 'bg-orange-500 text-white border-orange-500' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}>
+                    📁 {label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           <div className="bg-white rounded-2xl border p-6">
             <h2 className="font-semibold text-gray-900 mb-2">全問復習</h2>
-            <p className="text-sm text-gray-500 mb-4">保存されている全{questions.length}問を復習します。</p>
-            {questions.length > 0 ? (
-              <button onClick={() => handleStart([...questions])}
+            <p className="text-sm text-gray-500 mb-4">{filteredQuestions.length}問を復習します。</p>
+            {filteredQuestions.length > 0 ? (
+              <button onClick={() => handleStart(filteredQuestions)}
                 className="w-full bg-orange-500 text-white py-3 rounded-xl text-sm font-medium hover:bg-orange-600">
-                全問復習を始める（{questions.length}問）
+                復習を始める（{filteredQuestions.length}問）
               </button>
             ) : (
               <div className="text-center py-4 text-gray-400">
@@ -223,15 +257,14 @@ export default function ReviewPage() {
             )}
           </div>
 
-          {questions.length > 0 && (
+          {filteredQuestions.length > 0 && (
             <div className="bg-white rounded-2xl border p-6">
               <h2 className="font-semibold text-gray-900 mb-2">科目別復習</h2>
-              <p className="text-sm text-gray-500 mb-4">科目を選んで復習します。</p>
               <div className="space-y-2">
-                {Array.from(new Set(questions.map(q => q.subject ?? 'その他'))).map(subject => {
-                  const subjectQuestions = questions.filter(q => (q.subject ?? 'その他') === subject);
+                {Array.from(new Set(filteredQuestions.map(q => q.subject ?? 'その他'))).map(subject => {
+                  const subjectQuestions = filteredQuestions.filter(q => (q.subject ?? 'その他') === subject);
                   return (
-                    <button key={subject} onClick={() => handleStart([...subjectQuestions])}
+                    <button key={subject} onClick={() => handleStart(subjectQuestions)}
                       className="w-full text-left flex items-center justify-between p-4 rounded-xl border border-gray-200 hover:border-orange-300 hover:bg-orange-50 transition-colors">
                       <span className="text-sm font-medium text-gray-900">{subject}</span>
                       <span className="text-xs text-gray-400">{subjectQuestions.length}問 →</span>
