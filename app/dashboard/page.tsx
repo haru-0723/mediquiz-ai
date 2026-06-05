@@ -108,9 +108,12 @@ const plan = profile?.plan ?? 'free';
         </div>
         <div className="bg-white rounded-2xl border p-6 mb-8">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-gray-900">教材一覧</h2>
-            <Link href="/upload" className="text-xs text-green-600 hover:underline">+ 追加</Link>
-          </div>
+  <h2 className="font-semibold text-gray-900">教材一覧</h2>
+  <div className="flex items-center gap-3">
+    <Link href="/materials" className="text-xs text-gray-400 hover:underline">管理・削除</Link>
+    <Link href="/upload" className="text-xs text-green-600 hover:underline">+ 追加</Link>
+  </div>
+</div>
           {materials && materials.length > 0 ? (
             <div className="grid grid-cols-2 gap-3">
               {materials.map(material => (
