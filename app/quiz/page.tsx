@@ -15,35 +15,54 @@ type Question = {
   answer: string;
   explanation: string | null;
   difficulty: string;
+  folder_id: string | null;
 };
+
+type Folder = { id: string; name: string; };
 
 export default function QuizPage() {
   const supabase = createClient();
   const [allQuestions, setAllQuestions] = useState<Question[]>([]);
-  const [questions, setQuestions] = useState<Question[]>([]);
+  const [folders, setFolders] = useState<Folder[]>([]);
   const [loading, setLoading] = useState(true);
   const [current, setCurrent] = useState(0);
   const [selected, setSelected] = useState<string | null>(null);
   const [answered, setAnswered] = useState(false);
   const [results, setResults] = useState<{ correct: boolean }[]>([]);
-  const [phase, setPhase] = useState<'select' | 'quiz' | 'result'>('select');
+  const [phase, setPhase] = useState<'select' | 'quiz' | 'result'>('quiz');
   const [selectedSubject, setSelectedSubject] = useState('すべて');
+  const [selectedFolder, setSelectedFolder] = useState('すべて');
+  const [quizQuestions, setQuizQuestions] = useState<Question[]>([]);
 
   useEffect(() => {
-    supabase.from('questions').select('*').order('created_at', { ascending: false }).then(({ data }) => {
-      if (data) setAllQuestions(data);
+    async function load() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data: qData } = await supabase.from('questions').select('*').order('created_at', { ascending: false });
+      if (qData) setAllQuestions(qData);
+      const { data: fData } = await supabase.from('folders').select('*').eq('user_id', user.id).order('created_at');
+      if (fData) setFolders(fData);
       setLoading(false);
-    });
+    }
+    load();
+    setPhase('select');
   }, []);
 
-  const subjects = ['すべて', ...Array.from(new Set(allQuestions.map(q => q.subject ?? 'その他')))];
+  const filteredByFolder = selectedFolder === 'すべて'
+    ? allQuestions
+    : selectedFolder === 'なし'
+    ? allQuestions.filter(q => !q.folder_id)
+    : allQuestions.filter(q => q.folder_id === selectedFolder);
+
+  const filteredQuestions = selectedSubject === 'すべて'
+    ? filteredByFolder
+    : filteredByFolder.filter(q => (q.subject ?? 'その他') === selectedSubject);
+
+  const subjects = ['すべて', ...Array.from(new Set(filteredByFolder.map(q => q.subject ?? 'その他')))];
 
   function handleStart() {
-    const filtered = selectedSubject === 'すべて'
-      ? allQuestions
-      : allQuestions.filter(q => (q.subject ?? 'その他') === selectedSubject);
-    const shuffled = filtered.sort(() => Math.random() - 0.5);
-    setQuestions(shuffled);
+    const shuffled = [...filteredQuestions].sort(() => Math.random() - 0.5);
+    setQuizQuestions(shuffled);
     setCurrent(0);
     setSelected(null);
     setAnswered(false);
@@ -58,12 +77,12 @@ export default function QuizPage() {
   }
 
   async function handleNext() {
-    const q = questions[current];
+    const q = quizQuestions[current];
     const isCorrect = selected === q.answer;
     const newResults = [...results, { correct: isCorrect }];
     setResults(newResults);
 
-    if (current + 1 < questions.length) {
+    if (current + 1 < quizQuestions.length) {
       setCurrent(current + 1);
       setSelected(null);
       setAnswered(false);
@@ -80,6 +99,14 @@ export default function QuizPage() {
       }
       setPhase('result');
     }
+  }
+
+  function handleRetry() {
+    setCurrent(0);
+    setSelected(null);
+    setAnswered(false);
+    setResults([]);
+    setPhase('select');
   }
 
   if (loading) {
@@ -104,7 +131,7 @@ export default function QuizPage() {
             <Link href="/dashboard" className="flex-1 border border-gray-200 rounded-xl py-3 text-sm text-gray-600 text-center">
               ダッシュボードへ
             </Link>
-            <button onClick={() => setPhase('select')}
+            <button onClick={handleRetry}
               className="flex-1 bg-green-600 text-white rounded-xl py-3 text-sm font-medium">
               もう一度
             </button>
@@ -128,40 +155,54 @@ export default function QuizPage() {
         </nav>
         <div className="max-w-xl mx-auto p-8">
           <h1 className="text-2xl font-semibold text-gray-900 mb-2">演習を始める</h1>
-          <p className="text-gray-500 text-sm mb-8">科目を選んで演習しましょう。</p>
+          <p className="text-gray-500 text-sm mb-8">フォルダや科目を選んで演習しましょう。</p>
           <div className="bg-white rounded-2xl border p-8 space-y-5">
+
+            {/* フォルダ絞り込み */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">フォルダで絞り込み</label>
+              <div className="flex flex-wrap gap-2">
+                {['すべて', 'なし', ...folders.map(f => f.id)].map((id, i) => {
+                  const label = i === 0 ? 'すべて' : i === 1 ? 'フォルダなし' : folders[i - 2]?.name;
+                  return (
+                    <button key={id} onClick={() => { setSelectedFolder(id); setSelectedSubject('すべて'); }}
+                      className={`px-3 py-1.5 rounded-xl text-xs border transition-colors ${selectedFolder === id ? 'bg-green-600 text-white border-green-600' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}>
+                      📁 {label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* 科目絞り込み */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">科目を選択</label>
+              <div className="flex flex-wrap gap-2">
+                {subjects.map(s => (
+                  <button key={s} onClick={() => setSelectedSubject(s)}
+                    className={`px-4 py-2 rounded-xl text-sm border transition-colors ${selectedSubject === s ? 'bg-green-600 text-white border-green-600' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}>
+                    {s}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="p-4 bg-gray-50 rounded-xl">
+              <p className="text-sm text-gray-600">
+                問題数：<span className="font-semibold text-gray-900">{filteredQuestions.length}問</span>
+              </p>
+            </div>
+
             {allQuestions.length === 0 ? (
-              <div className="text-center py-6">
-                <p className="text-gray-400 text-sm mb-4">まだ問題がありません</p>
-                <Link href="/questions/new" className="bg-green-600 text-white px-6 py-3 rounded-xl text-sm font-medium">
-                  問題を追加する
-                </Link>
+              <div className="text-center py-6 text-gray-400">
+                <p className="text-sm">まだ問題がありません</p>
+                <Link href="/questions/new" className="text-xs text-green-600 hover:underline mt-2 inline-block">問題を追加する</Link>
               </div>
             ) : (
-              <>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">科目を選択</label>
-                  <div className="flex flex-wrap gap-2">
-                    {subjects.map(s => (
-                      <button key={s} onClick={() => setSelectedSubject(s)}
-                        className={`px-4 py-2 rounded-xl text-sm border transition-colors ${selectedSubject === s ? 'bg-green-600 text-white border-green-600' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}>
-                        {s}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div className="p-4 bg-gray-50 rounded-xl">
-                  <p className="text-sm text-gray-600">
-                    問題数：<span className="font-semibold text-gray-900">
-                      {selectedSubject === 'すべて' ? allQuestions.length : allQuestions.filter(q => (q.subject ?? 'その他') === selectedSubject).length}問
-                    </span>
-                  </p>
-                </div>
-                <button onClick={handleStart}
-                  className="w-full bg-green-600 text-white py-3 rounded-xl text-sm font-medium hover:bg-green-700">
-                  ⚡ 演習を始める
-                </button>
-              </>
+              <button onClick={handleStart} disabled={filteredQuestions.length === 0}
+                className="w-full bg-green-600 text-white py-3 rounded-xl text-sm font-medium hover:bg-green-700 disabled:opacity-60">
+                ⚡ 演習を始める
+              </button>
             )}
           </div>
           <div className="mt-4 text-center">
@@ -172,7 +213,7 @@ export default function QuizPage() {
     );
   }
 
-  const q = questions[current];
+  const q = quizQuestions[current];
   const accuracy = results.length > 0 ? Math.round((results.filter(r => r.correct).length / results.length) * 100) : 0;
   const options = [
     { label: 'A', text: q.option_a },
@@ -194,11 +235,11 @@ export default function QuizPage() {
       </nav>
       <div className="max-w-2xl mx-auto p-8">
         <div className="flex justify-between items-center mb-2 text-sm text-gray-500">
-          <span>{current + 1} / {questions.length}問</span>
+          <span>{current + 1} / {quizQuestions.length}問</span>
           <span>正解率 {accuracy}%</span>
         </div>
         <div className="h-2 bg-gray-200 rounded-full mb-8 overflow-hidden">
-          <div className="h-full bg-green-600 rounded-full transition-all" style={{ width: `${(current / questions.length) * 100}%` }} />
+          <div className="h-full bg-green-600 rounded-full transition-all" style={{ width: `${(current / quizQuestions.length) * 100}%` }} />
         </div>
         <div className="bg-white rounded-2xl border p-6 mb-4">
           <div className="flex gap-2 mb-4">
@@ -238,7 +279,7 @@ export default function QuizPage() {
           <Link href="/questions/new" className="text-sm text-gray-400 hover:text-gray-600">+ 問題を追加</Link>
           {answered && (
             <button onClick={handleNext} className="bg-green-600 text-white px-6 py-2.5 rounded-xl text-sm font-medium hover:bg-green-700">
-              {current + 1 < questions.length ? '次の問題 →' : '結果を見る'}
+              {current + 1 < quizQuestions.length ? '次の問題 →' : '結果を見る'}
             </button>
           )}
         </div>
