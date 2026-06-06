@@ -3,6 +3,8 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import ExamSection from './ExamSection';
 import LogoutButton from './LogoutButton';
+import HelpModal from '@/components/HelpModal';
+import { dashboardHelp } from '@/lib/helpContent';
 
 export default async function DashboardPage() {
   const supabase = createClient();
@@ -55,6 +57,7 @@ export default async function DashboardPage() {
             <Link href="/admin" className="text-xs bg-red-500 text-white px-2 py-1 rounded-lg hover:bg-red-600">管理者</Link>
           )}
           <Link href="/settings" className="text-xs text-gray-400 hover:text-gray-600">設定</Link>
+          <HelpModal steps={dashboardHelp.steps} pageTitle={dashboardHelp.pageTitle} />
           <LogoutButton />
         </div>
       </nav>
