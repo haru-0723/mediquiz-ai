@@ -128,9 +128,10 @@ export default function QuizPage() {
           <p className="text-5xl font-bold text-green-600 mb-2">{accuracy}%</p>
           <p className="text-gray-500 mb-8">{results.length}問中 {correct}問正解</p>
           <div className="flex gap-3">
-            <Link href="/dashboard" className="flex-1 border border-gray-200 rounded-xl py-3 text-sm text-gray-600 text-center">
-              ダッシュボードへ
-            </Link>
+            <button onClick={() => window.location.href = '/dashboard'}
+  className="flex-1 border border-gray-200 rounded-xl py-3 text-sm text-gray-600">
+  ダッシュボードへ
+</button>
             <button onClick={handleRetry}
               className="flex-1 bg-green-600 text-white rounded-xl py-3 text-sm font-medium">
               もう一度
