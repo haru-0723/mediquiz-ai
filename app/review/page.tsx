@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
+import HelpModal from '@/components/HelpModal';
+import { quizHelp } from '@/lib/helpContent';
 
 type Question = {
   id: string;
@@ -218,14 +220,15 @@ export default function ReviewPage() {
           </div>
           <span className="font-semibold">復習モード</span>
         </div>
-        <Link href="/dashboard" className="text-sm text-gray-500">ダッシュボードへ戻る</Link>
+        <div className="flex items-center gap-3">
+          <HelpModal steps={quizHelp.steps} pageTitle={quizHelp.pageTitle} />
+          <Link href="/dashboard" className="text-sm text-gray-500">ダッシュボードへ戻る</Link>
+        </div>
       </nav>
       <div className="max-w-xl mx-auto p-8">
         <h1 className="text-2xl font-semibold text-gray-900 mb-2">復習モード</h1>
         <p className="text-gray-500 text-sm mb-8">フォルダや科目を選んで復習しましょう。</p>
         <div className="space-y-4">
-
-          {/* フォルダ絞り込み */}
           <div className="bg-white rounded-2xl border p-6">
             <h2 className="font-semibold text-gray-900 mb-3">フォルダで絞り込み</h2>
             <div className="flex flex-wrap gap-2">
