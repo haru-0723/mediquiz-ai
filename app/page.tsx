@@ -20,7 +20,7 @@ export default function HomePage() {
 
       <section className="max-w-3xl mx-auto text-center px-8 py-24">
         <h1 className="text-5xl font-semibold mb-6">
-          授業スライドをアップロードするだけで<br />
+          資料をアップロードするだけで<br />
           <span className="text-green-600">AIが問題を自動生成</span>
         </h1>
         <p className="text-lg text-gray-600 mb-10">
