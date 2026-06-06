@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
+import HelpModal from '@/components/HelpModal';
+import { quizHelp } from '@/lib/helpContent';
 
 type Question = {
   id: string;
@@ -129,9 +131,9 @@ export default function QuizPage() {
           <p className="text-gray-500 mb-8">{results.length}問中 {correct}問正解</p>
           <div className="flex gap-3">
             <button onClick={() => window.location.href = '/dashboard'}
-  className="flex-1 border border-gray-200 rounded-xl py-3 text-sm text-gray-600">
-  ダッシュボードへ
-</button>
+              className="flex-1 border border-gray-200 rounded-xl py-3 text-sm text-gray-600">
+              ダッシュボードへ
+            </button>
             <button onClick={handleRetry}
               className="flex-1 bg-green-600 text-white rounded-xl py-3 text-sm font-medium">
               もう一度
@@ -152,14 +154,15 @@ export default function QuizPage() {
             </div>
             <span className="font-semibold">MediQuiz AI</span>
           </div>
-          <Link href="/dashboard" className="text-sm text-gray-500">ダッシュボードへ戻る</Link>
+          <div className="flex items-center gap-3">
+            <HelpModal steps={quizHelp.steps} pageTitle={quizHelp.pageTitle} />
+            <Link href="/dashboard" className="text-sm text-gray-500">ダッシュボードへ戻る</Link>
+          </div>
         </nav>
         <div className="max-w-xl mx-auto p-8">
           <h1 className="text-2xl font-semibold text-gray-900 mb-2">演習を始める</h1>
           <p className="text-gray-500 text-sm mb-8">フォルダや科目を選んで演習しましょう。</p>
           <div className="bg-white rounded-2xl border p-8 space-y-5">
-
-            {/* フォルダ絞り込み */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">フォルダで絞り込み</label>
               <div className="flex flex-wrap gap-2">
@@ -174,8 +177,6 @@ export default function QuizPage() {
                 })}
               </div>
             </div>
-
-            {/* 科目絞り込み */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">科目を選択</label>
               <div className="flex flex-wrap gap-2">
@@ -187,13 +188,11 @@ export default function QuizPage() {
                 ))}
               </div>
             </div>
-
             <div className="p-4 bg-gray-50 rounded-xl">
               <p className="text-sm text-gray-600">
                 問題数：<span className="font-semibold text-gray-900">{filteredQuestions.length}問</span>
               </p>
             </div>
-
             {allQuestions.length === 0 ? (
               <div className="text-center py-6 text-gray-400">
                 <p className="text-sm">まだ問題がありません</p>
