@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
+import HelpModal from '@/components/HelpModal';
+import { generateHelp } from '@/lib/helpContent';
 
 type Folder = { id: string; name: string; };
 type Material = { id: string; title: string; subject: string | null; folder_id: string | null; };
@@ -24,7 +26,7 @@ export default function GeneratePage() {
   const [answered, setAnswered] = useState(false);
   const [results, setResults] = useState<{ correct: boolean }[]>([]);
   const [phase, setPhase] = useState<'select' | 'quiz' | 'result'>('select');
- const [saving, setSaving] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [progress, setProgress] = useState(0);
   const [progressMessage, setProgressMessage] = useState('');
@@ -71,7 +73,6 @@ export default function GeneratePage() {
     setProgress(0);
     setProgressMessage('教材を読み込んでいます...');
 
-    // メッセージを順番に切り替え
     const messages = [
       '教材を読み込んでいます...',
       'AIが画像を認識しています...',
@@ -88,8 +89,7 @@ export default function GeneratePage() {
     const selected = materials.filter(m => selectedIds.includes(m.id));
     setSelectedMaterials(selected);
 
-   try {
-      // 全教材を並列で同時生成
+    try {
       const results = await Promise.all(
         selectedIds.map(id =>
           fetch('/api/generate', {
@@ -100,7 +100,6 @@ export default function GeneratePage() {
         )
       );
 
-      // エラーチェック
       for (const data of results) {
         if (data.upgrade) {
           setError(data.error);
@@ -135,7 +134,6 @@ export default function GeneratePage() {
 
       let folderId = saveFolderId || null;
 
-      // 新しいフォルダを作成する場合
       if (showNewSaveFolder && newSaveFolderName.trim()) {
         const { data: newFolder } = await supabase.from('folders').insert({
           user_id: user.id,
@@ -223,8 +221,6 @@ export default function GeneratePage() {
             ) : (
               <div className="space-y-3">
                 <p className="text-sm text-gray-600">この問題を問題一覧に保存しますか？</p>
-
-                {/* フォルダ選択 */}
                 <div>
                   <label className="block text-xs text-gray-500 mb-1">保存先フォルダ（任意）</label>
                   <select value={saveFolderId} onChange={e => setSaveFolderId(e.target.value)}
@@ -236,8 +232,6 @@ export default function GeneratePage() {
                     <option value="__new__">+ 新しいフォルダを作成</option>
                   </select>
                 </div>
-
-                {/* 新しいフォルダ名入力 */}
                 {(saveFolderId === '__new__' || showNewSaveFolder) && (
                   <input
                     type="text"
@@ -247,7 +241,6 @@ export default function GeneratePage() {
                     className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
                   />
                 )}
-
                 <button onClick={handleSaveAll} disabled={saving}
                   className="w-full bg-green-600 text-white py-2.5 rounded-xl text-sm font-medium hover:bg-green-700 disabled:opacity-60">
                   {saving ? '保存中...' : `${questions.length}問を保存する`}
@@ -345,14 +338,16 @@ export default function GeneratePage() {
           </div>
           <span className="font-semibold">MediQuiz AI</span>
         </div>
-        <Link href="/dashboard" className="text-sm text-gray-500">ダッシュボードへ戻る</Link>
+        <div className="flex items-center gap-3">
+          <HelpModal steps={generateHelp.steps} pageTitle={generateHelp.pageTitle} />
+          <Link href="/dashboard" className="text-sm text-gray-500">ダッシュボードへ戻る</Link>
+        </div>
       </nav>
       <div className="max-w-xl mx-auto p-8">
         <h1 className="text-2xl font-semibold text-gray-900 mb-2">AI問題生成</h1>
         <p className="text-gray-500 text-sm mb-8">複数の教材を選んで一気に問題を生成できます。</p>
         <div className="bg-white rounded-2xl border p-8 space-y-5">
 
-          {/* フォルダフィルター */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">フォルダで絞り込み</label>
             <div className="flex flex-wrap gap-2">
@@ -368,7 +363,6 @@ export default function GeneratePage() {
             </div>
           </div>
 
-          {/* 教材選択 */}
           <div>
             <div className="flex items-center justify-between mb-2">
               <label className="block text-sm font-medium text-gray-700">教材を選択（複数可）</label>
@@ -402,7 +396,6 @@ export default function GeneratePage() {
             )}
           </div>
 
-          {/* 問題数 */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">教材1件あたりの問題数：{count}問</label>
             <input type="range" min={3} max={10} value={count} onChange={e => setCount(Number(e.target.value))} className="w-full accent-green-600" />
