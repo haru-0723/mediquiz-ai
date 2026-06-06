@@ -32,7 +32,7 @@ const plan = profile?.plan ?? 'free';
   ].filter(Boolean).join(' ・ ');
   return (
     <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white border-b px-8 py-4 flex items-center justify-between">
+   profile?.grade ? `${profile.grade}年生` : null,
         <div className="flex items-center gap-2">
           <div className="w-7 h-7 bg-green-600 rounded-lg flex items-center justify-center">
             <span className="text-white text-xs font-bold">M</span>
