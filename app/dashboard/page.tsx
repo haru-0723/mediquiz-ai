@@ -35,14 +35,14 @@ export default async function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white border-b px-8 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
+      <nav className="bg-white border-b px-4 sm:px-8 py-3 sm:py-4 flex items-center justify-between">
+        <div className="flex items-center gap-2 flex-shrink-0">
           <div className="w-7 h-7 bg-green-600 rounded-lg flex items-center justify-center">
             <span className="text-white text-xs font-bold">M</span>
           </div>
-          <span className="font-semibold">MediQuiz AI</span>
+          <span className="font-semibold text-sm sm:text-base">MediQuiz AI</span>
         </div>
-        <div className="flex items-center gap-2 flex-wrap justify-end">
+        <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap justify-end">
           <Link href="/pricing" className={`text-xs px-2 py-1 rounded-full font-medium ${plan === 'standard' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-600'}`}>
             {plan === 'standard' ? '⭐ スタンダード' : '🔓 無料プラン'}
           </Link>
@@ -61,47 +61,47 @@ export default async function DashboardPage() {
           <LogoutButton />
         </div>
       </nav>
-      <div className="max-w-4xl mx-auto p-8">
-        <Link href="/settings" className="group block mb-8 bg-white rounded-2xl border p-6 hover:border-green-300 hover:shadow-sm transition-all">
-          <div className="flex items-center justify-between gap-4">
+      <div className="max-w-4xl mx-auto p-4 sm:p-8">
+        <Link href="/settings" className="group block mb-6 sm:mb-8 bg-white rounded-2xl border p-4 sm:p-6 hover:border-green-300 hover:shadow-sm transition-all">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
             <div className="min-w-0">
-             <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 group-hover:text-green-700 transition-colors leading-snug">
-  こんにちは、{name.split(' ')[0]}さん 👋
-</h1>
-<p className="text-gray-500 mt-1 text-sm leading-relaxed">
-  {profileSummary || '今日も一緒に頑張りましょう。プロフィールを設定しましょう →'}
-</p>
+              <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 group-hover:text-green-700 transition-colors leading-snug break-all">
+                こんにちは、{name.split(' ')[0]}さん 👋
+              </h1>
+              <p className="text-gray-500 mt-1 text-sm leading-relaxed">
+                {profileSummary || '今日も一緒に頑張りましょう。プロフィールを設定しましょう →'}
+              </p>
             </div>
-            <span className="flex-shrink-0 text-xs text-gray-400 group-hover:text-green-600 flex items-center gap-1 transition-colors">
+            <span className="flex-shrink-0 text-xs text-gray-400 group-hover:text-green-600 flex items-center gap-1 transition-colors self-start sm:self-auto">
               プロフィール編集 <span aria-hidden="true">→</span>
             </span>
           </div>
         </Link>
-        <div className="grid grid-cols-2 gap-4 mb-8">
-          <div className="bg-white rounded-2xl border p-6">
-            <p className="text-sm text-gray-400 mb-1">総学習問題数</p>
-            <p className="text-3xl font-semibold text-gray-900">{totalQuestions}</p>
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-6 sm:mb-8">
+          <div className="bg-white rounded-2xl border p-4 sm:p-6">
+            <p className="text-xs sm:text-sm text-gray-400 mb-1">総学習問題数</p>
+            <p className="text-2xl sm:text-3xl font-semibold text-gray-900">{totalQuestions}</p>
             <p className="text-xs text-gray-400 mt-1">{totalQuestions === 0 ? '問題を解いて記録を作ろう' : '問題解いてます！'}</p>
           </div>
-          <div className="bg-white rounded-2xl border p-6">
-            <p className="text-sm text-gray-400 mb-1">総合正解率</p>
-            <p className="text-3xl font-semibold text-gray-900">{totalQuestions > 0 ? `${accuracy}%` : '--%'}</p>
+          <div className="bg-white rounded-2xl border p-4 sm:p-6">
+            <p className="text-xs sm:text-sm text-gray-400 mb-1">総合正解率</p>
+            <p className="text-2xl sm:text-3xl font-semibold text-gray-900">{totalQuestions > 0 ? `${accuracy}%` : '--%'}</p>
             <p className="text-xs text-gray-400 mt-1">{totalQuestions === 0 ? '演習を始めると表示されます' : '頑張ってます！'}</p>
           </div>
-          <div className="bg-white rounded-2xl border p-6">
-            <p className="text-sm text-gray-400 mb-1">演習回数</p>
-            <p className="text-3xl font-semibold text-gray-900">{sessions?.length ?? 0}回</p>
+          <div className="bg-white rounded-2xl border p-4 sm:p-6">
+            <p className="text-xs sm:text-sm text-gray-400 mb-1">演習回数</p>
+            <p className="text-2xl sm:text-3xl font-semibold text-gray-900">{sessions?.length ?? 0}回</p>
             <p className="text-xs text-gray-400 mt-1">毎日続けよう🔥</p>
           </div>
-          <div className="bg-white rounded-2xl border p-6">
-            <p className="text-sm text-gray-400 mb-1">最高正解率</p>
-            <p className="text-3xl font-semibold text-gray-900">{bestAccuracy !== null ? `${bestAccuracy}%` : '--%'}</p>
+          <div className="bg-white rounded-2xl border p-4 sm:p-6">
+            <p className="text-xs sm:text-sm text-gray-400 mb-1">最高正解率</p>
+            <p className="text-2xl sm:text-3xl font-semibold text-gray-900">{bestAccuracy !== null ? `${bestAccuracy}%` : '--%'}</p>
             <p className="text-xs text-gray-400 mt-1">自己ベストを更新しよう🏆</p>
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 sm:mb-8">
           <ExamSection userId={user.id} initialExams={exams ?? []} />
-          <div className="bg-white rounded-2xl border p-6">
+          <div className="bg-white rounded-2xl border p-4 sm:p-6">
             <h2 className="font-semibold text-gray-900 mb-4">最近の演習</h2>
             {sessions && sessions.length > 0 ? (
               <div className="space-y-3">
@@ -125,7 +125,7 @@ export default async function DashboardPage() {
             )}
           </div>
         </div>
-        <div className="bg-white rounded-2xl border p-6 mb-8">
+        <div className="bg-white rounded-2xl border p-4 sm:p-6 mb-6 sm:mb-8">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-semibold text-gray-900">教材一覧</h2>
             <div className="flex items-center gap-3">
@@ -134,7 +134,7 @@ export default async function DashboardPage() {
             </div>
           </div>
           {materials && materials.length > 0 ? (
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {materials.map(material => (
                 <div key={material.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
                   <div className="w-8 h-8 bg-green-50 rounded-lg flex items-center justify-center flex-shrink-0 text-lg">
