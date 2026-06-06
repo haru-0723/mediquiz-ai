@@ -25,7 +25,7 @@ export default function SettingsPage() {
     load();
   }, []);
 
-  async function handlePortal() {
+async function handlePortal() {
     setPortalLoading(true);
     const res = await fetch('/api/stripe/portal', { method: 'POST' });
     const { url, error } = await res.json();
@@ -37,6 +37,21 @@ export default function SettingsPage() {
     window.location.href = url;
   }
 
+  async function handleDeleteAccount() {
+    if (!confirm('本当にアカウントを削除しますか？\nすべてのデータが失われます。この操作は取り消せません。')) return;
+    if (!confirm('最終確認：本当に削除してよいですか？')) return;
+    try {
+      const res = await fetch('/api/account/delete', { method: 'POST' });
+      if (res.ok) {
+        await supabase.auth.signOut();
+        window.location.href = '/';
+      } else {
+        alert('削除に失敗しました。しばらくしてからお試しください。');
+      }
+    } catch {
+      alert('エラーが発生しました。');
+    }
+  }
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -116,9 +131,10 @@ export default function SettingsPage() {
         <div className="bg-white rounded-2xl border border-red-100 p-6">
           <h2 className="font-semibold text-red-600 mb-4">アカウント削除</h2>
           <p className="text-sm text-gray-500 mb-4">アカウントを削除すると、すべてのデータが失われます。この操作は取り消せません。</p>
-          <button className="w-full border border-red-200 text-red-400 rounded-xl py-3 text-sm hover:border-red-400 hover:text-red-600 transition-colors">
-            アカウントを削除する
-          </button>
+          <button onClick={handleDeleteAccount}
+        className="w-full border border-red-200 text-red-400 rounded-xl py-3 text-sm hover:border-red-400 hover:text-red-600 transition-colors">
+        アカウントを削除する
+      </button>
         </div>
       </div>
     </div>
