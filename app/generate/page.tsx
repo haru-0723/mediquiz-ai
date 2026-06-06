@@ -27,6 +27,7 @@ export default function GeneratePage() {
  const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [progressMessage, setProgressMessage] = useState('');
   const [saveFolderId, setSaveFolderId] = useState('');
   const [newSaveFolderName, setNewSaveFolderName] = useState('');
   const [showNewSaveFolder, setShowNewSaveFolder] = useState(false);
@@ -68,6 +69,22 @@ export default function GeneratePage() {
     setGenerating(true);
     setError('');
     setProgress(0);
+    setProgressMessage('教材を読み込んでいます...');
+
+    // メッセージを順番に切り替え
+    const messages = [
+      '教材を読み込んでいます...',
+      'AIが画像を認識しています...',
+      '問題を作成しています...',
+      '選択肢を生成しています...',
+      '解説を作成しています...',
+      'もうすぐ完成です...',
+    ];
+    let msgIndex = 0;
+    const msgInterval = setInterval(() => {
+      msgIndex = (msgIndex + 1) % messages.length;
+      setProgressMessage(messages[msgIndex]);
+    }, 2000);
     const selected = materials.filter(m => selectedIds.includes(m.id));
     setSelectedMaterials(selected);
 
@@ -106,6 +123,7 @@ export default function GeneratePage() {
       setError(e instanceof Error ? e.message : '問題生成に失敗しました');
     } finally {
       setGenerating(false);
+      clearInterval(msgInterval);
     }
   }
 
@@ -176,12 +194,13 @@ export default function GeneratePage() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center max-w-sm w-full px-8">
-          <div style={{ width: 40, height: 40, border: '3px solid #16a34a', borderTopColor: 'transparent', borderRadius: '50%', margin: '0 auto 20px', animation: 'spin 0.8s linear infinite' }} />
-          <p className="text-gray-600 font-medium mb-4">AIが問題を生成しています...</p>
-          <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-            <div className="h-full bg-green-600 rounded-full transition-all" style={{ width: `${progress}%` }} />
+          <div style={{ width: 48, height: 48, border: '3px solid #16a34a', borderTopColor: 'transparent', borderRadius: '50%', margin: '0 auto 24px', animation: 'spin 0.8s linear infinite' }} />
+          <p className="text-gray-900 font-semibold text-lg mb-2">問題を生成中...</p>
+          <p className="text-green-600 text-sm font-medium mb-6 min-h-[20px]">{progressMessage}</p>
+          <div className="h-2 bg-gray-200 rounded-full overflow-hidden mb-2">
+            <div className="h-full bg-green-600 rounded-full transition-all duration-500" style={{ width: `${progress}%` }} />
           </div>
-          <p className="text-sm text-gray-400 mt-2">{progress}%</p>
+          <p className="text-xs text-gray-400">{selectedIds.length}件の教材を処理中</p>
         </div>
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
