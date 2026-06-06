@@ -65,12 +65,12 @@ export default async function DashboardPage() {
         <Link href="/settings" className="group block mb-8 bg-white rounded-2xl border p-6 hover:border-green-300 hover:shadow-sm transition-all">
           <div className="flex items-center justify-between gap-4">
             <div className="min-w-0">
-              <h1 className="text-2xl font-semibold text-gray-900 truncate group-hover:text-green-700 transition-colors">
-                こんにちは、{name.split(' ')[0]}さん 👋
-              </h1>
-              <p className="text-gray-500 mt-1 text-sm truncate">
-                {profileSummary || '今日も一緒に頑張りましょう。プロフィールを設定しましょう →'}
-              </p>
+             <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 group-hover:text-green-700 transition-colors leading-snug">
+  こんにちは、{name.split(' ')[0]}さん 👋
+</h1>
+<p className="text-gray-500 mt-1 text-sm leading-relaxed">
+  {profileSummary || '今日も一緒に頑張りましょう。プロフィールを設定しましょう →'}
+</p>
             </div>
             <span className="flex-shrink-0 text-xs text-gray-400 group-hover:text-green-600 flex items-center gap-1 transition-colors">
               プロフィール編集 <span aria-hidden="true">→</span>
