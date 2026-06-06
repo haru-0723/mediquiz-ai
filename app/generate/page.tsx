@@ -71,24 +71,30 @@ export default function GeneratePage() {
     const selected = materials.filter(m => selectedIds.includes(m.id));
     setSelectedMaterials(selected);
 
-    try {
-      const allQuestions: Question[] = [];
-      for (let i = 0; i < selectedIds.length; i++) {
-        const res = await fetch('/api/generate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ materialId: selectedIds[i], count }),
-        });
-        const data = await res.json();
+   try {
+      // 全教材を並列で同時生成
+      const results = await Promise.all(
+        selectedIds.map(id =>
+          fetch('/api/generate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ materialId: id, count }),
+          }).then(res => res.json())
+        )
+      );
+
+      // エラーチェック
+      for (const data of results) {
         if (data.upgrade) {
           setError(data.error);
           setGenerating(false);
           return;
         }
-        if (!res.ok) throw new Error(data.error);
-        allQuestions.push(...data.questions);
-        setProgress(Math.round(((i + 1) / selectedIds.length) * 100));
+        if (data.error) throw new Error(data.error);
       }
+
+      setProgress(100);
+      const allQuestions: Question[] = results.flatMap(data => data.questions);
       setQuestions(allQuestions);
       setCurrent(0);
       setResults([]);
