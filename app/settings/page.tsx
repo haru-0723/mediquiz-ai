@@ -64,14 +64,19 @@ export default function SettingsPage() {
 
   async function handlePortal() {
     setPortalLoading(true);
-    const res = await fetch('/api/stripe/portal', { method: 'POST' });
-    const { url, error } = await res.json();
-    if (error) {
-      alert(error);
+    try {
+      const res = await fetch('/api/stripe/portal', { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        alert(data.error ?? 'ポータルへのアクセスに失敗しました。しばらくしてからお試しください。');
+        return;
+      }
+      window.location.href = data.url;
+    } catch {
+      alert('通信エラーが発生しました。インターネット接続を確認してください。');
+    } finally {
       setPortalLoading(false);
-      return;
     }
-    window.location.href = url;
   }
 
   async function handleDeleteAccount() {

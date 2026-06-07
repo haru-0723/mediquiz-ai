@@ -2,7 +2,20 @@ import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { createClient } from '@/lib/supabase/server';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+if (!process.env.STRIPE_SECRET_KEY) {
+  throw new Error('STRIPE_SECRET_KEY is not set');
+}
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+
+function getOrigin(request: NextRequest): string {
+  if (process.env.NEXT_PUBLIC_APP_URL) return process.env.NEXT_PUBLIC_APP_URL;
+  const originHeader = request.headers.get('origin');
+  if (originHeader) return originHeader;
+  const proto = request.headers.get('x-forwarded-proto') ?? 'https';
+  const host = request.headers.get('x-forwarded-host') ?? request.headers.get('host');
+  if (host) return `${proto}://${host}`;
+  return new URL(request.url).origin;
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -17,19 +30,22 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (!profile?.stripe_customer_id) {
-      return NextResponse.json({ error: 'サブスクリプションが見つかりません' }, { status: 404 });
+      return NextResponse.json({
+        error: 'サブスクリプション情報が見つかりません。サポートにお問い合わせください。'
+      }, { status: 404 });
     }
 
-    const origin = new URL(request.url).origin;
+    const origin = getOrigin(request);
 
     const session = await stripe.billingPortal.sessions.create({
       customer: profile.stripe_customer_id,
-      return_url: `${origin}/dashboard`,
+      return_url: `${origin}/settings`,
     });
 
     return NextResponse.json({ url: session.url });
-  } catch (e) {
-    console.error(e);
-    return NextResponse.json({ error: 'ポータルの作成に失敗しました' }, { status: 500 });
+  } catch (e: unknown) {
+    console.error('[stripe/portal]', e);
+    const message = e instanceof Error ? e.message : 'ポータルの作成に失敗しました';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
