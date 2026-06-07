@@ -17,6 +17,13 @@ function getOrigin(request: NextRequest): string {
   return new URL(request.url).origin;
 }
 
+async function resolveCustomerId(profileCustomerId: string | null, userEmail: string): Promise<string | null> {
+  if (profileCustomerId) return profileCustomerId;
+  // stripe_customer_id が未保存の場合、メールで検索
+  const customers = await stripe.customers.list({ email: userEmail, limit: 1 });
+  return customers.data[0]?.id ?? null;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const supabase = createClient();
@@ -29,23 +36,36 @@ export async function POST(request: NextRequest) {
       .eq('id', user.id)
       .single();
 
-    if (!profile?.stripe_customer_id) {
+    const customerId = await resolveCustomerId(profile?.stripe_customer_id ?? null, user.email!);
+
+    if (!customerId) {
       return NextResponse.json({
         error: 'サブスクリプション情報が見つかりません。サポートにお問い合わせください。'
       }, { status: 404 });
     }
 
+    // 見つかった customer_id を DB に保存（webhook 未着の場合の補完）
+    if (!profile?.stripe_customer_id) {
+      await supabase.from('profiles').update({ stripe_customer_id: customerId }).eq('id', user.id);
+    }
+
     const origin = getOrigin(request);
 
     const session = await stripe.billingPortal.sessions.create({
-      customer: profile.stripe_customer_id,
+      customer: customerId,
       return_url: `${origin}/settings`,
     });
 
     return NextResponse.json({ url: session.url });
   } catch (e: unknown) {
     console.error('[stripe/portal]', e);
-    const message = e instanceof Error ? e.message : 'ポータルの作成に失敗しました';
+    const stripeError = e as { message?: string; code?: string };
+    if (stripeError.code === 'resource_missing') {
+      return NextResponse.json({
+        error: 'Stripeカスタマーポータルが設定されていません。Stripeダッシュボードで有効化してください。'
+      }, { status: 500 });
+    }
+    const message = stripeError.message ?? 'ポータルの作成に失敗しました';
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
