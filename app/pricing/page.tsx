@@ -54,7 +54,7 @@ export default function PricingPage() {
             <p className="text-sm text-gray-500 mb-6">まずは試したい方に</p>
             <ul className="space-y-3 mb-8">
               {[
-                'AI問題生成：月3回まで',
+                'AI問題生成：1日3回まで',
                 '問題保存：50問まで',
                 '教材アップロード：3件まで',
                 '問題演習',

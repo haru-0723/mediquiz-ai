@@ -17,21 +17,20 @@ export async function POST(request: NextRequest) {
       .eq('id', user.id)
       .single();
 
-    // 無料プランの場合、今月の生成回数を確認
+    // 無料プランの場合、今日の生成回数を確認
     if (!profile || profile.plan === 'free') {
-      const startOfMonth = new Date();
-      startOfMonth.setDate(1);
-      startOfMonth.setHours(0, 0, 0, 0);
+      const startOfDay = new Date();
+      startOfDay.setHours(0, 0, 0, 0);
 
       const { count } = await supabase
         .from('generate_logs')
         .select('*', { count: 'exact', head: true })
         .eq('user_id', user.id)
-        .gte('created_at', startOfMonth.toISOString());
+        .gte('created_at', startOfDay.toISOString());
 
       if ((count ?? 0) >= 3) {
         return NextResponse.json({
-          error: '無料プランのAI問題生成は月3回までです。スタンダードプランにアップグレードしてください。',
+          error: '無料プランのAI問題生成は1日3回までです。スタンダードプランにアップグレードしてください。',
           upgrade: true
         }, { status: 403 });
       }
