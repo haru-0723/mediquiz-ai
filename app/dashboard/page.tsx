@@ -5,6 +5,7 @@ import ExamSection from './ExamSection';
 import LogoutButton from './LogoutButton';
 import HelpModal from '@/components/HelpModal';
 import { dashboardHelp } from '@/lib/helpContent';
+import GuideBanner from './GuideBanner';
 
 export default async function DashboardPage() {
   const supabase = createClient();
@@ -62,6 +63,7 @@ export default async function DashboardPage() {
         </div>
       </nav>
       <div className="max-w-4xl mx-auto p-4 sm:p-8">
+        <GuideBanner />
         <Link href="/settings" className="group block mb-6 sm:mb-8 bg-white rounded-2xl border p-4 sm:p-6 hover:border-green-300 hover:shadow-sm transition-all">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
             <div className="min-w-0">
