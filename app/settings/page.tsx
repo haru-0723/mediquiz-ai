@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client';
 export default function SettingsPage() {
   const supabase = createClient();
   const [plan, setPlan] = useState('free');
+  const [stripeCustomerId, setStripeCustomerId] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [university, setUniversity] = useState('');
@@ -26,6 +27,7 @@ export default function SettingsPage() {
       const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
       if (profile) {
         setPlan(profile.plan);
+        setStripeCustomerId(profile.stripe_customer_id ?? null);
         setUniversity(profile.university ?? '');
         setDepartment(profile.department ?? '');
         setGrade(profile.grade ? String(profile.grade) : '');
@@ -177,11 +179,17 @@ export default function SettingsPage() {
           </div>
           {plan === 'standard' ? (
             <div className="space-y-3">
-              <button onClick={handlePortal} disabled={portalLoading}
-                className="w-full border border-gray-200 rounded-xl py-3 text-sm text-gray-600 hover:border-gray-300 transition-colors disabled:opacity-60">
-                {portalLoading ? '処理中...' : '🔧 サブスクリプションを管理する'}
-              </button>
-              <p className="text-xs text-gray-400 text-center">解約・プラン変更はこちらから</p>
+              {stripeCustomerId ? (
+                <>
+                  <button onClick={handlePortal} disabled={portalLoading}
+                    className="w-full border border-gray-200 rounded-xl py-3 text-sm text-gray-600 hover:border-gray-300 transition-colors disabled:opacity-60">
+                    {portalLoading ? '処理中...' : '🔧 サブスクリプションを管理する'}
+                  </button>
+                  <p className="text-xs text-gray-400 text-center">解約・プラン変更はこちらから</p>
+                </>
+              ) : (
+                <p className="text-xs text-gray-400 text-center">管理者アカウントのため、管理画面はありません</p>
+              )}
             </div>
           ) : (
             <Link href="/pricing"
