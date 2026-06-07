@@ -52,6 +52,7 @@ export default function TermsPage() {
           <section>
             <h2 className="text-lg font-semibold text-gray-900 mb-3">第5条（免責事項）</h2>
             <p>本サービスで提供する問題・解説は学習支援を目的としており、医療行為の正確性を保証するものではありません。運営者は本サービスの利用によって生じた損害について、一切の責任を負いません。</p>
+            <p className="mt-3">本サービスのAIが生成した問題・解説は学習支援を目的としており、内容の正確性・完全性を保証するものではありません。医療行為の判断には使用しないでください。</p>
           </section>
 
           <section>

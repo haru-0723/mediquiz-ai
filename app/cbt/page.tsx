@@ -313,6 +313,8 @@ async function handleStart() {
               style={{ width: `${(current / questions.length) * 100}%` }} />
           </div>
 
+          <p className="text-xs text-gray-400 mb-3">⚠️ AI生成問題のため、内容の正確性を保証しません</p>
+
           <div className="bg-white rounded-2xl border p-6 mb-4">
             <div className="flex gap-2 mb-4">
               {q.subject && <span className="bg-blue-50 text-blue-700 text-xs px-3 py-1 rounded-full font-medium">{q.subject}</span>}
