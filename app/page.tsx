@@ -31,6 +31,30 @@ export default function HomePage() {
         </Link>
       </section>
 
+      <section className="max-w-3xl mx-auto px-8 pb-24">
+        <h2 className="text-center text-2xl font-semibold text-gray-900 mb-12">使い方はかんたん3ステップ</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+          <div className="bg-gray-50 rounded-2xl p-8 text-center">
+            <div className="text-4xl mb-4">📂</div>
+            <div className="text-xs font-semibold text-green-600 mb-2">STEP 1</div>
+            <h3 className="text-base font-semibold text-gray-900 mb-2">資料をアップロード</h3>
+            <p className="text-sm text-gray-500 leading-relaxed">授業スライドやノートをそのままアップロードするだけ。</p>
+          </div>
+          <div className="bg-gray-50 rounded-2xl p-8 text-center">
+            <div className="text-4xl mb-4">🤖</div>
+            <div className="text-xs font-semibold text-green-600 mb-2">STEP 2</div>
+            <h3 className="text-base font-semibold text-gray-900 mb-2">AIが問題を自動生成</h3>
+            <p className="text-sm text-gray-500 leading-relaxed">AIが内容を読み取り、試験に出やすい問題を自動で作成。</p>
+          </div>
+          <div className="bg-gray-50 rounded-2xl p-8 text-center">
+            <div className="text-4xl mb-4">🏆</div>
+            <div className="text-xs font-semibold text-green-600 mb-2">STEP 3</div>
+            <h3 className="text-base font-semibold text-gray-900 mb-2">演習して実力アップ</h3>
+            <p className="text-sm text-gray-500 leading-relaxed">解説付きの問題を繰り返し解いて、確実に定着させよう。</p>
+          </div>
+        </div>
+      </section>
+
       <footer className="border-t py-8 px-8 flex justify-between items-center text-sm text-gray-400">
         <span>© 2026 MediQuiz AI</span>
         <div className="flex gap-6">
