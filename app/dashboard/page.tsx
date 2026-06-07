@@ -159,6 +159,10 @@ export default async function DashboardPage() {
             ⚡ 演習を始める
           </Link>
         </div>
+        <p className="text-center text-xs text-gray-400 mt-8">
+          お問い合わせはこちらまでSMSをお送りください：
+          <a href="sms:090-5889-8610" className="underline hover:text-gray-600">090-5889-8610</a>
+        </p>
       </div>
     </div>
   );
