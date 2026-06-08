@@ -39,6 +39,10 @@ export default function CBTPage() {
   const [timeLeft, setTimeLeft] = useState(0);
   const [showResult, setShowResult] = useState(false);
   const [error, setError] = useState('');
+  const [showReportForm, setShowReportForm] = useState(false);
+  const [reportReason, setReportReason] = useState('内容が間違っている');
+  const [reportedSet, setReportedSet] = useState<Set<number>>(new Set());
+  const [submittingReport, setSubmittingReport] = useState(false);
 
   useEffect(() => {
     supabase.from('questions').select('*').order('created_at', { ascending: false }).then(({ data }) => {
@@ -126,6 +130,22 @@ async function handleStart() {
   }
 }
 
+  async function handleReport() {
+    setSubmittingReport(true);
+    try {
+      const q = questions[current];
+      await fetch('/api/report', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question_id: q.id, reason: reportReason }),
+      });
+      setReportedSet(prev => new Set([...prev, current]));
+      setShowReportForm(false);
+    } finally {
+      setSubmittingReport(false);
+    }
+  }
+
   function handleAnswer(letter: string) {
     setSelected(letter);
   }
@@ -135,6 +155,7 @@ async function handleStart() {
     const isCorrect = selected === q.answer;
     const newAnswers = [...answers, { questionId: q.id, selected, isCorrect }];
     setAnswers(newAnswers);
+    setShowReportForm(false);
     if (current + 1 < questions.length) {
       setCurrent(current + 1);
       setSelected(null);
@@ -354,6 +375,35 @@ async function handleStart() {
                 <p className="text-xs font-medium text-blue-600 mb-2">💡 解説</p>
                 <p className="text-sm text-gray-600 leading-relaxed">{q.explanation}</p>
               </div>
+            )}
+          </div>
+
+          <div className="flex items-center mb-3">
+            {reportedSet.has(current) ? (
+              <span className="text-xs text-green-600">✅ 報告しました</span>
+            ) : showReportForm ? (
+              <div className="flex items-center gap-2 flex-wrap">
+                <select value={reportReason} onChange={e => setReportReason(e.target.value)}
+                  className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 text-gray-600 focus:outline-none">
+                  <option>内容が間違っている</option>
+                  <option>問題文がおかしい</option>
+                  <option>解説が不正確</option>
+                  <option>その他</option>
+                </select>
+                <button onClick={handleReport} disabled={submittingReport}
+                  className="text-xs bg-red-500 text-white px-3 py-1.5 rounded-lg hover:bg-red-600 disabled:opacity-60">
+                  {submittingReport ? '送信中...' : '送信'}
+                </button>
+                <button onClick={() => setShowReportForm(false)}
+                  className="text-xs text-gray-400 hover:text-gray-600">
+                  キャンセル
+                </button>
+              </div>
+            ) : (
+              <button onClick={() => setShowReportForm(true)}
+                className="text-xs text-gray-400 hover:text-red-500 transition-colors">
+                🚩 問題を報告する
+              </button>
             )}
           </div>
 

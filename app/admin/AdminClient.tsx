@@ -31,6 +31,9 @@ export default function AdminClient({ reports: initialReports }: { reports: Repo
   const [reports, setReports] = useState<Report[]>(initialReports);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [dismissing, setDismissing] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState<Partial<Question>>({});
+  const [savingEdit, setSavingEdit] = useState(false);
 
   async function handleDeleteQuestion(questionId: string, reportId: string) {
     if (!confirm('この問題を削除しますか？関連するレポートも削除されます。')) return;
@@ -38,6 +41,31 @@ export default function AdminClient({ reports: initialReports }: { reports: Repo
     await supabase.from('questions').delete().eq('id', questionId);
     setReports(reports.filter(r => r.question_id !== questionId));
     setDeleting(null);
+  }
+
+  function startEdit(q: Question) {
+    setEditForm({ ...q });
+    setEditingId(q.id);
+  }
+
+  async function handleSaveEdit(questionId: string) {
+    setSavingEdit(true);
+    await supabase.from('questions').update({
+      question: editForm.question,
+      option_a: editForm.option_a,
+      option_b: editForm.option_b,
+      option_c: editForm.option_c,
+      option_d: editForm.option_d,
+      answer: editForm.answer,
+      explanation: editForm.explanation,
+    }).eq('id', questionId);
+    setReports(reports.map(r =>
+      r.question_id === questionId
+        ? { ...r, questions: { ...r.questions!, ...editForm } as Question }
+        : r
+    ));
+    setEditingId(null);
+    setSavingEdit(false);
   }
 
   async function handleDismissReport(reportId: string) {
@@ -86,6 +114,13 @@ export default function AdminClient({ reports: initialReports }: { reports: Repo
                     </p>
                   </div>
                   <div className="flex gap-2">
+                    {report.questions && (
+                      <button
+                        onClick={() => startEdit(report.questions!)}
+                        className="text-xs text-blue-400 hover:text-blue-600 border border-blue-200 px-3 py-1.5 rounded-lg transition-colors">
+                        編集
+                      </button>
+                    )}
                     <button
                       onClick={() => handleDismissReport(report.id)}
                       disabled={dismissing === report.id}
@@ -101,7 +136,51 @@ export default function AdminClient({ reports: initialReports }: { reports: Repo
                   </div>
                 </div>
 
-                {report.questions ? (
+                {editingId === report.question_id && report.questions ? (
+                  <div className="bg-gray-50 rounded-xl p-4 space-y-3">
+                    <textarea
+                      value={editForm.question ?? ''}
+                      onChange={e => setEditForm(f => ({ ...f, question: e.target.value }))}
+                      rows={3}
+                      placeholder="問題文"
+                      className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
+                    />
+                    {(['option_a', 'option_b', 'option_c', 'option_d'] as const).map((key, i) => (
+                      <div key={key} className="flex items-center gap-2">
+                        <span className="text-xs font-medium text-gray-500 w-4">{['A','B','C','D'][i]}</span>
+                        <input type="text" value={editForm[key] ?? ''}
+                          onChange={e => setEditForm(f => ({ ...f, [key]: e.target.value }))}
+                          className="flex-1 px-3 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                        />
+                      </div>
+                    ))}
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-medium text-gray-500">正解</span>
+                      <select value={editForm.answer ?? 'A'}
+                        onChange={e => setEditForm(f => ({ ...f, answer: e.target.value }))}
+                        className="px-3 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
+                        <option>A</option><option>B</option><option>C</option><option>D</option>
+                      </select>
+                    </div>
+                    <textarea
+                      value={editForm.explanation ?? ''}
+                      onChange={e => setEditForm(f => ({ ...f, explanation: e.target.value }))}
+                      rows={3}
+                      placeholder="解説"
+                      className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
+                    />
+                    <div className="flex gap-2 justify-end">
+                      <button onClick={() => setEditingId(null)}
+                        className="text-xs text-gray-400 hover:text-gray-600 border border-gray-200 px-3 py-1.5 rounded-lg">
+                        キャンセル
+                      </button>
+                      <button onClick={() => handleSaveEdit(report.question_id)} disabled={savingEdit}
+                        className="text-xs bg-green-600 text-white px-3 py-1.5 rounded-lg hover:bg-green-700 disabled:opacity-60">
+                        {savingEdit ? '保存中...' : '保存する'}
+                      </button>
+                    </div>
+                  </div>
+                ) : report.questions ? (
                   <div className="bg-gray-50 rounded-xl p-4">
                     <div className="flex gap-2 mb-3">
                       {report.questions.subject && (

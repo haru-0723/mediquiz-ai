@@ -33,6 +33,10 @@ export default function GeneratePage() {
   const [saveFolderId, setSaveFolderId] = useState('');
   const [newSaveFolderName, setNewSaveFolderName] = useState('');
   const [showNewSaveFolder, setShowNewSaveFolder] = useState(false);
+  const [showReportForm, setShowReportForm] = useState(false);
+  const [reportReason, setReportReason] = useState('内容が間違っている');
+  const [reportedSet, setReportedSet] = useState<Set<number>>(new Set());
+  const [submittingReport, setSubmittingReport] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -168,6 +172,35 @@ export default function GeneratePage() {
     }
   }
 
+  async function handleReport() {
+    setSubmittingReport(true);
+    try {
+      const q = questions[current];
+      await fetch('/api/report', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          question_data: {
+            question: q.question,
+            option_a: q.options[0]?.slice(3) ?? '',
+            option_b: q.options[1]?.slice(3) ?? '',
+            option_c: q.options[2]?.slice(3) ?? '',
+            option_d: q.options[3]?.slice(3) ?? '',
+            answer: q.answer,
+            explanation: q.explanation,
+            difficulty: q.difficulty,
+            subject: selectedMaterials[0]?.subject ?? null,
+          },
+          reason: reportReason,
+        }),
+      });
+      setReportedSet(prev => new Set([...prev, current]));
+      setShowReportForm(false);
+    } finally {
+      setSubmittingReport(false);
+    }
+  }
+
   function handleReviewWrong() {
     const wrong = questions.filter((_, i) => !results[i]?.correct);
     setQuestions(wrong.sort(() => Math.random() - 0.5));
@@ -189,6 +222,7 @@ export default function GeneratePage() {
     const isCorrect = selected?.charAt(0) === q.answer;
     const newResults = [...results, { correct: isCorrect }];
     setResults(newResults);
+    setShowReportForm(false);
     if (current + 1 < questions.length) {
       setCurrent(current + 1);
       setSelected(null);
@@ -336,7 +370,33 @@ export default function GeneratePage() {
               </div>
             )}
           </div>
-          <div className="flex justify-end">
+          <div className="flex items-center justify-between">
+            {reportedSet.has(current) ? (
+              <span className="text-xs text-green-600">✅ 報告しました</span>
+            ) : showReportForm ? (
+              <div className="flex items-center gap-2 flex-wrap">
+                <select value={reportReason} onChange={e => setReportReason(e.target.value)}
+                  className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 text-gray-600 focus:outline-none">
+                  <option>内容が間違っている</option>
+                  <option>問題文がおかしい</option>
+                  <option>解説が不正確</option>
+                  <option>その他</option>
+                </select>
+                <button onClick={handleReport} disabled={submittingReport}
+                  className="text-xs bg-red-500 text-white px-3 py-1.5 rounded-lg hover:bg-red-600 disabled:opacity-60">
+                  {submittingReport ? '送信中...' : '送信'}
+                </button>
+                <button onClick={() => setShowReportForm(false)}
+                  className="text-xs text-gray-400 hover:text-gray-600">
+                  キャンセル
+                </button>
+              </div>
+            ) : (
+              <button onClick={() => setShowReportForm(true)}
+                className="text-xs text-gray-400 hover:text-red-500 transition-colors">
+                🚩 問題を報告する
+              </button>
+            )}
             {answered && (
               <button onClick={handleNext} className="bg-green-600 text-white px-6 py-2.5 rounded-xl text-sm font-medium hover:bg-green-700">
                 {current + 1 < questions.length ? '次の問題 →' : '結果を見る'}
