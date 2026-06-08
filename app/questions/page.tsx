@@ -4,6 +4,13 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 
+type Folder = {
+  id: string;
+  name: string;
+  user_id: string;
+  created_at: string;
+};
+
 type Question = {
   id: string;
   subject: string | null;
@@ -16,103 +23,160 @@ type Question = {
   explanation: string | null;
   difficulty: string;
   user_id: string;
+  folder_id?: string | null;
 };
+
+type FolderFilter = 'all' | 'none' | string;
 
 const DIFF_LABEL: Record<string, string> = { easy: '基礎', medium: '標準', hard: '応用' };
 
 export default function QuestionsPage() {
   const supabase = createClient();
   const [questions, setQuestions] = useState<Question[]>([]);
+  const [folders, setFolders] = useState<Folder[]>([]);
   const [loading, setLoading] = useState(true);
-  const [deleting, setDeleting] = useState<string | null>(null);
-  const [reporting, setReporting] = useState<string | null>(null);
-  const [reportReason, setReportReason] = useState('');
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const [reported, setReported] = useState<Set<string>>(new Set());
   const [plan, setPlan] = useState<string>('free');
-  const [subjectFilter, setSubjectFilter] = useState<string>('all');
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  // Folder state
+  const [selectedFolder, setSelectedFolder] = useState<FolderFilter>('all');
+  const [showNewFolder, setShowNewFolder] = useState(false);
+  const [newFolderName, setNewFolderName] = useState('');
+  const [creatingFolder, setCreatingFolder] = useState(false);
+  const [deletingFolderId, setDeletingFolderId] = useState<string | null>(null);
+
+  // Question ops
+  const [deleting, setDeleting] = useState<string | null>(null);
+  const [movingQuestionId, setMovingQuestionId] = useState<string | null>(null);
+
+  // Bulk select
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set<string>());
+  const [bulkTargetFolderId, setBulkTargetFolderId] = useState<string>('none');
+  const [bulkMoving, setBulkMoving] = useState(false);
+
+  // PDF
   const [exporting, setExporting] = useState(false);
   const [showPlanError, setShowPlanError] = useState(false);
 
-  useEffect(() => {
-    async function load() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        setCurrentUserId(user.id);
-        const { data: profile } = await supabase.from('profiles').select('plan').eq('id', user.id).single();
-        if (profile) setPlan(profile.plan ?? 'free');
-      }
-      const { data } = await supabase.from('questions').select('*').order('created_at', { ascending: false });
-      if (data) setQuestions(data);
-      setLoading(false);
-    }
-    load();
-  }, []);
+  useEffect(() => { loadData(); }, []);
 
-  const uniqueSubjects = Array.from(new Set(questions.map(q => q.subject).filter((s): s is string => !!s)));
-  const filteredQuestions = subjectFilter === 'all' ? questions : questions.filter(q => q.subject === subjectFilter);
+  useEffect(() => {
+    setSelectedIds(new Set<string>());
+  }, [selectedFolder]);
+
+  async function loadData() {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { setLoading(false); return; }
+    setCurrentUserId(user.id);
+
+    const [profileRes, foldersRes, questionsRes] = await Promise.all([
+      supabase.from('profiles').select('plan').eq('id', user.id).single(),
+      supabase.from('folders').select('*').eq('user_id', user.id).order('created_at'),
+      supabase.from('questions').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
+    ]);
+    if (profileRes.data) setPlan(profileRes.data.plan ?? 'free');
+    if (foldersRes.data) setFolders(foldersRes.data);
+    if (questionsRes.data) setQuestions(questionsRes.data);
+    setLoading(false);
+  }
+
+  const filteredQuestions = selectedFolder === 'all'
+    ? questions
+    : selectedFolder === 'none'
+      ? questions.filter(q => !q.folder_id)
+      : questions.filter(q => q.folder_id === selectedFolder);
+
+  const folderCounts: Record<string, number> = {};
+  folders.forEach(f => { folderCounts[f.id] = questions.filter(q => q.folder_id === f.id).length; });
+  const noFolderCount = questions.filter(q => !q.folder_id).length;
+
+  const currentFolderName =
+    selectedFolder === 'all' ? '全問題' :
+    selectedFolder === 'none' ? 'フォルダなし' :
+    (folders.find(f => f.id === selectedFolder)?.name ?? '問題集');
+
+  async function handleCreateFolder() {
+    if (!newFolderName.trim() || !currentUserId) return;
+    setCreatingFolder(true);
+    const { data } = await supabase.from('folders').insert({ user_id: currentUserId, name: newFolderName.trim() }).select().single();
+    if (data) setFolders(prev => [...prev, data as Folder]);
+    setNewFolderName('');
+    setShowNewFolder(false);
+    setCreatingFolder(false);
+  }
+
+  async function handleDeleteFolder(folderId: string) {
+    if (!confirm('このフォルダを削除しますか？\n（中の問題は「フォルダなし」に移動します）')) return;
+    setDeletingFolderId(folderId);
+    await supabase.from('folders').delete().eq('id', folderId);
+    setFolders(prev => prev.filter(f => f.id !== folderId));
+    setQuestions(prev => prev.map(q => q.folder_id === folderId ? { ...q, folder_id: null } : q));
+    if (selectedFolder === folderId) setSelectedFolder('all');
+    setDeletingFolderId(null);
+  }
 
   async function handleDelete(id: string) {
     if (!confirm('この問題を削除しますか？')) return;
     setDeleting(id);
     await supabase.from('questions').delete().eq('id', id);
-    setQuestions(questions.filter(q => q.id !== id));
+    setQuestions(prev => prev.filter(q => q.id !== id));
+    const next = new Set<string>(selectedIds);
+    next.delete(id);
+    setSelectedIds(next);
     setDeleting(null);
   }
 
-  async function handleReport(questionId: string) {
-    if (!reportReason.trim()) return;
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-    await supabase.from('question_reports').insert({
-      question_id: questionId,
-      user_id: user.id,
-      reason: reportReason,
-    });
-    const next = new Set<string>(reported);
-    next.add(questionId);
-    setReported(next);
-    setReporting(null);
-    setReportReason('');
-    alert('レポートを送信しました。ご協力ありがとうございます。');
+  async function handleMoveQuestion(questionId: string, targetFolderId: string) {
+    const fid = targetFolderId === 'none' ? null : targetFolderId;
+    await supabase.from('questions').update({ folder_id: fid }).eq('id', questionId);
+    setQuestions(prev => prev.map(q => q.id === questionId ? { ...q, folder_id: fid } : q));
+    setMovingQuestionId(null);
+  }
+
+  async function handleBulkMove() {
+    if (selectedIds.size === 0) return;
+    setBulkMoving(true);
+    const fid = bulkTargetFolderId === 'none' ? null : bulkTargetFolderId;
+    const ids = Array.from(selectedIds);
+    await supabase.from('questions').update({ folder_id: fid }).in('id', ids);
+    setQuestions(prev => prev.map(q => selectedIds.has(q.id) ? { ...q, folder_id: fid } : q));
+    setSelectedIds(new Set<string>());
+    setBulkMoving(false);
+  }
+
+  function toggleSelect(id: string) {
+    const next = new Set<string>(selectedIds);
+    if (next.has(id)) { next.delete(id); } else { next.add(id); }
+    setSelectedIds(next);
+  }
+
+  function toggleSelectAll() {
+    if (selectedIds.size === filteredQuestions.length && filteredQuestions.length > 0) {
+      setSelectedIds(new Set<string>());
+    } else {
+      const next = new Set<string>();
+      filteredQuestions.forEach(q => next.add(q.id));
+      setSelectedIds(next);
+    }
   }
 
   async function handleExportPDF() {
-    if (plan === 'free') {
-      setShowPlanError(true);
-      return;
-    }
-    if (filteredQuestions.length === 0) {
-      alert('エクスポートする問題がありません');
-      return;
-    }
+    if (plan === 'free') { setShowPlanError(true); return; }
+    if (filteredQuestions.length === 0) { alert('エクスポートする問題がありません'); return; }
 
     setExporting(true);
     setShowPlanError(false);
-
     try {
       const container = document.createElement('div');
-      container.style.cssText = [
-        'position:absolute',
-        'left:-9999px',
-        'top:0',
-        'width:794px',
-        'background:white',
-        'padding:56px 56px 40px',
-        'font-family:sans-serif',
-        'color:#111',
-        'font-size:14px',
-        'line-height:1.6',
-      ].join(';');
+      container.style.cssText = 'position:absolute;left:-9999px;top:0;width:794px;background:white;padding:56px 56px 40px;font-family:sans-serif;color:#111;font-size:14px;line-height:1.6;';
 
       const titleEl = document.createElement('h1');
-      titleEl.textContent = 'MediQuiz AI — 問題集';
+      titleEl.textContent = `MediQuiz AI — ${currentFolderName}`;
       titleEl.style.cssText = 'font-size:22px;font-weight:700;margin:0 0 6px;color:#111;';
       container.appendChild(titleEl);
 
       const metaEl = document.createElement('p');
-      const filterLabel = subjectFilter !== 'all' ? ` ／ 科目：${subjectFilter}` : '';
-      metaEl.textContent = `全${filteredQuestions.length}問${filterLabel}`;
+      metaEl.textContent = `全${filteredQuestions.length}問`;
       metaEl.style.cssText = 'font-size:13px;color:#888;margin:0 0 36px;';
       container.appendChild(metaEl);
 
@@ -122,19 +186,16 @@ export default function QuestionsPage() {
 
         const badges = document.createElement('div');
         badges.style.cssText = 'display:flex;gap:6px;align-items:center;margin-bottom:10px;flex-wrap:wrap;';
-
         const qNum = document.createElement('span');
         qNum.textContent = `Q${i + 1}`;
         qNum.style.cssText = 'font-size:11px;color:#aaa;font-weight:600;';
         badges.appendChild(qNum);
-
         if (q.subject) {
           const sb = document.createElement('span');
           sb.textContent = q.subject;
           sb.style.cssText = 'font-size:11px;background:#f0fdf4;color:#16a34a;padding:2px 8px;border-radius:999px;';
           badges.appendChild(sb);
         }
-
         const db = document.createElement('span');
         db.textContent = DIFF_LABEL[q.difficulty] ?? q.difficulty;
         db.style.cssText = 'font-size:11px;background:#f3f4f6;color:#6b7280;padding:2px 8px;border-radius:999px;';
@@ -147,18 +208,16 @@ export default function QuestionsPage() {
         card.appendChild(qText);
 
         const optKeys: Array<keyof Question> = ['option_a', 'option_b', 'option_c', 'option_d'];
-        const optLabels = ['A', 'B', 'C', 'D'];
-        optKeys.forEach((key, idx) => {
+        ['A', 'B', 'C', 'D'].forEach((lbl, idx) => {
           const row = document.createElement('div');
           row.style.cssText = 'display:flex;gap:8px;margin-bottom:5px;align-items:flex-start;';
-          const lbl = document.createElement('span');
-          lbl.textContent = optLabels[idx] + '.';
-          lbl.style.cssText = 'font-size:13px;color:#666;min-width:22px;flex-shrink:0;padding-top:1px;';
-          const txt = document.createElement('span');
-          txt.textContent = q[key] as string;
-          txt.style.cssText = 'font-size:13px;color:#333;line-height:1.6;';
-          row.appendChild(lbl);
-          row.appendChild(txt);
+          const l = document.createElement('span');
+          l.textContent = lbl + '.';
+          l.style.cssText = 'font-size:13px;color:#666;min-width:22px;flex-shrink:0;';
+          const t = document.createElement('span');
+          t.textContent = q[optKeys[idx]] as string;
+          t.style.cssText = 'font-size:13px;color:#333;line-height:1.6;';
+          row.appendChild(l); row.appendChild(t);
           card.appendChild(row);
         });
 
@@ -179,47 +238,26 @@ export default function QuestionsPage() {
       });
 
       document.body.appendChild(container);
-
-      const html2canvasModule = await import('html2canvas');
-      const html2canvas = html2canvasModule.default;
-      const canvas = await html2canvas(container, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: '#ffffff',
-        logging: false,
-      });
-
+      const h2c = await import('html2canvas');
+      const canvas = await h2c.default(container, { scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false });
       document.body.removeChild(container);
 
       const { jsPDF } = await import('jspdf');
       const pdf = new jsPDF('p', 'mm', 'a4');
-      const pageW = 210;
-      const pageH = 297;
-      const canvasW = canvas.width;
-      const pageHpx = Math.round((pageH / pageW) * canvasW);
-
-      let offsetY = 0;
-      let pageIndex = 0;
+      const pageW = 210; const pageH = 297;
+      const cw = canvas.width;
+      const pageHpx = Math.round((pageH / pageW) * cw);
+      let offsetY = 0; let pageIdx = 0;
       while (offsetY < canvas.height) {
-        if (pageIndex > 0) pdf.addPage();
+        if (pageIdx > 0) pdf.addPage();
         const chunk = document.createElement('canvas');
-        chunk.width = canvasW;
-        chunk.height = pageHpx;
+        chunk.width = cw; chunk.height = pageHpx;
         const ctx = chunk.getContext('2d');
-        if (ctx) {
-          ctx.fillStyle = '#ffffff';
-          ctx.fillRect(0, 0, canvasW, pageHpx);
-          ctx.drawImage(canvas, 0, -offsetY);
-        }
+        if (ctx) { ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, cw, pageHpx); ctx.drawImage(canvas, 0, -offsetY); }
         pdf.addImage(chunk.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, pageW, pageH);
-        offsetY += pageHpx;
-        pageIndex++;
+        offsetY += pageHpx; pageIdx++;
       }
-
-      const fileName = subjectFilter !== 'all'
-        ? `MediQuiz_${subjectFilter}.pdf`
-        : 'MediQuiz_問題集.pdf';
-      pdf.save(fileName);
+      pdf.save(`MediQuiz_${currentFolderName}.pdf`);
     } catch (e) {
       console.error(e);
       alert('PDFの生成に失敗しました。もう一度お試しください。');
@@ -236,6 +274,11 @@ export default function QuestionsPage() {
     );
   }
 
+  const folderMoveOptions = [
+    { value: 'none', label: 'フォルダなし' },
+    ...folders.map(f => ({ value: f.id, label: f.name })),
+  ];
+
   return (
     <div className="min-h-screen bg-gray-50">
       <nav className="bg-white border-b px-4 sm:px-8 py-3 sm:py-4 flex items-center justify-between">
@@ -248,155 +291,281 @@ export default function QuestionsPage() {
         <Link href="/dashboard" className="text-sm text-gray-500">ダッシュボードへ戻る</Link>
       </nav>
 
-      <div className="max-w-3xl mx-auto p-4 sm:p-8">
-        <div className="flex items-center justify-between mb-5 sm:mb-6">
+      <div className="max-w-5xl mx-auto p-4 sm:p-6">
+        {/* ページヘッダー */}
+        <div className="flex items-center justify-between mb-4 sm:mb-6">
           <div>
-            <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">問題一覧</h1>
-            <p className="text-gray-500 text-sm mt-1">
-              {filteredQuestions.length === questions.length
-                ? `全${questions.length}問`
-                : `${filteredQuestions.length}問（全${questions.length}問中）`}
-            </p>
+            <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">マイ問題集</h1>
+            <p className="text-gray-500 text-sm mt-0.5">全{questions.length}問</p>
           </div>
-          <Link href="/questions/new" className="bg-green-600 text-white px-4 py-2.5 sm:px-5 rounded-xl text-sm font-medium hover:bg-green-700">
+          <Link href="/questions/new" className="bg-green-600 text-white px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-green-700">
             + 問題を追加
           </Link>
         </div>
 
-        {questions.length > 0 && (
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-5 sm:mb-6">
-            {uniqueSubjects.length > 0 && (
-              <select
-                value={subjectFilter}
-                onChange={e => { setSubjectFilter(e.target.value); setShowPlanError(false); }}
-                className="w-full sm:w-auto text-sm border border-gray-200 rounded-xl px-4 py-3 sm:py-2 focus:outline-none focus:ring-2 focus:ring-green-500 bg-white"
-              >
-                <option value="all">すべての科目</option>
-                {uniqueSubjects.map(s => (
-                  <option key={s} value={s}>{s}</option>
-                ))}
-              </select>
-            )}
-            <div className="flex flex-col items-start gap-1">
-              <button
-                onClick={handleExportPDF}
-                disabled={exporting}
-                className="flex items-center gap-2 bg-white border border-gray-200 text-gray-700 w-full sm:w-auto justify-center sm:justify-start px-4 py-3 sm:py-2 rounded-xl text-sm font-medium hover:border-gray-300 hover:bg-gray-50 disabled:opacity-60 transition-colors"
-              >
-                {exporting ? (
-                  <>
-                    <svg className="animate-spin w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-                    </svg>
-                    生成中...
-                  </>
-                ) : '📄 PDFで出力する'}
+        {/* スマホ：横スクロールフォルダタブ */}
+        <div className="sm:hidden -mx-4 px-4 overflow-x-auto flex gap-2 pb-3 mb-4">
+          {[
+            { id: 'all' as FolderFilter, label: 'すべて', count: questions.length },
+            { id: 'none' as FolderFilter, label: 'フォルダなし', count: noFolderCount },
+            ...folders.map(f => ({ id: f.id as FolderFilter, label: f.name, count: folderCounts[f.id] ?? 0 })),
+          ].map(item => (
+            <button key={item.id} onClick={() => setSelectedFolder(item.id)}
+              className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium transition-colors ${selectedFolder === item.id ? 'bg-green-600 text-white' : 'bg-white border border-gray-200 text-gray-600'}`}>
+              {item.label}
+              <span className={`text-xs px-1.5 py-0.5 rounded-full ${selectedFolder === item.id ? 'bg-green-500' : 'bg-gray-100 text-gray-400'}`}>
+                {item.count}
+              </span>
+            </button>
+          ))}
+          <button onClick={() => setShowNewFolder(true)}
+            className="flex-shrink-0 px-3 py-2 rounded-xl text-sm text-green-600 border border-dashed border-green-300 hover:bg-green-50">
+            + フォルダ
+          </button>
+        </div>
+
+        {/* スマホ：新規フォルダ作成 */}
+        {showNewFolder && (
+          <div className="sm:hidden bg-white border rounded-xl p-3 mb-4">
+            <input
+              value={newFolderName}
+              onChange={e => setNewFolderName(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handleCreateFolder()}
+              placeholder="フォルダ名を入力"
+              className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 mb-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+              autoFocus
+            />
+            <div className="flex gap-2">
+              <button onClick={handleCreateFolder} disabled={creatingFolder || !newFolderName.trim()}
+                className="flex-1 bg-green-600 text-white text-sm py-2 rounded-lg disabled:opacity-60">
+                {creatingFolder ? '作成中...' : '作成'}
               </button>
-              {showPlanError && (
-                <p className="text-xs text-orange-600">
-                  スタンダードプランの機能です。
-                  <Link href="/pricing" className="underline ml-1">アップグレードする →</Link>
-                </p>
-              )}
+              <button onClick={() => { setShowNewFolder(false); setNewFolderName(''); }}
+                className="flex-1 border text-sm py-2 rounded-lg text-gray-500">
+                キャンセル
+              </button>
             </div>
           </div>
         )}
 
-        {filteredQuestions.length > 0 ? (
-          <div className="space-y-3 sm:space-y-4">
-            {filteredQuestions.map((q, i) => (
-              <div key={q.id} className="bg-white rounded-2xl border p-4 sm:p-6">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex gap-2 flex-wrap">
-                    {q.subject && <span className="bg-green-50 text-green-700 text-xs px-3 py-1 rounded-full font-medium">{q.subject}</span>}
-                    <span className="bg-gray-100 text-gray-500 text-xs px-3 py-1 rounded-full">
-                      {DIFF_LABEL[q.difficulty] ?? q.difficulty}
-                    </span>
+        <div className="flex gap-5 items-start">
+          {/* PC：左サイドバー */}
+          <div className="hidden sm:flex flex-col w-52 shrink-0 gap-3">
+            <div className="bg-white rounded-2xl border p-3">
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-2 mb-2">フォルダ</p>
+
+              {/* すべて・フォルダなし */}
+              {[
+                { id: 'all' as FolderFilter, label: 'すべての問題', count: questions.length },
+                { id: 'none' as FolderFilter, label: 'フォルダなし', count: noFolderCount },
+              ].map(item => (
+                <button key={item.id} onClick={() => setSelectedFolder(item.id)}
+                  className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm transition-colors mb-0.5 ${selectedFolder === item.id ? 'bg-green-50 text-green-700 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}>
+                  <span>{item.label}</span>
+                  <span className="text-xs text-gray-400">{item.count}</span>
+                </button>
+              ))}
+
+              {folders.length > 0 && <hr className="my-2 border-gray-100" />}
+
+              {/* ユーザーフォルダ */}
+              {folders.map(f => (
+                <div key={f.id} className="group flex items-center gap-1 mb-0.5">
+                  <button onClick={() => setSelectedFolder(f.id)}
+                    className={`flex-1 flex items-center justify-between px-3 py-2 rounded-xl text-sm transition-colors ${selectedFolder === f.id ? 'bg-green-50 text-green-700 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}>
+                    <span className="truncate">{f.name}</span>
+                    <span className="text-xs text-gray-400 flex-shrink-0 ml-1">{folderCounts[f.id] ?? 0}</span>
+                  </button>
+                  <button
+                    onClick={() => handleDeleteFolder(f.id)}
+                    disabled={deletingFolderId === f.id}
+                    className="p-1.5 text-gray-300 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-50 flex-shrink-0"
+                    title="フォルダを削除"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+
+              {/* フォルダ作成 */}
+              {showNewFolder ? (
+                <div className="mt-2">
+                  <input
+                    value={newFolderName}
+                    onChange={e => setNewFolderName(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && handleCreateFolder()}
+                    placeholder="フォルダ名"
+                    className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 mb-1.5 focus:outline-none focus:ring-2 focus:ring-green-500"
+                    autoFocus
+                  />
+                  <div className="flex gap-1">
+                    <button onClick={handleCreateFolder} disabled={creatingFolder || !newFolderName.trim()}
+                      className="flex-1 bg-green-600 text-white text-xs py-1.5 rounded-lg disabled:opacity-60">
+                      作成
+                    </button>
+                    <button onClick={() => { setShowNewFolder(false); setNewFolderName(''); }}
+                      className="flex-1 border text-xs py-1.5 rounded-lg text-gray-500">
+                      ×
+                    </button>
                   </div>
-                  <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0 ml-2">
-                    <span className="text-xs text-gray-400">Q{i + 1}</span>
-                    {currentUserId === q.user_id && (
-                      <>
+                </div>
+              ) : (
+                <button onClick={() => setShowNewFolder(true)}
+                  className="w-full mt-2 text-xs text-green-600 border border-dashed border-green-200 rounded-xl py-2 hover:bg-green-50 transition-colors">
+                  + フォルダを作成
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* メインコンテンツ */}
+          <div className="flex-1 min-w-0">
+            {/* フォルダタイトル + PDF + 一括選択バー */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-4">
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <h2 className="text-base font-semibold text-gray-800 truncate">{currentFolderName}</h2>
+                <span className="text-sm text-gray-400 flex-shrink-0">{filteredQuestions.length}問</span>
+              </div>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                {/* 全選択チェックボックス */}
+                {filteredQuestions.length > 0 && (
+                  <button onClick={toggleSelectAll}
+                    className="text-xs border border-gray-200 rounded-lg px-3 py-2 text-gray-500 hover:bg-gray-50 transition-colors">
+                    {selectedIds.size === filteredQuestions.length && filteredQuestions.length > 0 ? '選択解除' : '全選択'}
+                  </button>
+                )}
+                {/* PDFボタン */}
+                <div className="flex flex-col items-end gap-1">
+                  <button onClick={handleExportPDF} disabled={exporting}
+                    className="flex items-center gap-1.5 text-xs bg-white border border-gray-200 text-gray-600 px-3 py-2 rounded-lg hover:bg-gray-50 disabled:opacity-60 transition-colors">
+                    {exporting ? (
+                      <><svg className="animate-spin w-3.5 h-3.5" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/></svg>生成中...</>
+                    ) : '📄 PDFで出力'}
+                  </button>
+                  {showPlanError && (
+                    <p className="text-xs text-orange-600">
+                      スタンダードプランの機能です。
+                      <Link href="/pricing" className="underline ml-1">アップグレード →</Link>
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* 一括操作バー */}
+            {selectedIds.size > 0 && (
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 mb-4 flex flex-col sm:flex-row sm:items-center gap-2">
+                <span className="text-sm text-blue-700 font-medium flex-shrink-0">{selectedIds.size}問を選択中</span>
+                <div className="flex items-center gap-2 flex-1">
+                  <select value={bulkTargetFolderId} onChange={e => setBulkTargetFolderId(e.target.value)}
+                    className="flex-1 text-sm border border-blue-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white">
+                    {folderMoveOptions.map(o => (
+                      <option key={o.value} value={o.value}>{o.label}</option>
+                    ))}
+                  </select>
+                  <button onClick={handleBulkMove} disabled={bulkMoving}
+                    className="flex-shrink-0 bg-blue-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-60 transition-colors">
+                    {bulkMoving ? '移動中...' : '移動'}
+                  </button>
+                  <button onClick={() => setSelectedIds(new Set<string>())}
+                    className="flex-shrink-0 text-sm text-gray-400 hover:text-gray-600 px-2 py-2">
+                    ×
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* 問題リスト */}
+            {filteredQuestions.length > 0 ? (
+              <div className="space-y-3">
+                {filteredQuestions.map((q, i) => (
+                  <div key={q.id} className={`bg-white rounded-2xl border p-4 sm:p-5 transition-colors ${selectedIds.has(q.id) ? 'border-blue-300 bg-blue-50/30' : ''}`}>
+                    {/* カードヘッダー */}
+                    <div className="flex items-start justify-between mb-3 gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {/* チェックボックス */}
+                        <input type="checkbox" checked={selectedIds.has(q.id)} onChange={() => toggleSelect(q.id)}
+                          className="w-4 h-4 rounded accent-blue-600 cursor-pointer flex-shrink-0" />
+                        <span className="text-xs text-gray-400">Q{i + 1}</span>
+                        {q.subject && <span className="bg-green-50 text-green-700 text-xs px-2.5 py-0.5 rounded-full font-medium">{q.subject}</span>}
+                        <span className="bg-gray-100 text-gray-500 text-xs px-2.5 py-0.5 rounded-full">
+                          {DIFF_LABEL[q.difficulty] ?? q.difficulty}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5 flex-shrink-0">
+                        {/* 移動ボタン */}
+                        {movingQuestionId === q.id ? (
+                          <div className="flex items-center gap-1">
+                            <select onChange={e => handleMoveQuestion(q.id, e.target.value)}
+                              defaultValue=""
+                              className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none bg-white">
+                              <option value="" disabled>移動先を選択</option>
+                              {folderMoveOptions.map(o => (
+                                <option key={o.value} value={o.value}>{o.label}</option>
+                              ))}
+                            </select>
+                            <button onClick={() => setMovingQuestionId(null)} className="text-gray-400 hover:text-gray-600 px-1">×</button>
+                          </div>
+                        ) : (
+                          <button onClick={() => setMovingQuestionId(q.id)}
+                            className="text-xs text-gray-400 hover:text-gray-600 border border-gray-200 hover:border-gray-300 px-2.5 py-1.5 rounded-lg transition-colors">
+                            移動
+                          </button>
+                        )}
                         <Link href={`/questions/${q.id}/edit`}
-                          className="text-xs text-blue-400 hover:text-blue-600 border border-blue-200 hover:border-blue-400 px-2.5 py-1.5 sm:px-3 sm:py-1 rounded-lg transition-colors">
+                          className="text-xs text-blue-400 hover:text-blue-600 border border-blue-200 hover:border-blue-400 px-2.5 py-1.5 rounded-lg transition-colors">
                           編集
                         </Link>
                         <button onClick={() => handleDelete(q.id)} disabled={deleting === q.id}
-                          className="text-xs text-red-400 hover:text-red-600 border border-red-200 hover:border-red-400 px-2.5 py-1.5 sm:px-3 sm:py-1 rounded-lg transition-colors disabled:opacity-60">
-                          {deleting === q.id ? '削除中...' : '削除'}
+                          className="text-xs text-red-400 hover:text-red-600 border border-red-200 hover:border-red-400 px-2.5 py-1.5 rounded-lg transition-colors disabled:opacity-60">
+                          {deleting === q.id ? '...' : '削除'}
                         </button>
-                      </>
-                    )}
-                    {currentUserId !== q.user_id && (
-                      <button onClick={() => reported.has(q.id) ? null : setReporting(q.id)}
-                        className={`text-xs px-2.5 py-1.5 sm:px-3 sm:py-1 rounded-lg border transition-colors ${reported.has(q.id) ? 'text-gray-300 border-gray-100 cursor-not-allowed' : 'text-orange-400 hover:text-orange-600 border-orange-200 hover:border-orange-400'}`}>
-                        {reported.has(q.id) ? '報告済み' : '報告'}
-                      </button>
-                    )}
-                  </div>
-                </div>
+                      </div>
+                    </div>
 
-                <p className="text-sm font-medium text-gray-900 mb-3">{q.question}</p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {[
-                    { label: 'A', text: q.option_a },
-                    { label: 'B', text: q.option_b },
-                    { label: 'C', text: q.option_c },
-                    { label: 'D', text: q.option_d },
-                  ].map(({ label, text }) => (
-                    <div key={label} className={`flex items-center gap-2 p-3 sm:p-2.5 rounded-lg text-xs ${q.answer === label ? 'bg-green-50 text-green-700 font-medium' : 'bg-gray-50 text-gray-600'}`}>
-                      <span className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-medium flex-shrink-0 ${q.answer === label ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-500'}`}>
-                        {label}
-                      </span>
-                      {text}
-                    </div>
-                  ))}
-                </div>
-                {q.explanation && (
-                  <div className="mt-3 p-3 bg-gray-50 rounded-xl">
-                    <p className="text-xs text-gray-500"><span className="font-medium text-green-600">💡 解説：</span>{q.explanation}</p>
-                  </div>
-                )}
+                    {/* 問題文 */}
+                    <p className="text-sm font-medium text-gray-900 mb-3 leading-relaxed">{q.question}</p>
 
-                {reporting === q.id && (
-                  <div className="mt-4 p-4 bg-orange-50 rounded-xl border border-orange-200">
-                    <p className="text-sm font-medium text-orange-700 mb-2">問題を報告する</p>
-                    <div className="space-y-2 mb-3">
-                      {['問題文・選択肢が不正確', '解説が間違っている', '不適切なコンテンツ', 'その他'].map(reason => (
-                        <button key={reason} onClick={() => setReportReason(reason)}
-                          className={`block w-full text-left px-3 py-2 rounded-lg text-sm border transition-colors ${reportReason === reason ? 'bg-orange-200 border-orange-400 text-orange-800' : 'bg-white border-orange-200 text-gray-600 hover:border-orange-300'}`}>
-                          {reason}
-                        </button>
-                      ))}
+                    {/* 選択肢 */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {(['A', 'B', 'C', 'D'] as const).map(lbl => {
+                        const key = `option_${lbl.toLowerCase()}` as keyof Question;
+                        return (
+                          <div key={lbl} className={`flex items-center gap-2 p-3 sm:p-2.5 rounded-lg text-xs ${q.answer === lbl ? 'bg-green-50 text-green-700 font-medium' : 'bg-gray-50 text-gray-600'}`}>
+                            <span className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-medium flex-shrink-0 ${q.answer === lbl ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-500'}`}>
+                              {lbl}
+                            </span>
+                            {q[key] as string}
+                          </div>
+                        );
+                      })}
                     </div>
-                    <div className="flex gap-2">
-                      <button onClick={() => { setReporting(null); setReportReason(''); }}
-                        className="flex-1 border border-gray-200 rounded-xl py-2 text-sm text-gray-500">
-                        キャンセル
-                      </button>
-                      <button onClick={() => handleReport(q.id)} disabled={!reportReason}
-                        className="flex-1 bg-orange-500 text-white rounded-xl py-2 text-sm font-medium disabled:opacity-60">
-                        報告する
-                      </button>
-                    </div>
+
+                    {/* 解説 */}
+                    {q.explanation && (
+                      <div className="mt-3 p-3 bg-gray-50 rounded-xl">
+                        <p className="text-xs text-gray-500">
+                          <span className="font-medium text-green-600">💡 解説：</span>{q.explanation}
+                        </p>
+                      </div>
+                    )}
                   </div>
+                ))}
+              </div>
+            ) : (
+              <div className="bg-white rounded-2xl border p-10 text-center">
+                <p className="text-gray-400 mb-4">
+                  {questions.length > 0 ? 'このフォルダに問題はありません' : 'まだ問題がありません'}
+                </p>
+                {questions.length === 0 && (
+                  <Link href="/questions/new" className="bg-green-600 text-white px-6 py-3 rounded-xl text-sm font-medium hover:bg-green-700">
+                    最初の問題を追加する
+                  </Link>
                 )}
               </div>
-            ))}
-          </div>
-        ) : (
-          <div className="bg-white rounded-2xl border p-8 sm:p-12 text-center">
-            <p className="text-gray-400 mb-4">
-              {questions.length > 0 ? 'この科目の問題はありません' : 'まだ問題がありません'}
-            </p>
-            {questions.length === 0 && (
-              <Link href="/questions/new" className="bg-green-600 text-white px-6 py-3 rounded-xl text-sm font-medium hover:bg-green-700">
-                最初の問題を追加する
-              </Link>
             )}
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
