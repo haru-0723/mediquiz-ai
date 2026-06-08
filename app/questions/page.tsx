@@ -238,38 +238,38 @@ export default function QuestionsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white border-b px-8 py-4 flex items-center justify-between">
+      <nav className="bg-white border-b px-4 sm:px-8 py-3 sm:py-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="w-7 h-7 bg-green-600 rounded-lg flex items-center justify-center">
             <span className="text-white text-xs font-bold">M</span>
           </div>
-          <span className="font-semibold">MediQuiz AI</span>
+          <span className="font-semibold text-sm sm:text-base">MediQuiz AI</span>
         </div>
         <Link href="/dashboard" className="text-sm text-gray-500">ダッシュボードへ戻る</Link>
       </nav>
 
-      <div className="max-w-3xl mx-auto p-8">
-        <div className="flex items-center justify-between mb-6">
+      <div className="max-w-3xl mx-auto p-4 sm:p-8">
+        <div className="flex items-center justify-between mb-5 sm:mb-6">
           <div>
-            <h1 className="text-2xl font-semibold text-gray-900">問題一覧</h1>
+            <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">問題一覧</h1>
             <p className="text-gray-500 text-sm mt-1">
               {filteredQuestions.length === questions.length
                 ? `全${questions.length}問`
                 : `${filteredQuestions.length}問（全${questions.length}問中）`}
             </p>
           </div>
-          <Link href="/questions/new" className="bg-green-600 text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-green-700">
+          <Link href="/questions/new" className="bg-green-600 text-white px-4 py-2.5 sm:px-5 rounded-xl text-sm font-medium hover:bg-green-700">
             + 問題を追加
           </Link>
         </div>
 
         {questions.length > 0 && (
-          <div className="flex items-center gap-3 mb-6 flex-wrap">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-5 sm:mb-6">
             {uniqueSubjects.length > 0 && (
               <select
                 value={subjectFilter}
                 onChange={e => { setSubjectFilter(e.target.value); setShowPlanError(false); }}
-                className="text-sm border border-gray-200 rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 bg-white"
+                className="w-full sm:w-auto text-sm border border-gray-200 rounded-xl px-4 py-3 sm:py-2 focus:outline-none focus:ring-2 focus:ring-green-500 bg-white"
               >
                 <option value="all">すべての科目</option>
                 {uniqueSubjects.map(s => (
@@ -281,7 +281,7 @@ export default function QuestionsPage() {
               <button
                 onClick={handleExportPDF}
                 disabled={exporting}
-                className="flex items-center gap-2 bg-white border border-gray-200 text-gray-700 px-4 py-2 rounded-xl text-sm font-medium hover:border-gray-300 hover:bg-gray-50 disabled:opacity-60 transition-colors"
+                className="flex items-center gap-2 bg-white border border-gray-200 text-gray-700 w-full sm:w-auto justify-center sm:justify-start px-4 py-3 sm:py-2 rounded-xl text-sm font-medium hover:border-gray-300 hover:bg-gray-50 disabled:opacity-60 transition-colors"
               >
                 {exporting ? (
                   <>
@@ -304,33 +304,33 @@ export default function QuestionsPage() {
         )}
 
         {filteredQuestions.length > 0 ? (
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             {filteredQuestions.map((q, i) => (
-              <div key={q.id} className="bg-white rounded-2xl border p-6">
+              <div key={q.id} className="bg-white rounded-2xl border p-4 sm:p-6">
                 <div className="flex items-start justify-between mb-3">
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 flex-wrap">
                     {q.subject && <span className="bg-green-50 text-green-700 text-xs px-3 py-1 rounded-full font-medium">{q.subject}</span>}
                     <span className="bg-gray-100 text-gray-500 text-xs px-3 py-1 rounded-full">
                       {DIFF_LABEL[q.difficulty] ?? q.difficulty}
                     </span>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0 ml-2">
                     <span className="text-xs text-gray-400">Q{i + 1}</span>
                     {currentUserId === q.user_id && (
                       <>
                         <Link href={`/questions/${q.id}/edit`}
-                          className="text-xs text-blue-400 hover:text-blue-600 border border-blue-200 hover:border-blue-400 px-3 py-1 rounded-lg transition-colors">
+                          className="text-xs text-blue-400 hover:text-blue-600 border border-blue-200 hover:border-blue-400 px-2.5 py-1.5 sm:px-3 sm:py-1 rounded-lg transition-colors">
                           編集
                         </Link>
                         <button onClick={() => handleDelete(q.id)} disabled={deleting === q.id}
-                          className="text-xs text-red-400 hover:text-red-600 border border-red-200 hover:border-red-400 px-3 py-1 rounded-lg transition-colors disabled:opacity-60">
+                          className="text-xs text-red-400 hover:text-red-600 border border-red-200 hover:border-red-400 px-2.5 py-1.5 sm:px-3 sm:py-1 rounded-lg transition-colors disabled:opacity-60">
                           {deleting === q.id ? '削除中...' : '削除'}
                         </button>
                       </>
                     )}
                     {currentUserId !== q.user_id && (
                       <button onClick={() => reported.has(q.id) ? null : setReporting(q.id)}
-                        className={`text-xs px-3 py-1 rounded-lg border transition-colors ${reported.has(q.id) ? 'text-gray-300 border-gray-100 cursor-not-allowed' : 'text-orange-400 hover:text-orange-600 border-orange-200 hover:border-orange-400'}`}>
+                        className={`text-xs px-2.5 py-1.5 sm:px-3 sm:py-1 rounded-lg border transition-colors ${reported.has(q.id) ? 'text-gray-300 border-gray-100 cursor-not-allowed' : 'text-orange-400 hover:text-orange-600 border-orange-200 hover:border-orange-400'}`}>
                         {reported.has(q.id) ? '報告済み' : '報告'}
                       </button>
                     )}
@@ -338,14 +338,14 @@ export default function QuestionsPage() {
                 </div>
 
                 <p className="text-sm font-medium text-gray-900 mb-3">{q.question}</p>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {[
                     { label: 'A', text: q.option_a },
                     { label: 'B', text: q.option_b },
                     { label: 'C', text: q.option_c },
                     { label: 'D', text: q.option_d },
                   ].map(({ label, text }) => (
-                    <div key={label} className={`flex items-center gap-2 p-2.5 rounded-lg text-xs ${q.answer === label ? 'bg-green-50 text-green-700 font-medium' : 'bg-gray-50 text-gray-600'}`}>
+                    <div key={label} className={`flex items-center gap-2 p-3 sm:p-2.5 rounded-lg text-xs ${q.answer === label ? 'bg-green-50 text-green-700 font-medium' : 'bg-gray-50 text-gray-600'}`}>
                       <span className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-medium flex-shrink-0 ${q.answer === label ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-500'}`}>
                         {label}
                       </span>
@@ -386,7 +386,7 @@ export default function QuestionsPage() {
             ))}
           </div>
         ) : (
-          <div className="bg-white rounded-2xl border p-12 text-center">
+          <div className="bg-white rounded-2xl border p-8 sm:p-12 text-center">
             <p className="text-gray-400 mb-4">
               {questions.length > 0 ? 'この科目の問題はありません' : 'まだ問題がありません'}
             </p>

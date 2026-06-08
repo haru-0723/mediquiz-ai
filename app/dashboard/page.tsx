@@ -47,7 +47,7 @@ export default async function DashboardPage() {
           <Link href="/pricing" className={`text-xs px-2 py-1 rounded-full font-medium ${plan === 'standard' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-600'}`}>
             {plan === 'standard' ? '⭐ スタンダード' : '🔓 無料プラン'}
           </Link>
-          <Link href="/questions" className="text-xs text-green-600 hover:underline hidden sm:inline">問題一覧</Link>
+          <Link href="/questions" className="text-xs text-green-600 hover:underline">問題一覧</Link>
           <Link href="/review" className="text-xs bg-orange-500 text-white px-2 py-1 rounded-lg hover:bg-orange-600">復習</Link>
           <Link href="/cbt" className="text-xs bg-blue-600 text-white px-2 py-1 rounded-lg hover:bg-blue-700">CBT模試</Link>
           <Link href="/generate" className="text-xs bg-green-600 text-white px-2 py-1 rounded-lg hover:bg-green-700">AI生成</Link>
