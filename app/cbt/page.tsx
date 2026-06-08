@@ -139,7 +139,7 @@ async function handleStart() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ question_id: q.id, reason: reportReason }),
       });
-      setReportedSet(prev => new Set([...prev, current]));
+      setReportedSet(prev => { const next = new Set<number>(prev); next.add(current); return next; });
       setShowReportForm(false);
     } finally {
       setSubmittingReport(false);

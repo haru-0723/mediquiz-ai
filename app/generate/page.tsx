@@ -194,7 +194,7 @@ export default function GeneratePage() {
           reason: reportReason,
         }),
       });
-      setReportedSet(prev => new Set([...prev, current]));
+      setReportedSet(prev => { const next = new Set<number>(prev); next.add(current); return next; });
       setShowReportForm(false);
     } finally {
       setSubmittingReport(false);
