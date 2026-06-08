@@ -168,6 +168,16 @@ export default function GeneratePage() {
     }
   }
 
+  function handleReviewWrong() {
+    const wrong = questions.filter((_, i) => !results[i]?.correct);
+    setQuestions(wrong.sort(() => Math.random() - 0.5));
+    setCurrent(0);
+    setSelected(null);
+    setAnswered(false);
+    setResults([]);
+    setPhase('quiz');
+  }
+
   function handleAnswer(opt: string) {
     if (answered) return;
     setSelected(opt);
@@ -208,13 +218,21 @@ export default function GeneratePage() {
   if (phase === 'result') {
     const correct = results.filter(r => r.correct).length;
     const accuracy = Math.round((correct / results.length) * 100);
+    const wrongCount = results.length - correct;
+    const isPerfect = wrongCount === 0;
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-8">
         <div className="bg-white rounded-2xl border p-8 max-w-md w-full text-center">
-          <div className="text-5xl mb-4">🏆</div>
-          <h2 className="text-2xl font-semibold text-gray-900 mb-2">演習完了！</h2>
+          <div className="text-5xl mb-4">{isPerfect ? '🎉' : '🏆'}</div>
+          <h2 className="text-2xl font-semibold text-gray-900 mb-2">{isPerfect ? '全問正解！' : '演習完了！'}</h2>
           <p className="text-5xl font-bold text-green-600 mb-2">{accuracy}%</p>
           <p className="text-gray-500 mb-6">{results.length}問中 {correct}問正解</p>
+          {!isPerfect && (
+            <button onClick={handleReviewWrong}
+              className="w-full bg-orange-500 text-white rounded-xl py-3 text-sm font-medium hover:bg-orange-600 mb-4">
+              🔁 間違えた問題を復習する（{wrongCount}問）
+            </button>
+          )}
           <div className="bg-gray-50 rounded-xl p-4 mb-6">
             {saved ? (
               <p className="text-sm text-green-600 font-medium">✅ {questions.length}問を保存しました！</p>
