@@ -149,7 +149,7 @@ export default function AdminClient({ reports: initialReports }: { reports: Repo
                       <div key={key} className="flex items-center gap-2">
                         <span className="text-xs font-medium text-gray-500 w-4">{['A','B','C','D'][i]}</span>
                         <input type="text" value={editForm[key] ?? ''}
-                          onChange={e => setEditForm(f => ({ ...f, [key]: e.target.value }))}
+                          onChange={e => setEditForm(f => ({ ...f, [key]: e.target.value } as Partial<Question>))}
                           className="flex-1 px-3 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
                         />
                       </div>

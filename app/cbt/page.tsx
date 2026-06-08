@@ -41,7 +41,7 @@ export default function CBTPage() {
   const [error, setError] = useState('');
   const [showReportForm, setShowReportForm] = useState(false);
   const [reportReason, setReportReason] = useState('内容が間違っている');
-  const [reportedSet, setReportedSet] = useState<Set<number>>(new Set());
+  const [reportedSet, setReportedSet] = useState<Set<number>>(new Set<number>());
   const [submittingReport, setSubmittingReport] = useState(false);
 
   useEffect(() => {
