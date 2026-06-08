@@ -17,20 +17,32 @@ export async function POST(request: NextRequest) {
       .eq('id', user.id)
       .single();
 
-    // 無料プランの場合、今日の生成回数を確認
+    // 無料プランの場合、制限チェック
     if (!profile || profile.plan === 'free') {
       const startOfDay = new Date();
       startOfDay.setHours(0, 0, 0, 0);
 
-      const { count } = await supabase
+      const { count: generateCount } = await supabase
         .from('generate_logs')
         .select('*', { count: 'exact', head: true })
         .eq('user_id', user.id)
         .gte('created_at', startOfDay.toISOString());
 
-      if ((count ?? 0) >= 3) {
+      if ((generateCount ?? 0) >= 3) {
         return NextResponse.json({
           error: '無料プランのAI問題生成は1日3回までです。スタンダードプランにアップグレードしてください。',
+          upgrade: true
+        }, { status: 403 });
+      }
+
+      const { count: questionCount } = await supabase
+        .from('questions')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id);
+
+      if ((questionCount ?? 0) >= 30) {
+        return NextResponse.json({
+          error: '無料プランの保存上限（30問）に達しました。スタンダードプランにアップグレードしてください。',
           upgrade: true
         }, { status: 403 });
       }

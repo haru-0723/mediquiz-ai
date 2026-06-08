@@ -55,7 +55,7 @@ export default function PricingPage() {
             <ul className="space-y-3 mb-8">
               {[
                 'AI問題生成：1日3回まで',
-                '問題保存：50問まで',
+                '問題保存：30問まで',
                 '教材アップロード：3件まで',
                 '問題演習',
                 '試験日カウントダウン',

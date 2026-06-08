@@ -29,6 +29,19 @@ export default function NewQuestionPage() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('ログインが必要です');
+
+      // 無料プランの保存数チェック
+      const { data: profile } = await supabase.from('profiles').select('plan').eq('id', user.id).single();
+      if (!profile || profile.plan === 'free') {
+        const { count: questionCount } = await supabase
+          .from('questions')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id);
+        if ((questionCount ?? 0) >= 30) {
+          throw new Error('無料プランの保存上限（30問）に達しました。スタンダードプランにアップグレードしてください。');
+        }
+      }
+
       const { error: saveError } = await supabase.from('questions').insert({
         user_id: user.id,
         subject: subject || null,
@@ -151,7 +164,14 @@ export default function NewQuestionPage() {
               placeholder="解説を入力してください" />
           </div>
 
-          {error && <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-xl">{error}</div>}
+          {error && (
+            <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-xl">
+              <p>{error}</p>
+              {error.includes('アップグレード') && (
+                <a href="/pricing" className="underline font-medium mt-1 inline-block">プランをアップグレードする →</a>
+              )}
+            </div>
+          )}
 
           <button onClick={handleSave} disabled={saving}
             className="w-full bg-green-600 text-white py-3 rounded-xl text-sm font-medium hover:bg-green-700 disabled:opacity-60">
