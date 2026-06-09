@@ -66,30 +66,31 @@ export default async function DashboardPage() {
         <GuideBanner />
 
         {/* プロフィールカード */}
-        <Link href="/settings" className="group block mb-6 sm:mb-8 bg-white rounded-2xl border p-4 sm:p-6 hover:border-green-300 hover:shadow-sm transition-all">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
-            <div className="min-w-0">
-              <div className="flex items-center gap-2 flex-wrap mb-1">
+        <div className="mb-6 sm:mb-8">
+          <div className="flex items-center gap-2 mb-2">
+            <Link
+              href="/pricing"
+              className={`text-xs px-2.5 py-1 rounded-full font-medium ${plan === 'standard' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-600'}`}
+            >
+              {plan === 'standard' ? '⭐ スタンダード' : '🔓 無料プラン'}
+            </Link>
+          </div>
+          <Link href="/settings" className="group block bg-white rounded-2xl border p-4 sm:p-6 hover:border-green-300 hover:shadow-sm transition-all">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
+              <div className="min-w-0">
                 <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 group-hover:text-green-700 transition-colors leading-snug break-all">
                   こんにちは、{name.split(' ')[0]}さん 👋
                 </h1>
-                <Link
-                  href="/pricing"
-                  onClick={e => e.stopPropagation()}
-                  className={`text-xs px-2 py-0.5 rounded-full font-medium flex-shrink-0 ${plan === 'standard' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-600'}`}
-                >
-                  {plan === 'standard' ? '⭐ スタンダード' : '🔓 無料プラン'}
-                </Link>
+                <p className="text-gray-500 mt-1 text-sm leading-relaxed">
+                  {profileSummary || '今日も一緒に頑張りましょう。プロフィールを設定しましょう →'}
+                </p>
               </div>
-              <p className="text-gray-500 text-sm leading-relaxed">
-                {profileSummary || '今日も一緒に頑張りましょう。プロフィールを設定しましょう →'}
-              </p>
+              <span className="flex-shrink-0 text-xs text-gray-400 group-hover:text-green-600 flex items-center gap-1 transition-colors self-start sm:self-auto">
+                プロフィール編集 <span aria-hidden="true">→</span>
+              </span>
             </div>
-            <span className="flex-shrink-0 text-xs text-gray-400 group-hover:text-green-600 flex items-center gap-1 transition-colors self-start sm:self-auto">
-              プロフィール編集 <span aria-hidden="true">→</span>
-            </span>
-          </div>
-        </Link>
+          </Link>
+        </div>
 
         {/* 機能カード 6枚 */}
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
