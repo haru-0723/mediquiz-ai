@@ -175,7 +175,7 @@ export default async function DashboardPage() {
                     {material.file_type?.includes('pdf') ? '📄' : '🖼️'}
                   </div>
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">{material.title}</p>
+                    <p className="text-sm font-medium text-gray-900 break-words line-clamp-2">{material.title}</p>
                     {material.subject && <p className="text-xs text-gray-400">{material.subject}</p>}
                   </div>
                 </div>

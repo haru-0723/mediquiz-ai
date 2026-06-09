@@ -9,6 +9,7 @@ type Folder = { id: string; name: string; };
 export default function UploadPage() {
   const supabase = createClient();
   const [files, setFiles] = useState<File[]>([]);
+  const [titles, setTitles] = useState<string[]>([]);
   const [folders, setFolders] = useState<Folder[]>([]);
   const [selectedFolder, setSelectedFolder] = useState('');
   const [newFolderName, setNewFolderName] = useState('');
@@ -30,10 +31,16 @@ export default function UploadPage() {
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const newFiles = Array.from(e.target.files ?? []);
     setFiles(prev => [...prev, ...newFiles]);
+    setTitles(prev => [...prev, ...newFiles.map(f => f.name.replace(/\.[^/.]+$/, ''))]);
   }
 
   function removeFile(index: number) {
     setFiles(files.filter((_, i) => i !== index));
+    setTitles(titles.filter((_, i) => i !== index));
+  }
+
+  function updateTitle(index: number, value: string) {
+    setTitles(titles.map((t, i) => i === index ? value : t));
   }
 
   async function createFolder() {
@@ -60,14 +67,15 @@ export default function UploadPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('ログインが必要です');
 
-      for (const file of files) {
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
         const path = `${user.id}/${Date.now()}_${file.name}`;
         const { error: uploadError } = await supabase.storage.from('materials').upload(path, file);
         if (uploadError) throw uploadError;
         const { data: { publicUrl } } = supabase.storage.from('materials').getPublicUrl(path);
         await supabase.from('materials').insert({
           user_id: user.id,
-          title: file.name.replace(/\.[^/.]+$/, ''),
+          title: (titles[i] || '').trim() || file.name.replace(/\.[^/.]+$/, ''),
           file_url: publicUrl,
           file_type: file.type,
           subject: subject || null,
@@ -90,7 +98,7 @@ export default function UploadPage() {
           <h2 className="text-xl font-semibold text-gray-900 mb-2">アップロード完了！</h2>
           <p className="text-gray-500 text-sm mb-6">{files.length}件の教材が保存されました。</p>
           <div className="flex gap-3">
-            <button onClick={() => { setFiles([]); setDone(false); setSubject(''); }}
+            <button onClick={() => { setFiles([]); setTitles([]); setDone(false); setSubject(''); }}
               className="flex-1 border border-gray-200 rounded-xl py-3 text-sm text-gray-600">
               続けてアップロード
             </button>
@@ -129,11 +137,20 @@ export default function UploadPage() {
             {files.length > 0 && (
               <div className="mt-3 space-y-2">
                 {files.map((file, i) => (
-                  <div key={i} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
-                    <span className="text-lg">{file.type.includes('pdf') ? '📄' : '🖼️'}</span>
-                    <span className="text-sm text-gray-700 flex-1 truncate">{file.name}</span>
-                    <span className="text-xs text-gray-400">{(file.size / 1024 / 1024).toFixed(1)}MB</span>
-                    <button onClick={() => removeFile(i)} className="text-gray-300 hover:text-red-400 text-lg">×</button>
+                  <div key={i} className="flex flex-col gap-2 p-3 bg-gray-50 rounded-xl">
+                    <div className="flex items-center gap-3">
+                      <span className="text-lg flex-shrink-0">{file.type.includes('pdf') ? '📄' : '🖼️'}</span>
+                      <span className="text-xs text-gray-400 flex-1 truncate">{file.name}</span>
+                      <span className="text-xs text-gray-400 flex-shrink-0">{(file.size / 1024 / 1024).toFixed(1)}MB</span>
+                      <button onClick={() => removeFile(i)} className="text-gray-300 hover:text-red-400 text-lg flex-shrink-0">×</button>
+                    </div>
+                    <input
+                      type="text"
+                      value={titles[i] ?? ''}
+                      onChange={e => updateTitle(i, e.target.value)}
+                      placeholder="教材名"
+                      className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                    />
                   </div>
                 ))}
                 <p className="text-xs text-green-600 font-medium">合計 {files.length}件選択中</p>
