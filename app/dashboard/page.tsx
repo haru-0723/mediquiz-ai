@@ -7,6 +7,15 @@ import HelpModal from '@/components/HelpModal';
 import { dashboardHelp } from '@/lib/helpContent';
 import GuideBanner from './GuideBanner';
 
+const FEATURE_CARDS = [
+  { href: '/quiz',      icon: '⚡', title: '演習を始める',  desc: '科目・難易度を選んで演習' },
+  { href: '/review',   icon: '🔁', title: '復習モード',    desc: '間違えた問題を再チャレンジ' },
+  { href: '/cbt',      icon: '🎯', title: 'CBT模試',       desc: '本番形式で実力を測る' },
+  { href: '/generate', icon: '✨', title: 'AI問題生成',    desc: '教材からAIが問題を自動作成' },
+  { href: '/questions',icon: '📚', title: 'マイ問題集',    desc: '自分の問題をフォルダ管理' },
+  { href: '/materials',icon: '📤', title: '教材管理',      desc: 'PDFや画像をアップロード' },
+];
+
 export default async function DashboardPage() {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -43,17 +52,7 @@ export default async function DashboardPage() {
           </div>
           <span className="font-semibold text-sm sm:text-base">MediQuiz AI</span>
         </div>
-        <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap justify-end">
-          <Link href="/pricing" className={`text-xs px-2 py-1 rounded-full font-medium ${plan === 'standard' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-600'}`}>
-            {plan === 'standard' ? '⭐ スタンダード' : '🔓 無料プラン'}
-          </Link>
-          <Link href="/questions" className="text-xs text-green-600 hover:underline">問題一覧</Link>
-          <Link href="/review" className="text-xs bg-orange-500 text-white px-2 py-1 rounded-lg hover:bg-orange-600">復習</Link>
-          <Link href="/cbt" className="text-xs bg-blue-600 text-white px-2 py-1 rounded-lg hover:bg-blue-700">CBT模試</Link>
-          <Link href="/generate" className="text-xs bg-green-600 text-white px-2 py-1 rounded-lg hover:bg-green-700">AI生成</Link>
-          <Link href="/questions/new" className="text-xs bg-green-50 text-green-700 px-2 py-1 rounded-lg hover:bg-green-100">+ 問題</Link>
-          <Link href="/materials" className="text-xs text-green-600 hover:underline hidden sm:inline">教材一覧</Link>
-          <Link href="/upload" className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-lg hover:bg-gray-200">+ 教材</Link>
+        <div className="flex items-center gap-1.5 sm:gap-2">
           {isAdmin && (
             <Link href="/admin" className="text-xs bg-red-500 text-white px-2 py-1 rounded-lg hover:bg-red-600">管理者</Link>
           )}
@@ -62,15 +61,27 @@ export default async function DashboardPage() {
           <LogoutButton />
         </div>
       </nav>
+
       <div className="max-w-4xl mx-auto p-4 sm:p-8">
         <GuideBanner />
+
+        {/* プロフィールカード */}
         <Link href="/settings" className="group block mb-6 sm:mb-8 bg-white rounded-2xl border p-4 sm:p-6 hover:border-green-300 hover:shadow-sm transition-all">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
             <div className="min-w-0">
-              <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 group-hover:text-green-700 transition-colors leading-snug break-all">
-                こんにちは、{name.split(' ')[0]}さん 👋
-              </h1>
-              <p className="text-gray-500 mt-1 text-sm leading-relaxed">
+              <div className="flex items-center gap-2 flex-wrap mb-1">
+                <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 group-hover:text-green-700 transition-colors leading-snug break-all">
+                  こんにちは、{name.split(' ')[0]}さん 👋
+                </h1>
+                <Link
+                  href="/pricing"
+                  onClick={e => e.stopPropagation()}
+                  className={`text-xs px-2 py-0.5 rounded-full font-medium flex-shrink-0 ${plan === 'standard' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-600'}`}
+                >
+                  {plan === 'standard' ? '⭐ スタンダード' : '🔓 無料プラン'}
+                </Link>
+              </div>
+              <p className="text-gray-500 text-sm leading-relaxed">
                 {profileSummary || '今日も一緒に頑張りましょう。プロフィールを設定しましょう →'}
               </p>
             </div>
@@ -79,6 +90,23 @@ export default async function DashboardPage() {
             </span>
           </div>
         </Link>
+
+        {/* 機能カード 6枚 */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
+          {FEATURE_CARDS.map(card => (
+            <Link
+              key={card.href}
+              href={card.href}
+              className="bg-white rounded-2xl border p-4 sm:p-5 hover:border-green-300 hover:shadow-sm transition-all flex flex-col gap-2"
+            >
+              <span className="text-2xl">{card.icon}</span>
+              <p className="font-semibold text-sm sm:text-base text-gray-900 leading-snug">{card.title}</p>
+              <p className="text-xs text-gray-400 leading-relaxed">{card.desc}</p>
+            </Link>
+          ))}
+        </div>
+
+        {/* 統計カード */}
         <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-6 sm:mb-8">
           <div className="bg-white rounded-2xl border p-4 sm:p-6">
             <p className="text-xs sm:text-sm text-gray-400 mb-1">総学習問題数</p>
@@ -101,6 +129,8 @@ export default async function DashboardPage() {
             <p className="text-xs text-gray-400 mt-1">自己ベストを更新しよう🏆</p>
           </div>
         </div>
+
+        {/* 試験予定 / 最近の演習 */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 sm:mb-8">
           <ExamSection userId={user.id} initialExams={exams ?? []} />
           <div className="bg-white rounded-2xl border p-4 sm:p-6">
@@ -108,7 +138,6 @@ export default async function DashboardPage() {
             {sessions && sessions.length > 0 ? (
               <div className="space-y-3">
                 {sessions.map(session => {
-                  const acc = Math.round((session.correct_count / session.total_questions) * 100);
                   return (
                     <div key={session.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
                       <div>
@@ -127,6 +156,8 @@ export default async function DashboardPage() {
             )}
           </div>
         </div>
+
+        {/* 教材一覧 */}
         <div className="bg-white rounded-2xl border p-4 sm:p-6 mb-6 sm:mb-8">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-semibold text-gray-900">教材一覧</h2>
@@ -156,11 +187,7 @@ export default async function DashboardPage() {
             </div>
           )}
         </div>
-        <div className="text-center">
-          <Link href="/quiz" className="inline-flex items-center gap-2 bg-green-600 text-white px-8 py-3 rounded-xl font-medium hover:bg-green-700 transition-colors">
-            ⚡ 演習を始める
-          </Link>
-        </div>
+
         <p className="text-center text-xs text-gray-400 mt-8">
           お問い合わせはこちらまでSMSをお送りください：
           <a href="sms:090-5889-8610" className="underline hover:text-gray-600">090-5889-8610</a>
