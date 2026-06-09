@@ -3,8 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
-import HelpModal from '@/components/HelpModal';
-import { generateHelp } from '@/lib/helpContent';
+import Navbar from '@/components/Navbar';
 
 type Folder = { id: string; name: string; };
 type Material = { id: string; title: string; subject: string | null; folder_id: string | null; };
@@ -319,15 +318,7 @@ export default function GeneratePage() {
     const accuracy = results.length > 0 ? Math.round((results.filter(r => r.correct).length / results.length) * 100) : 0;
     return (
       <div className="min-h-screen bg-gray-50">
-        <nav className="bg-white border-b px-8 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 bg-green-600 rounded-lg flex items-center justify-center">
-              <span className="text-white text-xs font-bold">M</span>
-            </div>
-            <span className="font-semibold">MediQuiz AI</span>
-          </div>
-          <Link href="/dashboard" className="text-sm text-gray-500">ダッシュボードへ戻る</Link>
-        </nav>
+        <Navbar />
         <div className="max-w-2xl mx-auto p-8">
           <div className="flex justify-between items-center mb-2 text-sm text-gray-500">
             <span>{current + 1} / {questions.length}問</span>
@@ -410,18 +401,7 @@ export default function GeneratePage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white border-b px-8 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 bg-green-600 rounded-lg flex items-center justify-center">
-            <span className="text-white text-xs font-bold">M</span>
-          </div>
-          <span className="font-semibold">MediQuiz AI</span>
-        </div>
-        <div className="flex items-center gap-3">
-          <HelpModal steps={generateHelp.steps} pageTitle={generateHelp.pageTitle} />
-          <Link href="/dashboard" className="text-sm text-gray-500">ダッシュボードへ戻る</Link>
-        </div>
-      </nav>
+      <Navbar />
       <div className="max-w-xl mx-auto p-8">
         <h1 className="text-2xl font-semibold text-gray-900 mb-2">AI問題生成</h1>
         <p className="text-gray-500 text-sm mb-8">複数の教材を選んで一気に問題を生成できます。</p>

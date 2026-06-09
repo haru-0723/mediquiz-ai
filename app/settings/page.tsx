@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
+import Navbar from '@/components/Navbar';
 
 export default function SettingsPage() {
   const supabase = createClient();
@@ -107,15 +108,7 @@ export default function SettingsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white border-b px-8 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 bg-green-600 rounded-lg flex items-center justify-center">
-            <span className="text-white text-xs font-bold">M</span>
-          </div>
-          <span className="font-semibold">MediQuiz AI</span>
-        </div>
-        <Link href="/dashboard" className="text-sm text-gray-500">ダッシュボードへ戻る</Link>
-      </nav>
+      <Navbar />
 
       <div className="max-w-xl mx-auto p-8 space-y-6">
         <h1 className="text-2xl font-semibold text-gray-900">設定</h1>

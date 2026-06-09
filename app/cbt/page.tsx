@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
+import Navbar from '@/components/Navbar';
 
 type Question = {
   id: string;
@@ -212,15 +213,7 @@ async function handleStart() {
 
     return (
       <div className="min-h-screen bg-gray-50">
-        <nav className="bg-white border-b px-8 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center">
-              <span className="text-white text-xs font-bold">CBT</span>
-            </div>
-            <span className="font-semibold">CBT模試モード</span>
-          </div>
-          <Link href="/dashboard" className="text-sm text-gray-500">ダッシュボードへ</Link>
-        </nav>
+        <Navbar />
         <div className="max-w-2xl mx-auto p-8">
           <div className="bg-white rounded-2xl border p-8 text-center mb-6">
             <div className="text-5xl mb-4">📊</div>
@@ -306,23 +299,16 @@ async function handleStart() {
 
     return (
       <div className="min-h-screen bg-gray-50">
-        <nav className="bg-white border-b px-8 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center">
-              <span className="text-white text-xs font-bold">CBT</span>
-            </div>
-            <span className="font-semibold">CBT模試モード</span>
-          </div>
-          <div className="flex items-center gap-4">
-            <span className={`text-sm font-semibold px-3 py-1 rounded-full ${isUrgent ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'}`}>
-              ⏱ {formatTime(timeLeft)}
-            </span>
-            <button onClick={() => handleFinish(answers, questions)}
-              className="text-xs text-gray-400 hover:text-gray-600 border border-gray-200 px-3 py-1 rounded-lg">
-              終了
-            </button>
-          </div>
-        </nav>
+        <Navbar />
+        <div className="bg-white border-b px-4 sm:px-8 py-2 flex items-center justify-end gap-3">
+          <span className={`text-sm font-semibold px-3 py-1 rounded-full ${isUrgent ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'}`}>
+            ⏱ {formatTime(timeLeft)}
+          </span>
+          <button onClick={() => handleFinish(answers, questions)}
+            className="text-xs text-gray-400 hover:text-gray-600 border border-gray-200 px-3 py-1 rounded-lg">
+            終了
+          </button>
+        </div>
 
         <div className="max-w-2xl mx-auto p-8">
           <div className="flex justify-between items-center mb-2 text-sm text-gray-500">
@@ -431,15 +417,7 @@ async function handleStart() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white border-b px-8 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center">
-            <span className="text-white text-xs font-bold">CBT</span>
-          </div>
-          <span className="font-semibold">CBT模試モード</span>
-        </div>
-        <Link href="/dashboard" className="text-sm text-gray-500">ダッシュボードへ戻る</Link>
-      </nav>
+      <Navbar />
 
       <div className="max-w-xl mx-auto p-8">
         <h1 className="text-2xl font-semibold text-gray-900 mb-2">CBT模試モード</h1>
