@@ -298,7 +298,6 @@ export default function QuestionsPage() {
       }
 
       pdf.save(`MediQuiz_${currentFolderName}.pdf`);
-      setPdfMode(false);
       setPdfSelectedIds(new Set<string>());
     } catch (e) {
       console.error(e);
