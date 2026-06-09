@@ -57,11 +57,15 @@ export default function QuestionsPage() {
   // PDF
   const [exporting, setExporting] = useState(false);
   const [showPlanError, setShowPlanError] = useState(false);
+  const [pdfMode, setPdfMode] = useState(false);
+  const [pdfSelectedIds, setPdfSelectedIds] = useState<Set<string>>(new Set<string>());
 
   useEffect(() => { loadData(); }, []);
 
   useEffect(() => {
     setSelectedIds(new Set<string>());
+    setPdfMode(false);
+    setPdfSelectedIds(new Set<string>());
   }, [selectedFolder]);
 
   async function loadData() {
@@ -160,104 +164,142 @@ export default function QuestionsPage() {
     }
   }
 
-  async function handleExportPDF() {
+  function handleExportPDF() {
     if (plan === 'free') { setShowPlanError(true); return; }
     if (filteredQuestions.length === 0) { alert('エクスポートする問題がありません'); return; }
+    setShowPlanError(false);
+    // すべて選択した状態でPDF選択モードに入る
+    const all = new Set<string>();
+    filteredQuestions.forEach(q => all.add(q.id));
+    setPdfSelectedIds(all);
+    setPdfMode(true);
+  }
+
+  function togglePdfSelect(id: string) {
+    const next = new Set<string>(pdfSelectedIds);
+    if (next.has(id)) { next.delete(id); } else { next.add(id); }
+    setPdfSelectedIds(next);
+  }
+
+  async function generateSelectedPDF() {
+    const toExport = filteredQuestions.filter(q => pdfSelectedIds.has(q.id));
+    if (toExport.length === 0) { alert('PDF化する問題を選択してください'); return; }
 
     setExporting(true);
-    setShowPlanError(false);
     try {
-      const container = document.createElement('div');
-      container.style.cssText = 'position:absolute;left:-9999px;top:0;width:794px;background:white;padding:56px 56px 40px;font-family:sans-serif;color:#111;font-size:14px;line-height:1.6;';
+      const h2c = await import('html2canvas');
+      const { jsPDF } = await import('jspdf');
 
-      const titleEl = document.createElement('h1');
-      titleEl.textContent = `MediQuiz AI — ${currentFolderName}`;
-      titleEl.style.cssText = 'font-size:22px;font-weight:700;margin:0 0 6px;color:#111;';
-      container.appendChild(titleEl);
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const PAGE_W = 210;
+      const PAGE_H = 297;
+      const MARGIN = 15;
+      const CONTENT_W_MM = PAGE_W - MARGIN * 2; // 180mm
+      const CONTENT_W_PX = 680; // ≈180mm at 96dpi
+      const GAP_MM = 5;
+      const optKeys: Array<keyof Question> = ['option_a', 'option_b', 'option_c', 'option_d'];
 
-      const metaEl = document.createElement('p');
-      metaEl.textContent = `全${filteredQuestions.length}問`;
-      metaEl.style.cssText = 'font-size:13px;color:#888;margin:0 0 36px;';
-      container.appendChild(metaEl);
+      let curY = MARGIN;
 
-      filteredQuestions.forEach((q, i) => {
-        const card = document.createElement('div');
-        card.style.cssText = 'margin-bottom:28px;padding-bottom:28px;border-bottom:1px solid #e5e7eb;';
+      // タイトルブロックを描画
+      const titleDiv = document.createElement('div');
+      titleDiv.style.cssText = `position:absolute;left:-9999px;top:0;width:${CONTENT_W_PX}px;background:white;font-family:sans-serif;padding:0;`;
+      const h1 = document.createElement('h1');
+      h1.style.cssText = 'font-size:19px;font-weight:700;margin:0 0 3px;color:#111;';
+      h1.textContent = `MediQuiz AI — ${currentFolderName}`;
+      const meta = document.createElement('p');
+      meta.style.cssText = 'font-size:12px;color:#999;margin:0 0 14px;';
+      meta.textContent = `${toExport.length}問`;
+      const divider = document.createElement('hr');
+      divider.style.cssText = 'border:none;border-top:2px solid #e5e7eb;margin:0;';
+      titleDiv.appendChild(h1); titleDiv.appendChild(meta); titleDiv.appendChild(divider);
+      document.body.appendChild(titleDiv);
+      const titleCanvas = await h2c.default(titleDiv, { scale: 2, backgroundColor: '#ffffff', logging: false });
+      document.body.removeChild(titleDiv);
+      const titleHmm = CONTENT_W_MM * (titleCanvas.height / titleCanvas.width);
+      pdf.addImage(titleCanvas.toDataURL('image/jpeg', 0.95), 'JPEG', MARGIN, curY, CONTENT_W_MM, titleHmm);
+      curY += titleHmm + 6;
 
+      // 1問ずつ描画（ページ区切り制御）
+      for (let idx = 0; idx < toExport.length; idx++) {
+        const q = toExport[idx];
+
+        const qDiv = document.createElement('div');
+        qDiv.style.cssText = `position:absolute;left:-9999px;top:0;width:${CONTENT_W_PX}px;background:white;padding:12px 14px;border:1px solid #d1d5db;border-radius:8px;font-family:sans-serif;`;
+
+        // バッジ行
         const badges = document.createElement('div');
-        badges.style.cssText = 'display:flex;gap:6px;align-items:center;margin-bottom:10px;flex-wrap:wrap;';
-        const qNum = document.createElement('span');
-        qNum.textContent = `Q${i + 1}`;
-        qNum.style.cssText = 'font-size:11px;color:#aaa;font-weight:600;';
-        badges.appendChild(qNum);
+        badges.style.cssText = 'display:flex;gap:5px;align-items:center;margin-bottom:8px;flex-wrap:wrap;';
+        const qNumSpan = document.createElement('span');
+        qNumSpan.textContent = `Q${idx + 1}`;
+        qNumSpan.style.cssText = 'font-size:11px;color:#bbb;font-weight:600;';
+        badges.appendChild(qNumSpan);
         if (q.subject) {
           const sb = document.createElement('span');
           sb.textContent = q.subject;
-          sb.style.cssText = 'font-size:11px;background:#f0fdf4;color:#16a34a;padding:2px 8px;border-radius:999px;';
+          sb.style.cssText = 'font-size:11px;background:#f0fdf4;color:#16a34a;padding:1px 7px;border-radius:999px;';
           badges.appendChild(sb);
         }
         const db = document.createElement('span');
         db.textContent = DIFF_LABEL[q.difficulty] ?? q.difficulty;
-        db.style.cssText = 'font-size:11px;background:#f3f4f6;color:#6b7280;padding:2px 8px;border-radius:999px;';
+        db.style.cssText = 'font-size:11px;background:#f3f4f6;color:#6b7280;padding:1px 7px;border-radius:999px;';
         badges.appendChild(db);
-        card.appendChild(badges);
+        qDiv.appendChild(badges);
 
+        // 問題文
         const qText = document.createElement('p');
         qText.textContent = q.question;
-        qText.style.cssText = 'font-size:14px;font-weight:600;color:#111;margin:0 0 12px;line-height:1.7;';
-        card.appendChild(qText);
+        qText.style.cssText = 'font-size:13px;font-weight:600;color:#111;margin:0 0 9px;line-height:1.65;';
+        qDiv.appendChild(qText);
 
-        const optKeys: Array<keyof Question> = ['option_a', 'option_b', 'option_c', 'option_d'];
-        ['A', 'B', 'C', 'D'].forEach((lbl, idx) => {
+        // 選択肢A〜D（正解マークなし）
+        ['A', 'B', 'C', 'D'].forEach((lbl, i) => {
           const row = document.createElement('div');
-          row.style.cssText = 'display:flex;gap:8px;margin-bottom:5px;align-items:flex-start;';
+          row.style.cssText = 'display:flex;gap:7px;margin-bottom:4px;align-items:flex-start;';
           const l = document.createElement('span');
           l.textContent = lbl + '.';
-          l.style.cssText = 'font-size:13px;color:#666;min-width:22px;flex-shrink:0;';
+          l.style.cssText = 'font-size:12px;color:#666;min-width:18px;flex-shrink:0;padding-top:1px;';
           const t = document.createElement('span');
-          t.textContent = q[optKeys[idx]] as string;
-          t.style.cssText = 'font-size:13px;color:#333;line-height:1.6;';
+          t.textContent = q[optKeys[i]] as string;
+          t.style.cssText = 'font-size:12px;color:#333;line-height:1.55;';
           row.appendChild(l); row.appendChild(t);
-          card.appendChild(row);
+          qDiv.appendChild(row);
         });
 
+        // 正解 + 解説
         const ansBox = document.createElement('div');
-        ansBox.style.cssText = 'margin-top:14px;padding:10px 14px;background:#f9fafb;border-radius:8px;border-left:3px solid #16a34a;';
+        ansBox.style.cssText = 'margin-top:9px;padding:7px 11px;background:#f9fafb;border-radius:6px;border-left:3px solid #16a34a;';
         const ansLine = document.createElement('p');
         ansLine.textContent = `正解：${q.answer}`;
-        ansLine.style.cssText = 'font-size:12px;font-weight:700;color:#16a34a;margin:0 0 4px;';
+        ansLine.style.cssText = 'font-size:11px;font-weight:700;color:#16a34a;margin:0 0 2px;';
         ansBox.appendChild(ansLine);
         if (q.explanation) {
           const expLine = document.createElement('p');
           expLine.textContent = q.explanation;
-          expLine.style.cssText = 'font-size:12px;color:#555;margin:0;line-height:1.6;';
+          expLine.style.cssText = 'font-size:11px;color:#555;margin:0;line-height:1.55;';
           ansBox.appendChild(expLine);
         }
-        card.appendChild(ansBox);
-        container.appendChild(card);
-      });
+        qDiv.appendChild(ansBox);
 
-      document.body.appendChild(container);
-      const h2c = await import('html2canvas');
-      const canvas = await h2c.default(container, { scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false });
-      document.body.removeChild(container);
+        document.body.appendChild(qDiv);
+        const qCanvas = await h2c.default(qDiv, { scale: 2, backgroundColor: '#ffffff', logging: false });
+        document.body.removeChild(qDiv);
 
-      const { jsPDF } = await import('jspdf');
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      const pageW = 210; const pageH = 297;
-      const cw = canvas.width;
-      const pageHpx = Math.round((pageH / pageW) * cw);
-      let offsetY = 0; let pageIdx = 0;
-      while (offsetY < canvas.height) {
-        if (pageIdx > 0) pdf.addPage();
-        const chunk = document.createElement('canvas');
-        chunk.width = cw; chunk.height = pageHpx;
-        const ctx = chunk.getContext('2d');
-        if (ctx) { ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, cw, pageHpx); ctx.drawImage(canvas, 0, -offsetY); }
-        pdf.addImage(chunk.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, pageW, pageH);
-        offsetY += pageHpx; pageIdx++;
+        const qHmm = CONTENT_W_MM * (qCanvas.height / qCanvas.width);
+
+        // このページに収まらなければ改ページ
+        if (curY + qHmm > PAGE_H - MARGIN) {
+          pdf.addPage();
+          curY = MARGIN;
+        }
+
+        pdf.addImage(qCanvas.toDataURL('image/jpeg', 0.92), 'JPEG', MARGIN, curY, CONTENT_W_MM, qHmm);
+        curY += qHmm + GAP_MM;
       }
+
       pdf.save(`MediQuiz_${currentFolderName}.pdf`);
+      setPdfMode(false);
+      setPdfSelectedIds(new Set<string>());
     } catch (e) {
       console.error(e);
       alert('PDFの生成に失敗しました。もう一度お試しください。');
@@ -426,34 +468,62 @@ export default function QuestionsPage() {
                 <h2 className="text-base font-semibold text-gray-800 truncate">{currentFolderName}</h2>
                 <span className="text-sm text-gray-400 flex-shrink-0">{filteredQuestions.length}問</span>
               </div>
-              <div className="flex items-center gap-2 flex-shrink-0">
-                {/* 全選択チェックボックス */}
-                {filteredQuestions.length > 0 && (
-                  <button onClick={toggleSelectAll}
-                    className="text-xs border border-gray-200 rounded-lg px-3 py-2 text-gray-500 hover:bg-gray-50 transition-colors">
-                    {selectedIds.size === filteredQuestions.length && filteredQuestions.length > 0 ? '選択解除' : '全選択'}
-                  </button>
-                )}
-                {/* PDFボタン */}
-                <div className="flex flex-col items-end gap-1">
-                  <button onClick={handleExportPDF} disabled={exporting}
-                    className="flex items-center gap-1.5 text-xs bg-white border border-gray-200 text-gray-600 px-3 py-2 rounded-lg hover:bg-gray-50 disabled:opacity-60 transition-colors">
-                    {exporting ? (
-                      <><svg className="animate-spin w-3.5 h-3.5" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/></svg>生成中...</>
-                    ) : '📄 PDFで出力'}
-                  </button>
-                  {showPlanError && (
-                    <p className="text-xs text-orange-600">
-                      スタンダードプランの機能です。
-                      <Link href="/pricing" className="underline ml-1">アップグレード →</Link>
-                    </p>
+              {!pdfMode && (
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  {filteredQuestions.length > 0 && (
+                    <button onClick={toggleSelectAll}
+                      className="text-xs border border-gray-200 rounded-lg px-3 py-2 text-gray-500 hover:bg-gray-50 transition-colors">
+                      {selectedIds.size === filteredQuestions.length && filteredQuestions.length > 0 ? '選択解除' : '全選択'}
+                    </button>
                   )}
+                  <div className="flex flex-col items-end gap-1">
+                    <button onClick={handleExportPDF}
+                      className="flex items-center gap-1.5 text-xs bg-white border border-gray-200 text-gray-600 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors">
+                      📄 PDFで出力
+                    </button>
+                    {showPlanError && (
+                      <p className="text-xs text-orange-600">
+                        スタンダードプランの機能です。
+                        <Link href="/pricing" className="underline ml-1">アップグレード →</Link>
+                      </p>
+                    )}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
-            {/* 一括操作バー */}
-            {selectedIds.size > 0 && (
+            {/* PDF選択モードバナー */}
+            {pdfMode && (
+              <div className="bg-orange-50 border border-orange-200 rounded-xl p-3 mb-4">
+                <p className="text-sm font-medium text-orange-700 mb-2">📄 PDFに含める問題を選んでください（{pdfSelectedIds.size}問選択中）</p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <button onClick={() => {
+                    const all = new Set<string>();
+                    filteredQuestions.forEach(q => all.add(q.id));
+                    setPdfSelectedIds(all);
+                  }} className="text-xs border border-orange-300 rounded-lg px-3 py-1.5 text-orange-600 hover:bg-orange-100 transition-colors">
+                    全選択
+                  </button>
+                  <button onClick={() => setPdfSelectedIds(new Set<string>())}
+                    className="text-xs border border-orange-300 rounded-lg px-3 py-1.5 text-orange-600 hover:bg-orange-100 transition-colors">
+                    全解除
+                  </button>
+                  <button onClick={generateSelectedPDF} disabled={pdfSelectedIds.size === 0 || exporting}
+                    className="text-xs bg-orange-500 text-white rounded-lg px-4 py-1.5 hover:bg-orange-600 disabled:opacity-60 font-medium transition-colors flex items-center gap-1.5">
+                    {exporting ? (
+                      <><svg className="animate-spin w-3 h-3" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/></svg>生成中...</>
+                    ) : `選択した${pdfSelectedIds.size}問をPDF出力`}
+                  </button>
+                  <button onClick={() => { setPdfMode(false); setPdfSelectedIds(new Set<string>()); }}
+                    className="text-xs text-gray-400 hover:text-gray-600 px-2 py-1.5 transition-colors">
+                    キャンセル
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* 一括移動バー（PDF選択モード中は非表示） */}
+            {!pdfMode && selectedIds.size > 0 && (
               <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 mb-4 flex flex-col sm:flex-row sm:items-center gap-2">
                 <span className="text-sm text-blue-700 font-medium flex-shrink-0">{selectedIds.size}問を選択中</span>
                 <div className="flex items-center gap-2 flex-1">
@@ -479,13 +549,21 @@ export default function QuestionsPage() {
             {filteredQuestions.length > 0 ? (
               <div className="space-y-3">
                 {filteredQuestions.map((q, i) => (
-                  <div key={q.id} className={`bg-white rounded-2xl border p-4 sm:p-5 transition-colors ${selectedIds.has(q.id) ? 'border-blue-300 bg-blue-50/30' : ''}`}>
+                  <div key={q.id} className={`bg-white rounded-2xl border p-4 sm:p-5 transition-colors ${
+                    pdfMode
+                      ? (pdfSelectedIds.has(q.id) ? 'border-orange-300 bg-orange-50/20' : '')
+                      : (selectedIds.has(q.id) ? 'border-blue-300 bg-blue-50/30' : '')
+                  }`}>
                     {/* カードヘッダー */}
                     <div className="flex items-start justify-between mb-3 gap-2">
                       <div className="flex items-center gap-2 flex-wrap">
-                        {/* チェックボックス */}
-                        <input type="checkbox" checked={selectedIds.has(q.id)} onChange={() => toggleSelect(q.id)}
-                          className="w-4 h-4 rounded accent-blue-600 cursor-pointer flex-shrink-0" />
+                        {/* チェックボックス（pdfModeでPDF選択用に切り替え） */}
+                        <input
+                          type="checkbox"
+                          checked={pdfMode ? pdfSelectedIds.has(q.id) : selectedIds.has(q.id)}
+                          onChange={() => pdfMode ? togglePdfSelect(q.id) : toggleSelect(q.id)}
+                          className={`w-4 h-4 rounded cursor-pointer flex-shrink-0 ${pdfMode ? 'accent-orange-500' : 'accent-blue-600'}`}
+                        />
                         <span className="text-xs text-gray-400">Q{i + 1}</span>
                         {q.subject && <span className="bg-green-50 text-green-700 text-xs px-2.5 py-0.5 rounded-full font-medium">{q.subject}</span>}
                         <span className="bg-gray-100 text-gray-500 text-xs px-2.5 py-0.5 rounded-full">
