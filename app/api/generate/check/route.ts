@@ -30,6 +30,7 @@ export async function POST(request: NextRequest) {
       .download(filePath);
 
     if (downloadError || !fileData) {
+      console.error('[generate/check] file download failed:', downloadError?.message);
       return NextResponse.json({ hasIssues: false, issues: '' });
     }
 

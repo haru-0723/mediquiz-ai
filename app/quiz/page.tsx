@@ -30,7 +30,7 @@ export default function QuizPage() {
   const [selected, setSelected] = useState<string | null>(null);
   const [answered, setAnswered] = useState(false);
   const [results, setResults] = useState<{ correct: boolean }[]>([]);
-  const [phase, setPhase] = useState<'select' | 'quiz' | 'result'>('quiz');
+  const [phase, setPhase] = useState<'select' | 'quiz' | 'result'>('select');
   const [selectedSubject, setSelectedSubject] = useState('すべて');
   const [selectedFolder, setSelectedFolder] = useState('すべて');
   const [quizQuestions, setQuizQuestions] = useState<Question[]>([]);

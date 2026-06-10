@@ -3,8 +3,10 @@ import Anthropic from '@anthropic-ai/sdk';
 import { createClient } from '@/lib/supabase/server';
 import { getSubjectInstruction } from '@/lib/departmentUtils';
 
+if (!process.env.ANTHROPIC_API_KEY) {
+  throw new Error('ANTHROPIC_API_KEY is not set');
+}
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-
 
 
 export async function POST(request: NextRequest) {
@@ -123,7 +125,15 @@ ${getSubjectInstruction(profile?.department)}`
     const text = response.content[0].type === 'text' ? response.content[0].text.trim() : '';
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) throw new Error('JSONが見つかりません');
-    const parsed = JSON.parse(jsonMatch[0]);
+    let parsed: { questions?: unknown[] };
+    try {
+      parsed = JSON.parse(jsonMatch[0]);
+    } catch {
+      throw new Error('JSONのパースに失敗しました');
+    }
+    if (!Array.isArray(parsed.questions) || parsed.questions.length === 0) {
+      throw new Error('問題データが見つかりません');
+    }
 
     // 生成ログを記録
     await supabase.from('generate_logs').insert({ user_id: user.id });

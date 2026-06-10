@@ -3,10 +3,25 @@ import Anthropic from '@anthropic-ai/sdk';
 import { createClient } from '@/lib/supabase/server';
 import { getDepartmentType, getCBTSubjectInstruction } from '@/lib/departmentUtils';
 
+if (!process.env.ANTHROPIC_API_KEY) {
+  throw new Error('ANTHROPIC_API_KEY is not set');
+}
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
+type RawQuestion = {
+  question: string;
+  option_a: string;
+  option_b: string;
+  option_c: string;
+  option_d: string;
+  answer: string;
+  explanation: string;
+  subject: string;
+  difficulty: string;
+};
+
 // テキストから questions 配列を抽出。途中で切れた JSON にも対応
-function extractQuestions(text: string): Record<string, string>[] {
+function extractQuestions(text: string): RawQuestion[] {
   const jsonMatch = text.match(/\{[\s\S]*\}/);
   if (!jsonMatch) return [];
 
@@ -25,7 +40,7 @@ function extractQuestions(text: string): Record<string, string>[] {
   const content = jsonMatch[0].slice(bracketPos);
 
   // 深さ追跡で完全な {} ブロックを1つずつ切り出す
-  const questions: Record<string, string>[] = [];
+  const questions: RawQuestion[] = [];
   let depth = 0;
   let start = -1;
   let inString = false;
@@ -60,7 +75,7 @@ async function generateBatch(
   subject: string,
   batchCount: number,
   department: string | null | undefined,
-): Promise<Record<string, string>[]> {
+): Promise<RawQuestion[]> {
   const prompt = `あなたは医療系大学生の国家試験・定期試験対策を支援するAIです。
 ${subject !== 'すべて' ? `「${subject}」分野の` : '医療系（看護・医学・薬学・リハビリ）の'}CBT形式の4択問題を${batchCount}問作成してください。
 
@@ -108,7 +123,7 @@ export async function POST(request: NextRequest) {
 
     // 10問ずつバッチに分割して順番に生成
     const BATCH_SIZE = 10;
-    const allRawQuestions: Record<string, string>[] = [];
+    const allRawQuestions: RawQuestion[] = [];
     let remaining = count;
 
     while (remaining > 0) {
@@ -125,7 +140,7 @@ export async function POST(request: NextRequest) {
     const deptType = getDepartmentType(profile?.department);
     const isCbt = deptType !== 'other';
 
-    const questionsToSave = allRawQuestions.map((q: Record<string, string>) => ({
+    const questionsToSave = allRawQuestions.map((q: RawQuestion) => ({
       user_id: user.id,
       subject: q.subject,
       question: q.question,

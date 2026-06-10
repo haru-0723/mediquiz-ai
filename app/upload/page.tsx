@@ -21,12 +21,13 @@ export default function UploadPage() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    async function load() {
+      const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      supabase.from('folders').select('*').eq('user_id', user.id).order('created_at').then(({ data }) => {
-        if (data) setFolders(data);
-      });
-    });
+      const { data } = await supabase.from('folders').select('*').eq('user_id', user.id).order('created_at');
+      if (data) setFolders(data);
+    }
+    load();
   }, []);
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {

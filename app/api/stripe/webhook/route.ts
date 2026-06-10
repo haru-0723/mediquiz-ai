@@ -13,18 +13,24 @@ export async function POST(request: NextRequest) {
   } catch {
     return NextResponse.json({ error: 'Webhook error' }, { status: 400 });
   }
+
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
+
   if (event.type === 'checkout.session.completed') {
-   const session = event.data.object as unknown as Record<string, unknown>;
-    const email = session.customer_email as string;
+    const session = event.data.object as Stripe.Checkout.Session;
+    const email = session.customer_email;
     const customerId = session.customer as string;
     const subscriptionId = session.subscription as string;
+
     if (email) {
       const { data: users } = await supabase.auth.admin.listUsers();
-      const user = users?.users.find(u => u.email === email);
+      // メール確認済みユーザーのみ対象（未確認アカウントへのプラン付与を防ぐ）
+      const user = users?.users.find(
+        u => u.email === email && u.email_confirmed_at !== null
+      );
       if (user) {
         await supabase.from('profiles').upsert({
           id: user.id,
@@ -36,12 +42,14 @@ export async function POST(request: NextRequest) {
       }
     }
   }
+
   if (event.type === 'customer.subscription.deleted') {
-   const sub = event.data.object as unknown as Record<string, unknown>;
+    const sub = event.data.object as Stripe.Subscription;
     const customerId = sub.customer as string;
     await supabase.from('profiles')
       .update({ plan: 'free', stripe_subscription_id: null })
       .eq('stripe_customer_id', customerId);
   }
+
   return NextResponse.json({ received: true });
 }

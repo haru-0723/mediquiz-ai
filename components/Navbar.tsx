@@ -7,8 +7,7 @@ import { createClient } from '@/lib/supabase/client';
 import HelpModal from '@/components/HelpModal';
 import LogoutButton from '@/app/dashboard/LogoutButton';
 import { quizHelp, generateHelp } from '@/lib/helpContent';
-
-const ADMIN_EMAIL = 'harumaru0723@yahoo.co.jp';
+import { ADMIN_EMAIL } from '@/lib/constants';
 
 type HelpStep = { icon: string; title: string; description: string };
 

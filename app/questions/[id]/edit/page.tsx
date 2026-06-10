@@ -22,20 +22,27 @@ export default function EditQuestionPage({ params }: { params: { id: string } })
   const [error, setError] = useState('');
 
   useEffect(() => {
-    supabase.from('questions').select('*').eq('id', params.id).single().then(({ data }) => {
-      if (data) {
-        setSubject(data.subject ?? '');
-        setQuestion(data.question);
-        setOptionA(data.option_a);
-        setOptionB(data.option_b);
-        setOptionC(data.option_c);
-        setOptionD(data.option_d);
-        setAnswer(data.answer);
-        setExplanation(data.explanation ?? '');
-        setDifficulty(data.difficulty);
-      }
+    async function load() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { setError('ログインが必要です'); setLoading(false); return; }
+      const { data, error: fetchError } = await supabase
+        .from('questions').select('*')
+        .eq('id', params.id)
+        .eq('user_id', user.id)
+        .single();
+      if (fetchError || !data) { setError('問題が見つかりません'); setLoading(false); return; }
+      setSubject(data.subject ?? '');
+      setQuestion(data.question);
+      setOptionA(data.option_a);
+      setOptionB(data.option_b);
+      setOptionC(data.option_c);
+      setOptionD(data.option_d);
+      setAnswer(data.answer);
+      setExplanation(data.explanation ?? '');
+      setDifficulty(data.difficulty);
       setLoading(false);
-    });
+    }
+    load();
   }, [params.id]);
 
   async function handleSave() {
@@ -46,6 +53,8 @@ export default function EditQuestionPage({ params }: { params: { id: string } })
     setSaving(true);
     setError('');
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('ログインが必要です');
       const { error: saveError } = await supabase.from('questions').update({
         subject: subject || null,
         question,
@@ -56,7 +65,7 @@ export default function EditQuestionPage({ params }: { params: { id: string } })
         answer,
         explanation: explanation || null,
         difficulty,
-      }).eq('id', params.id);
+      }).eq('id', params.id).eq('user_id', user.id);
       if (saveError) throw saveError;
       router.push('/questions');
     } catch (e: unknown) {

@@ -1,13 +1,14 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import AdminClient from './AdminClient';
+import { ADMIN_EMAIL } from '@/lib/constants';
 
 export default async function AdminPage() {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
   // 管理者チェック
-  if (!user || user.email !== 'harumaru0723@yahoo.co.jp') {
+  if (!user || user.email !== ADMIN_EMAIL) {
     redirect('/dashboard');
   }
 

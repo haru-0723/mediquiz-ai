@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
+import { ADMIN_EMAIL } from '@/lib/constants';
 import Link from 'next/link';
 import ExamSection from './ExamSection';
 import LogoutButton from './LogoutButton';
@@ -29,7 +30,7 @@ export default async function DashboardPage() {
     .single();
 
   const plan = profile?.plan ?? 'free';
-  const isAdmin = user.email === 'harumaru0723@yahoo.co.jp';
+  const isAdmin = user.email === ADMIN_EMAIL;
   const [
     { data: exams },
     { data: sessions },
