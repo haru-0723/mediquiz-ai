@@ -30,13 +30,37 @@ export default async function DashboardPage() {
 
   const plan = profile?.plan ?? 'free';
   const isAdmin = user.email === 'harumaru0723@yahoo.co.jp';
-  const { data: exams } = await supabase.from('exams').select('*').eq('user_id', user.id).order('exam_date');
-  const { data: sessions } = await supabase.from('quiz_sessions').select('*').eq('user_id', user.id).order('completed_at', { ascending: false }).limit(5);
-  const { data: materials } = await supabase.from('materials').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
+  const [
+    { data: exams },
+    { data: sessions },
+    { data: allSessions },
+    { data: materials },
+  ] = await Promise.all([
+    supabase.from('exams').select('*').eq('user_id', user.id).order('exam_date'),
+    supabase.from('quiz_sessions').select('*').eq('user_id', user.id).order('completed_at', { ascending: false }).limit(5),
+    supabase.from('quiz_sessions').select('subject, correct_count, total_questions').eq('user_id', user.id),
+    supabase.from('materials').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
+  ]);
   const totalQuestions = sessions?.reduce((s, r) => s + r.total_questions, 0) ?? 0;
   const totalCorrect = sessions?.reduce((s, r) => s + r.correct_count, 0) ?? 0;
   const accuracy = totalQuestions > 0 ? Math.round((totalCorrect / totalQuestions) * 100) : 0;
   const bestAccuracy = sessions && sessions.length > 0 ? Math.max(...sessions.map(s => Math.round((s.correct_count / s.total_questions) * 100))) : null;
+
+  // 科目別正解率
+  const subjectMap: Record<string, { correct: number; total: number }> = {};
+  for (const s of allSessions ?? []) {
+    const subj = (s.subject as string | null) ?? 'その他';
+    if (!subjectMap[subj]) subjectMap[subj] = { correct: 0, total: 0 };
+    subjectMap[subj].correct += s.correct_count as number;
+    subjectMap[subj].total += s.total_questions as number;
+  }
+  const subjectStats = Object.entries(subjectMap)
+    .map(([subject, { correct, total }]) => ({
+      subject,
+      accuracy: Math.round((correct / total) * 100),
+      total,
+    }))
+    .sort((a, b) => a.accuracy - b.accuracy);
   const profileSummary = [
     profile?.university,
     profile?.department,
@@ -129,6 +153,69 @@ export default async function DashboardPage() {
             <p className="text-2xl sm:text-3xl font-semibold text-gray-900">{bestAccuracy !== null ? `${bestAccuracy}%` : '--%'}</p>
             <p className="text-xs text-gray-400 mt-1">自己ベストを更新しよう🏆</p>
           </div>
+        </div>
+
+        {/* 苦手分野分析 */}
+        <div className="bg-white rounded-2xl border p-4 sm:p-6 mb-6 sm:mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-semibold text-gray-900">📊 苦手分野分析</h2>
+            {plan === 'standard' && subjectStats.length > 0 && (
+              <span className="text-xs text-gray-400">{subjectStats.length}科目</span>
+            )}
+          </div>
+          {plan !== 'standard' ? (
+            <div className="text-center py-6">
+              <p className="text-sm text-gray-400 mb-3">スタンダードプランの機能です</p>
+              <Link href="/pricing"
+                className="inline-block text-xs bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors">
+                アップグレードする →
+              </Link>
+            </div>
+          ) : subjectStats.length === 0 ? (
+            <div className="text-center py-6 text-gray-400">
+              <p className="text-sm">演習を行うと分析が表示されます</p>
+              <Link href="/quiz" className="text-xs text-green-600 hover:underline mt-2 inline-block">演習を始める</Link>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {subjectStats.map(({ subject, accuracy: acc, total }) => {
+                const isWeak   = acc <= 60;
+                const isReview = acc > 60 && acc <= 80;
+                return (
+                  <div key={subject} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-sm font-medium text-gray-900 truncate mr-2">{subject}</span>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                            isWeak   ? 'bg-red-100 text-red-600' :
+                            isReview ? 'bg-yellow-100 text-yellow-600' :
+                                       'bg-green-100 text-green-600'
+                          }`}>
+                            {isWeak ? '苦手' : isReview ? '要復習' : '得意'}
+                          </span>
+                          <span className="text-sm font-semibold text-gray-700 w-10 text-right">{acc}%</span>
+                        </div>
+                      </div>
+                      <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                        <div className={`h-full rounded-full ${
+                          isWeak   ? 'bg-red-400' :
+                          isReview ? 'bg-yellow-400' :
+                                     'bg-green-500'
+                        }`} style={{ width: `${acc}%` }} />
+                      </div>
+                      <p className="text-xs text-gray-400 mt-1">{total}問回答済み</p>
+                    </div>
+                    <Link
+                      href={`/review?subject=${encodeURIComponent(subject)}`}
+                      className="flex-shrink-0 text-xs text-green-600 border border-green-200 px-2.5 py-2 rounded-lg hover:bg-green-50 transition-colors whitespace-nowrap">
+                      この科目を復習する
+                    </Link>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* 試験予定 / 最近の演習 */}

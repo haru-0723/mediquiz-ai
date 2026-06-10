@@ -44,6 +44,22 @@ export default function ReviewPage() {
       const { data: fData } = await supabase.from('folders').select('*').eq('user_id', user.id).order('created_at');
       if (fData) setFolders(fData);
       setLoading(false);
+
+      // URLパラメータで科目が指定されていれば即スタート
+      const subjectParam = new URLSearchParams(window.location.search).get('subject');
+      if (subjectParam && qData) {
+        const subjectQuestions = qData.filter(q => (q.subject ?? 'その他') === subjectParam);
+        if (subjectQuestions.length > 0) {
+          const shuffled = [...subjectQuestions].sort(() => Math.random() - 0.5);
+          setQuizQuestions(shuffled);
+          setCurrent(0);
+          setSelected(null);
+          setAnswered(false);
+          setResults([]);
+          setWrongIds([]);
+          setPhase('quiz');
+        }
+      }
     }
     load();
   }, []);
