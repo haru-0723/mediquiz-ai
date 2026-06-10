@@ -516,7 +516,7 @@ async function handleStart() {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-3">問題数</label>
             <div className="grid grid-cols-4 gap-2">
-              {[10, 20, 40, 100].map(n => (
+              {[10, 20, 30, 50].map(n => (
                 <button key={n} onClick={() => setQuestionCount(n)}
                   className={`py-2.5 rounded-xl text-sm border transition-colors ${questionCount === n ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}>
                   {n}問
