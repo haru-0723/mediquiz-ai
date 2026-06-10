@@ -515,15 +515,32 @@ export default function GeneratePage() {
           <div>
             <div className="flex items-center justify-between mb-2">
               <label className="block text-sm font-medium text-gray-700">教材を選択（複数可）</label>
-              <div className="flex gap-2">
+              <div className="flex items-center gap-3">
+                {materials.length > 0 && (
+                  <Link href="/upload" className="text-xs text-gray-400 hover:text-green-600 transition-colors">
+                    + 教材を追加
+                  </Link>
+                )}
                 <button onClick={selectAll} className="text-xs text-green-600 hover:underline">全選択</button>
                 <button onClick={clearAll} className="text-xs text-gray-400 hover:underline">解除</button>
               </div>
             </div>
             {filteredMaterials.length === 0 ? (
-              <div className="p-4 bg-gray-50 rounded-xl text-sm text-gray-500 text-center">
-                教材がありません。<Link href="/upload" className="text-green-600 hover:underline">アップロード</Link>してください。
-              </div>
+              materials.length === 0 ? (
+                <div className="p-6 bg-gray-50 rounded-xl text-center border-2 border-dashed border-gray-200">
+                  <div className="text-3xl mb-3">📤</div>
+                  <p className="text-sm font-medium text-gray-700 mb-1">教材がまだありません</p>
+                  <p className="text-xs text-gray-400 mb-4">PDFや画像をアップロードして問題を生成しましょう</p>
+                  <Link href="/upload"
+                    className="inline-flex items-center gap-1.5 bg-green-600 text-white text-sm font-medium px-4 py-2 rounded-xl hover:bg-green-700 transition-colors">
+                    + 教材をアップロードする
+                  </Link>
+                </div>
+              ) : (
+                <div className="p-4 bg-gray-50 rounded-xl text-sm text-gray-500 text-center">
+                  このフォルダに教材がありません。
+                </div>
+              )
             ) : (
               <div className="space-y-2 max-h-48 overflow-y-auto">
                 {filteredMaterials.map(m => (
