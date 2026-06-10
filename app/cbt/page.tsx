@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import Navbar from '@/components/Navbar';
 import { getDepartmentType } from '@/lib/departmentUtils';
+import ErrorBanner from '@/components/ErrorBanner';
 
 type Question = {
   id: string;
@@ -57,6 +58,8 @@ export default function CBTPage() {
   const [submittingReport, setSubmittingReport] = useState(false);
   const [department, setDepartment] = useState('');
   const [useManualSubjectList, setUseManualSubjectList] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [progressMessage, setProgressMessage] = useState('');
 
   useEffect(() => {
     async function load() {
@@ -93,6 +96,7 @@ export default function CBTPage() {
       ...remaining.map(q => ({ questionId: q.id, selected: null, isCorrect: false }))
     ];
     setAnswers(finalAnswers);
+    window.scrollTo(0, 0);
     setPhase('result');
   }, []);
 
@@ -118,6 +122,23 @@ async function handleStart() {
   }
 
   setGenerating(true);
+  setProgress(0);
+  setProgressMessage('問題を準備しています...');
+
+  const cbtMessages = [
+    '問題を準備しています...',
+    'AIが問題を生成しています...',
+    '科目別に問題を作成中...',
+    '選択肢を調整しています...',
+    'ストック問題と合わせています...',
+    'もうすぐ完成です...',
+  ];
+  let msgIndex = 0;
+  const msgInterval = setInterval(() => {
+    msgIndex = (msgIndex + 1) % cbtMessages.length;
+    setProgressMessage(cbtMessages[msgIndex]);
+    setProgress(prev => Math.min(prev + 15, 90));
+  }, 2000);
 
   try {
     // 60%は新しくAIで生成
@@ -155,6 +176,7 @@ async function handleStart() {
       return [...prev, ...fresh];
     });
 
+    setProgress(100);
     setQuestions(finalQuestions);
     setAnswers([]);
     setCurrent(0);
@@ -165,6 +187,7 @@ async function handleStart() {
   } catch (e: unknown) {
     setError(e instanceof Error ? e.message : '問題生成に失敗しました');
   } finally {
+    clearInterval(msgInterval);
     setGenerating(false);
   }
 }
@@ -251,10 +274,14 @@ async function handleStart() {
   if (generating) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div style={{ width: 40, height: 40, border: '3px solid #2563EB', borderTopColor: 'transparent', borderRadius: '50%', margin: '0 auto 20px', animation: 'spin 0.8s linear infinite' }} />
-          <p className="text-gray-600 font-medium">AIが問題を生成しています...</p>
-          <p className="text-sm text-gray-400 mt-2">少々お待ちください</p>
+        <div className="text-center max-w-sm w-full px-8">
+          <div style={{ width: 48, height: 48, border: '3px solid #2563EB', borderTopColor: 'transparent', borderRadius: '50%', margin: '0 auto 24px', animation: 'spin 0.8s linear infinite' }} />
+          <p className="text-gray-900 font-semibold text-lg mb-2">問題を生成中...</p>
+          <p className="text-blue-600 text-sm font-medium mb-6 min-h-[20px]">{progressMessage}</p>
+          <div className="h-2 bg-gray-200 rounded-full overflow-hidden mb-2">
+            <div className="h-full bg-blue-600 rounded-full transition-all duration-500" style={{ width: `${progress}%` }} />
+          </div>
+          <p className="text-xs text-gray-400">AIが{questionCount}問を準備しています</p>
         </div>
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
@@ -540,14 +567,7 @@ async function handleStart() {
             </div>
           </div>
 
-         {error && (
-  <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-xl">
-    <p>{error}</p>
-    <a href="/pricing" className="underline font-medium mt-1 inline-block">
-      プランをアップグレードする →
-    </a>
-  </div>
-)}
+          {error && <ErrorBanner message={error} />}
 
           <button onClick={handleStart}
             className="w-full bg-blue-600 text-white py-3 rounded-xl text-sm font-medium hover:bg-blue-700">

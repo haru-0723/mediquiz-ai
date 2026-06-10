@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import Navbar from '@/components/Navbar';
+import ErrorBanner from '@/components/ErrorBanner';
 
 type Folder = { id: string; name: string; };
 type Material = { id: string; title: string; subject: string | null; folder_id: string | null; };
@@ -79,15 +80,19 @@ export default function GeneratePage() {
     setSupplementText('');
     setChecking(true);
     try {
-      const checkRes = await fetch('/api/generate/check', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ materialId: selectedIds[0] }),
-      });
-      const checkData = await checkRes.json();
+      const checkResults = await Promise.all(
+        selectedIds.map(id =>
+          fetch('/api/generate/check', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ materialId: id }),
+          }).then(res => res.json())
+        )
+      );
       setChecking(false);
-      if (checkData.hasIssues) {
-        setCheckIssues(checkData.issues || '読み取りにくい部分があります');
+      const issuesList = checkResults.filter(r => r.hasIssues).map(r => r.issues).filter(Boolean);
+      if (issuesList.length > 0) {
+        setCheckIssues(issuesList.join('\n'));
         setShowCheckDialog(true);
       } else {
         await executeGenerate('');
@@ -256,6 +261,7 @@ export default function GeneratePage() {
       setSelected(null);
       setAnswered(false);
     } else {
+      window.scrollTo(0, 0);
       setPhase('result');
     }
   }
@@ -549,12 +555,7 @@ export default function GeneratePage() {
             </div>
           </div>
 
-          {error && (
-            <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-xl">
-              <p>{error}</p>
-              <a href="/pricing" className="underline font-medium mt-1 inline-block">プランをアップグレードする →</a>
-            </div>
-          )}
+          {error && <ErrorBanner message={error} />}
 
           <button onClick={handleGenerate} disabled={selectedIds.length === 0 || generating}
             className="w-full bg-green-600 text-white py-3 rounded-xl text-sm font-medium hover:bg-green-700 disabled:opacity-60">

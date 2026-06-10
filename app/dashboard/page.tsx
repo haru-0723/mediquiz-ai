@@ -38,7 +38,7 @@ export default async function DashboardPage() {
   ] = await Promise.all([
     supabase.from('exams').select('*').eq('user_id', user.id).order('exam_date'),
     supabase.from('quiz_sessions').select('*').eq('user_id', user.id).order('completed_at', { ascending: false }).limit(5),
-    supabase.from('quiz_sessions').select('subject, correct_count, total_questions').eq('user_id', user.id),
+    supabase.from('quiz_sessions').select('subject, correct_count, total_questions').eq('user_id', user.id).limit(500),
     supabase.from('materials').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
   ]);
   const totalQuestions = sessions?.reduce((s, r) => s + r.total_questions, 0) ?? 0;

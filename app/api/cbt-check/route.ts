@@ -13,8 +13,8 @@ export async function POST(request: NextRequest) {
       .eq('id', user.id)
       .single();
 
-    // スタンダードプランは無制限
-    if (profile?.plan === 'standard') {
+    // スタンダードプランは無制限（profile null は無料プラン扱い）
+    if (profile && profile.plan === 'standard') {
       return NextResponse.json({ allowed: true });
     }
 

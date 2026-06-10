@@ -98,6 +98,7 @@ export default function QuizPage() {
           correct_count: correct,
         });
       }
+      window.scrollTo(0, 0);
       setPhase('result');
     }
   }
