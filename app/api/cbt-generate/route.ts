@@ -4,6 +4,13 @@ import { createClient } from '@/lib/supabase/server';
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
+function getDepartmentType(department: string | null | undefined): 'medical' | 'pharmacy' | 'other' {
+  const d = department ?? '';
+  if (d.includes('医学') || d.includes('医師')) return 'medical';
+  if (d.includes('薬学')) return 'pharmacy';
+  return 'other';
+}
+
 function getSubjectInstruction(department: string | null | undefined): string {
   const d = department ?? '';
   if (d.includes('看護')) {
@@ -91,6 +98,10 @@ ${getSubjectInstruction(profile?.department)}
     if (!jsonMatch) throw new Error('JSONが見つかりません');
     const parsed = JSON.parse(jsonMatch[0]);
 
+    // department_type を判定
+    const deptType = getDepartmentType(profile?.department);
+    const isCbt = deptType !== 'other';
+
     // 生成した問題をDBに保存
     const questionsToSave = parsed.questions.map((q: Record<string, string>) => ({
       user_id: user.id,
@@ -103,6 +114,8 @@ ${getSubjectInstruction(profile?.department)}
       answer: q.answer,
       explanation: q.explanation,
       difficulty: q.difficulty,
+      is_cbt: isCbt,
+      department_type: deptType,
     }));
 
     const { data: saved, error: saveError } = await supabase

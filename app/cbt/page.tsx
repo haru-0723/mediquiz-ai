@@ -24,6 +24,12 @@ type Answer = {
   isCorrect: boolean;
 };
 
+function getDepartmentType(department: string): 'medical' | 'pharmacy' | 'other' {
+  if (department.includes('医学') || department.includes('医師')) return 'medical';
+  if (department.includes('薬学')) return 'pharmacy';
+  return 'other';
+}
+
 const PHARMACY_SUBJECTS = [
   'すべて', '物理系薬学', '化学系薬学', '生物系薬学', '薬理・薬物治療系',
   '薬剤系', '情報系', '衛生薬学', '薬学臨床', '薬学と社会', '基本事項',
@@ -66,10 +72,20 @@ export default function CBTPage() {
           .select('department')
           .eq('id', user.id)
           .single();
-        if (profileData?.department) setDepartment(profileData.department);
+        const dept = profileData?.department ?? '';
+        if (dept) setDepartment(dept);
+
+        const deptType = getDepartmentType(dept);
+        if (deptType !== 'other') {
+          const { data } = await supabase
+            .from('questions')
+            .select('*')
+            .eq('is_cbt', true)
+            .eq('department_type', deptType)
+            .order('created_at', { ascending: false });
+          if (data) setAllQuestions(data);
+        }
       }
-      const { data } = await supabase.from('questions').select('*').order('created_at', { ascending: false });
-      if (data) setAllQuestions(data);
       setLoading(false);
     }
     load();
@@ -211,6 +227,24 @@ async function handleStart() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <p className="text-gray-500">読み込み中...</p>
+      </div>
+    );
+  }
+
+  if (getDepartmentType(department) === 'other') {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Navbar />
+        <div className="max-w-xl mx-auto p-8">
+          <h1 className="text-2xl font-semibold text-gray-900 mb-2">CBTモード</h1>
+          <div className="bg-white rounded-2xl border p-8 text-center">
+            <div className="text-4xl mb-4">🎓</div>
+            <p className="text-gray-600 mb-4">現在、薬学部・医学部のみCBTモードに対応しています</p>
+            <Link href="/settings" className="text-sm text-green-600 hover:underline">
+              プロフィールで学部を設定する →
+            </Link>
+          </div>
+        </div>
       </div>
     );
   }
