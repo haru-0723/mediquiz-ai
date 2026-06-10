@@ -4,11 +4,43 @@ import { createClient } from '@/lib/supabase/server';
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
+function getSubjectInstruction(department: string | null | undefined): string {
+  const d = department ?? '';
+  if (d.includes('看護')) {
+    return `- subjectは必ず以下の看護系科目リストから最も適切なものを選んでください：
+  基礎看護学、成人看護学、老年看護学、小児看護学、母性看護学、精神看護学、在宅看護学、看護の統合と実践、解剖生理学、生化学、微生物学、免疫学、栄養学`;
+  }
+  if (d.includes('医学') || d.includes('医師')) {
+    return `- subjectは必ず以下の医学系科目リストから最も適切なものを選んでください：
+  解剖学、生理学、生化学、病理学、薬理学、内科学、外科学、小児科学、産婦人科学、精神医学、公衆衛生学`;
+  }
+  if (d.includes('薬学')) {
+    return `- subjectは必ず以下の薬学系科目リストから最も適切なものを選んでください：
+  薬剤学、薬理学、薬物治療学、製剤学、薬事法規、医薬品化学、生薬学、病態生理学、臨床薬学、調剤学`;
+  }
+  if (d.includes('理学療法') || d.includes('作業療法') || d.includes('リハビリ')) {
+    return `- subjectは必ず以下のリハビリ系科目リストから最も適切なものを選んでください：
+  運動学、解剖学、神経学、整形外科学、内部障害学、日常生活活動学、理学療法評価学、作業療法学`;
+  }
+  return `- subjectは必ず以下のリストから最も適切なものを選んでください：
+  看護系：基礎看護学、成人看護学、老年看護学、小児看護学、母性看護学、精神看護学、在宅看護学、看護の統合と実践
+  医学系：解剖学、生理学、生化学、病理学、薬理学、内科学、外科学、小児科学、産婦人科学、精神医学、公衆衛生学
+  薬学系：薬剤学、薬理学、薬物治療学、製剤学、薬事法規、医薬品化学、生薬学、病態生理学、臨床薬学、調剤学
+  リハビリ系：運動学、解剖学、神経学、整形外科学、内部障害学、日常生活活動学、理学療法評価学、作業療法学
+  基礎系：解剖生理学、生化学、微生物学、免疫学、栄養学`;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: 'ログインが必要です' }, { status: 401 });
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('department')
+      .eq('id', user.id)
+      .single();
 
     const { subject, count } = await request.json();
 
@@ -25,12 +57,7 @@ Rules:
 - answer must be: A, B, C, or D (letter only)
 - 問題文・選択肢・解説はすべて日本語で書く
 - 国家試験レベルを意識した問題を作成する
-- subjectは必ず以下のリストから最も適切なものを選んでください：
-  看護系：基礎看護学、成人看護学、老年看護学、小児看護学、母性看護学、精神看護学、在宅看護学、看護の統合と実践
-  医学系：解剖学、生理学、生化学、病理学、薬理学、内科学、外科学、小児科学、産婦人科学、精神医学、公衆衛生学
-  薬学系：薬剤学、薬理学、薬物治療学、製剤学、薬事法規、医薬品化学、生薬学、病態生理学、臨床薬学、調剤学
-  リハビリ系：運動学、解剖学、神経学、整形外科学、内部障害学、日常生活活動学、理学療法評価学、作業療法学
-  基礎系：解剖生理学、生化学、微生物学、免疫学、栄養学
+${getSubjectInstruction(profile?.department)}
 - 選択肢A〜Dの文章の長さをできるだけ揃える（正解だけ長くならないように）
 - 選択肢は全て同じくらいの文字数・文体にする
 - 正解を長く詳しく書かない

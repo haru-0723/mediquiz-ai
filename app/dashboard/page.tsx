@@ -116,6 +116,19 @@ export default async function DashboardPage() {
           </Link>
         </div>
 
+        {/* 学部未設定バナー */}
+        {!profile?.department && (
+          <div className="mb-6 sm:mb-8 flex items-start sm:items-center gap-3 bg-yellow-50 border border-yellow-200 rounded-xl px-4 py-3">
+            <span className="text-lg flex-shrink-0">📝</span>
+            <p className="text-sm text-yellow-800 flex-1">
+              学部・学科を設定すると、AIが最適な科目の問題を生成します
+            </p>
+            <Link href="/settings" className="text-xs text-yellow-700 font-medium hover:underline whitespace-nowrap flex-shrink-0">
+              プロフィールを設定する →
+            </Link>
+          </div>
+        )}
+
         {/* 機能カード 6枚 */}
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
           {FEATURE_CARDS.map(card => (
