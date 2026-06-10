@@ -36,6 +36,10 @@ export default function GeneratePage() {
   const [reportReason, setReportReason] = useState('内容が間違っている');
   const [reportedSet, setReportedSet] = useState<Set<number>>(new Set<number>());
   const [submittingReport, setSubmittingReport] = useState(false);
+  const [checking, setChecking] = useState(false);
+  const [showCheckDialog, setShowCheckDialog] = useState(false);
+  const [checkIssues, setCheckIssues] = useState('');
+  const [supplementText, setSupplementText] = useState('');
 
   useEffect(() => {
     async function load() {
@@ -71,6 +75,31 @@ export default function GeneratePage() {
 
   async function handleGenerate() {
     if (selectedIds.length === 0) return;
+    setError('');
+    setSupplementText('');
+    setChecking(true);
+    try {
+      const checkRes = await fetch('/api/generate/check', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ materialId: selectedIds[0] }),
+      });
+      const checkData = await checkRes.json();
+      setChecking(false);
+      if (checkData.hasIssues) {
+        setCheckIssues(checkData.issues || '読み取りにくい部分があります');
+        setShowCheckDialog(true);
+      } else {
+        await executeGenerate('');
+      }
+    } catch {
+      setChecking(false);
+      await executeGenerate('');
+    }
+  }
+
+  async function executeGenerate(supplement: string) {
+    setShowCheckDialog(false);
     setGenerating(true);
     setError('');
     setProgress(0);
@@ -89,8 +118,8 @@ export default function GeneratePage() {
       msgIndex = (msgIndex + 1) % messages.length;
       setProgressMessage(messages[msgIndex]);
     }, 2000);
-    const selected = materials.filter(m => selectedIds.includes(m.id));
-    setSelectedMaterials(selected);
+    const selectedMats = materials.filter(m => selectedIds.includes(m.id));
+    setSelectedMaterials(selectedMats);
 
     try {
       const results = await Promise.all(
@@ -98,7 +127,7 @@ export default function GeneratePage() {
           fetch('/api/generate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ materialId: id, count }),
+            body: JSON.stringify({ materialId: id, count, supplementText: supplement }),
           }).then(res => res.json())
         )
       );
@@ -229,6 +258,61 @@ export default function GeneratePage() {
     } else {
       setPhase('result');
     }
+  }
+
+  if (checking) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div style={{ width: 40, height: 40, border: '3px solid #16a34a', borderTopColor: 'transparent', borderRadius: '50%', margin: '0 auto 20px', animation: 'spin 0.8s linear infinite' }} />
+          <p className="text-gray-600 font-medium">画像を確認しています...</p>
+          <p className="text-sm text-gray-400 mt-2">読み取り品質をチェック中</p>
+        </div>
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
+    );
+  }
+
+  if (showCheckDialog) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Navbar />
+        <div className="flex items-center justify-center p-8 min-h-[calc(100vh-60px)]">
+          <div className="bg-white rounded-2xl border p-8 max-w-md w-full">
+            <div className="text-4xl mb-4 text-center">⚠️</div>
+            <h2 className="text-lg font-semibold text-gray-900 mb-2 text-center">読み取りにくい部分があります</h2>
+            <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-5">
+              <p className="text-sm text-yellow-800">{checkIssues}</p>
+            </div>
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">補足テキストを入力（任意）</label>
+              <textarea
+                value={supplementText}
+                onChange={e => setSupplementText(e.target.value)}
+                placeholder="読み取れなかった部分の内容を補足入力してください..."
+                className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
+                rows={3}
+              />
+            </div>
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={() => executeGenerate(supplementText)}
+                disabled={!supplementText.trim()}
+                className="w-full bg-green-600 text-white py-3 rounded-xl text-sm font-medium hover:bg-green-700 disabled:opacity-40"
+              >
+                補足を追加して生成する
+              </button>
+              <button
+                onClick={() => executeGenerate('')}
+                className="w-full border border-gray-200 text-gray-600 py-3 rounded-xl text-sm font-medium hover:border-gray-300 hover:bg-gray-50"
+              >
+                このまま生成する
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   if (generating) {
