@@ -15,6 +15,7 @@ const FEATURE_CARDS = [
   { href: '/generate', icon: '✨', title: 'AI問題生成',    desc: '教材からAIが問題を自動作成' },
   { href: '/questions',icon: '📚', title: 'マイ問題集',    desc: '自分の問題をフォルダ管理' },
   { href: '/materials',icon: '📤', title: '教材管理',      desc: 'PDFや画像をアップロード' },
+  { href: '/kokushi', icon: '📝', title: '国試モード',    desc: '国試形式の本格模試に挑戦' },
 ];
 
 export default async function DashboardPage() {

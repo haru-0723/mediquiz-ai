@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import HelpModal from '@/components/HelpModal';
 import LogoutButton from '@/app/dashboard/LogoutButton';
-import { quizHelp, generateHelp } from '@/lib/helpContent';
+import { quizHelp, generateHelp, kokushiHelp } from '@/lib/helpContent';
 import { ADMIN_EMAIL } from '@/lib/constants';
 
 type HelpStep = { icon: string; title: string; description: string };
@@ -15,6 +15,7 @@ const HELP_MAP: Record<string, { steps: HelpStep[]; title: string }> = {
   '/quiz':     { steps: quizHelp.steps,     title: quizHelp.pageTitle },
   '/review':   { steps: quizHelp.steps,     title: quizHelp.pageTitle },
   '/generate': { steps: generateHelp.steps, title: generateHelp.pageTitle },
+  '/kokushi':  { steps: kokushiHelp.steps,  title: kokushiHelp.pageTitle },
 };
 
 export default function Navbar() {
