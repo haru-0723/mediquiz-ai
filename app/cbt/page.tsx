@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import Navbar from '@/components/Navbar';
+import { getDepartmentType } from '@/lib/departmentUtils';
 
 type Question = {
   id: string;
@@ -23,12 +24,6 @@ type Answer = {
   selected: string | null;
   isCorrect: boolean;
 };
-
-function getDepartmentType(department: string): 'medical' | 'pharmacy' | 'other' {
-  if (department.includes('医学') || department.includes('医師')) return 'medical';
-  if (department.includes('薬学')) return 'pharmacy';
-  return 'other';
-}
 
 const PHARMACY_SUBJECTS = [
   'すべて', '物理系薬学', '化学系薬学', '生物系薬学', '薬理・薬物治療系',
@@ -153,8 +148,12 @@ async function handleStart() {
     const finalQuestions = [...newQuestions, ...stockQuestions]
       .sort(() => Math.random() - 0.5);
 
-    // allQuestionsを更新
-    setAllQuestions(prev => [...prev, ...newQuestions]);
+    // allQuestionsを更新（重複IDは除外）
+    setAllQuestions(prev => {
+      const existingIds = new Set(prev.map(q => q.id));
+      const fresh = newQuestions.filter((q: Question) => !existingIds.has(q.id));
+      return [...prev, ...fresh];
+    });
 
     setQuestions(finalQuestions);
     setAnswers([]);
