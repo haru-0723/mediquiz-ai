@@ -24,6 +24,16 @@ type Answer = {
   isCorrect: boolean;
 };
 
+const PHARMACY_SUBJECTS = [
+  'すべて', '物理系薬学', '化学系薬学', '生物系薬学', '薬理・薬物治療系',
+  '薬剤系', '情報系', '衛生薬学', '薬学臨床', '薬学と社会', '基本事項',
+];
+
+const MEDICAL_SUBJECTS = [
+  'すべて', '基礎医学', '社会医学', '内科系', '外科系',
+  'その他診療科', '医療面接・臨床推論', 'CBTでよく出るテーマ',
+];
+
 export default function CBTPage() {
   const supabase = createClient();
   const [allQuestions, setAllQuestions] = useState<Question[]>([]);
@@ -44,12 +54,25 @@ export default function CBTPage() {
   const [reportReason, setReportReason] = useState('内容が間違っている');
   const [reportedSet, setReportedSet] = useState<Set<number>>(new Set<number>());
   const [submittingReport, setSubmittingReport] = useState(false);
+  const [department, setDepartment] = useState('');
+  const [useManualSubjectList, setUseManualSubjectList] = useState(false);
 
   useEffect(() => {
-    supabase.from('questions').select('*').order('created_at', { ascending: false }).then(({ data }) => {
+    async function load() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('department')
+          .eq('id', user.id)
+          .single();
+        if (profileData?.department) setDepartment(profileData.department);
+      }
+      const { data } = await supabase.from('questions').select('*').order('created_at', { ascending: false });
       if (data) setAllQuestions(data);
       setLoading(false);
-    });
+    }
+    load();
   }, []);
 
   const handleFinish = useCallback((currentAnswers: Answer[], currentQuestions: Question[]) => {
@@ -172,7 +195,14 @@ async function handleStart() {
     return `${m}:${s.toString().padStart(2, '0')}`;
   }
 
-  const subjects = ['すべて', ...Array.from(new Set(allQuestions.map(q => q.subject ?? 'その他')))];
+  const deptSubjects: string[] = (() => {
+    if (department.includes('薬学')) return PHARMACY_SUBJECTS;
+    if (department.includes('医学') || department.includes('医師')) return MEDICAL_SUBJECTS;
+    return ['すべて', ...PHARMACY_SUBJECTS.slice(1), ...MEDICAL_SUBJECTS.slice(1)];
+  })();
+  const subjects = useManualSubjectList
+    ? ['すべて', ...Array.from(new Set(allQuestions.map(q => q.subject ?? 'その他')))]
+    : deptSubjects;
   const availableCount = selectedSubject === 'すべて'
     ? allQuestions.length
     : allQuestions.filter(q => (q.subject ?? 'その他') === selectedSubject).length;
@@ -420,12 +450,20 @@ async function handleStart() {
       <Navbar />
 
       <div className="max-w-xl mx-auto p-8">
-        <h1 className="text-2xl font-semibold text-gray-900 mb-2">CBT模試モード</h1>
+        <h1 className="text-2xl font-semibold text-gray-900 mb-2">CBTモード</h1>
         <p className="text-gray-500 text-sm mb-8">本番さながらの模試形式で実力を試しましょう。</p>
 
         <div className="bg-white rounded-2xl border p-8 space-y-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-3">出題範囲</label>
+            <div className="flex items-center justify-between mb-3">
+              <label className="text-sm font-medium text-gray-700">出題範囲</label>
+              <button
+                onClick={() => { setUseManualSubjectList(v => !v); setSelectedSubject('すべて'); }}
+                className="text-xs text-blue-500 hover:underline"
+              >
+                {useManualSubjectList ? '学部別に表示' : '既存の問題から選ぶ'}
+              </button>
+            </div>
             <div className="flex flex-wrap gap-2">
               {subjects.map(s => (
                 <button key={s} onClick={() => setSelectedSubject(s)}
@@ -434,6 +472,11 @@ async function handleStart() {
                 </button>
               ))}
             </div>
+            {!useManualSubjectList && (
+              <p className="text-xs text-gray-400 mt-2">
+                {department.includes('薬学') ? '薬学部' : department.includes('医学') || department.includes('医師') ? '医学部' : '薬学部・医学部'}の科目リストを表示中
+              </p>
+            )}
           </div>
 
           <div>
