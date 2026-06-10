@@ -29,7 +29,8 @@ export default async function AdminPage() {
         difficulty
       )
     `)
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false })
+    .limit(50);
 
   return <AdminClient reports={reports ?? []} />;
 }

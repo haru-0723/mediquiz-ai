@@ -46,9 +46,11 @@ export default function GeneratePage() {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const { data: folderData } = await supabase.from('folders').select('*').eq('user_id', user.id).order('created_at');
+      const [{ data: folderData }, { data: materialData }] = await Promise.all([
+        supabase.from('folders').select('*').eq('user_id', user.id).order('created_at'),
+        supabase.from('materials').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
+      ]);
       if (folderData) setFolders(folderData);
-      const { data: materialData } = await supabase.from('materials').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
       if (materialData) setMaterials(materialData);
     }
     load();
@@ -182,8 +184,8 @@ export default function GeneratePage() {
         }
       }
 
-      for (const q of questions) {
-        await supabase.from('questions').insert({
+      await supabase.from('questions').insert(
+        questions.map(q => ({
           user_id: user.id,
           subject: selectedMaterials[0]?.subject ?? null,
           question: q.question,
@@ -195,8 +197,8 @@ export default function GeneratePage() {
           explanation: q.explanation,
           difficulty: q.difficulty,
           folder_id: folderId,
-        });
-      }
+        }))
+      );
       setSaved(true);
     } catch (e) {
       console.error(e);

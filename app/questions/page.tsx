@@ -92,8 +92,11 @@ export default function QuestionsPage() {
       : questions.filter(q => q.folder_id === selectedFolder);
 
   const folderCounts: Record<string, number> = {};
-  folders.forEach(f => { folderCounts[f.id] = questions.filter(q => q.folder_id === f.id).length; });
-  const noFolderCount = questions.filter(q => !q.folder_id).length;
+  let noFolderCount = 0;
+  for (const q of questions) {
+    if (q.folder_id) folderCounts[q.folder_id] = (folderCounts[q.folder_id] ?? 0) + 1;
+    else noFolderCount++;
+  }
 
   const currentFolderName =
     selectedFolder === 'all' ? '全問題' :

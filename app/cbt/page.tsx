@@ -291,9 +291,10 @@ async function handleStart() {
   if (phase === 'result') {
     const correct = answers.filter(a => a.isCorrect).length;
     const accuracy = Math.round((correct / answers.length) * 100);
+    const answerMap = new Map(answers.map(a => [a.questionId, a]));
     const subjectStats = questions.reduce((acc, q) => {
       const subject = q.subject ?? 'その他';
-      const answer = answers.find(a => a.questionId === q.id);
+      const answer = answerMap.get(q.id);
       if (!answer) return acc;
       if (!acc[subject]) acc[subject] = { correct: 0, total: 0 };
       acc[subject].total++;

@@ -39,7 +39,7 @@ export default function QuizPage() {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const { data: qData } = await supabase.from('questions').select('*').eq('is_cbt', false).order('created_at', { ascending: false });
+      const { data: qData } = await supabase.from('questions').select('*').eq('user_id', user.id).eq('is_cbt', false).order('created_at', { ascending: false });
       if (qData) setAllQuestions(qData);
       const { data: fData } = await supabase.from('folders').select('*').eq('user_id', user.id).order('created_at');
       if (fData) setFolders(fData);

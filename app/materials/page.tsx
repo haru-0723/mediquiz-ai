@@ -21,10 +21,14 @@ export default function MaterialsPage() {
   const [deleting, setDeleting] = useState<string | null>(null);
 
   useEffect(() => {
-    supabase.from('materials').select('*').order('created_at', { ascending: false }).then(({ data }) => {
+    async function load() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { setLoading(false); return; }
+      const { data } = await supabase.from('materials').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
       if (data) setMaterials(data);
       setLoading(false);
-    });
+    }
+    load();
   }, []);
 
   async function handleDelete(material: Material) {

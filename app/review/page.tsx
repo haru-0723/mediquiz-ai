@@ -39,7 +39,7 @@ export default function ReviewPage() {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const { data: qData } = await supabase.from('questions').select('*').order('created_at', { ascending: false });
+      const { data: qData } = await supabase.from('questions').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
       if (qData) setQuestions(qData);
       const { data: fData } = await supabase.from('folders').select('*').eq('user_id', user.id).order('created_at');
       if (fData) setFolders(fData);

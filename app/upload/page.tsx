@@ -68,21 +68,23 @@ export default function UploadPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('ログインが必要です');
 
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        const path = `${user.id}/${Date.now()}_${file.name}`;
-        const { error: uploadError } = await supabase.storage.from('materials').upload(path, file);
-        if (uploadError) throw uploadError;
-        const { data: { publicUrl } } = supabase.storage.from('materials').getPublicUrl(path);
-        await supabase.from('materials').insert({
-          user_id: user.id,
-          title: (titles[i] || '').trim() || file.name.replace(/\.[^/.]+$/, ''),
-          file_url: publicUrl,
-          file_type: file.type,
-          subject: subject || null,
-          folder_id: selectedFolder || null,
-        });
-      }
+      const timestamp = Date.now();
+      await Promise.all(
+        files.map(async (file, i) => {
+          const path = `${user.id}/${timestamp}_${i}_${file.name}`;
+          const { error: uploadError } = await supabase.storage.from('materials').upload(path, file);
+          if (uploadError) throw uploadError;
+          const { data: { publicUrl } } = supabase.storage.from('materials').getPublicUrl(path);
+          await supabase.from('materials').insert({
+            user_id: user.id,
+            title: (titles[i] || '').trim() || file.name.replace(/\.[^/.]+$/, ''),
+            file_url: publicUrl,
+            file_type: file.type,
+            subject: subject || null,
+            folder_id: selectedFolder || null,
+          });
+        })
+      );
       setDone(true);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'アップロードに失敗しました');
