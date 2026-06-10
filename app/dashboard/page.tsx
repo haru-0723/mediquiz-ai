@@ -10,7 +10,7 @@ import GuideBanner from './GuideBanner';
 const FEATURE_CARDS = [
   { href: '/quiz',      icon: '⚡', title: '演習を始める',  desc: '科目・難易度を選んで演習' },
   { href: '/review',   icon: '🔁', title: '復習モード',    desc: '間違えた問題を再チャレンジ' },
-  { href: '/cbt',      icon: '🎯', title: 'CBT模試',       desc: '本番形式で実力を測る' },
+  { href: '/cbt',      icon: '🎯', title: 'CBTモード',      desc: '本番形式で実力を測る' },
   { href: '/generate', icon: '✨', title: 'AI問題生成',    desc: '教材からAIが問題を自動作成' },
   { href: '/questions',icon: '📚', title: 'マイ問題集',    desc: '自分の問題をフォルダ管理' },
   { href: '/materials',icon: '📤', title: '教材管理',      desc: 'PDFや画像をアップロード' },
