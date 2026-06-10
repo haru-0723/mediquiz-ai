@@ -275,6 +275,7 @@ export default function KokushiPage() {
           <div className="h-2 bg-gray-200 rounded-full overflow-hidden mb-2">
             <div className="h-full bg-purple-600 rounded-full transition-all duration-500" style={{ width: `${progress}%` }} />
           </div>
+          <p className="text-xs text-yellow-600 mb-2">⏳ 国試レベルの正確な問題を生成しています。1〜2分ほどお待ちください。</p>
           <p className="text-xs text-gray-400">AIが{questionCount}問を準備しています</p>
         </div>
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
