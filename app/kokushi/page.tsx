@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import Navbar from '@/components/Navbar';
 import ErrorBanner from '@/components/ErrorBanner';
+import ExplainButton from '@/components/ExplainButton';
 
 type Question = {
   id: string;
@@ -495,6 +496,9 @@ export default function KokushiPage() {
                 <p className="text-xs font-medium text-purple-600 mb-2">💡 解説</p>
                 <p className="text-sm text-gray-600 leading-relaxed">{q.explanation}</p>
               </div>
+            )}
+            {showResult && (
+              <ExplainButton key={q.id} question={q.question} answer={q.answer} explanation={q.explanation} subject={q.subject} accentColor="purple" />
             )}
           </div>
 

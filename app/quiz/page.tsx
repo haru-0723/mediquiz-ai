@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import Navbar from '@/components/Navbar';
+import ExplainButton from '@/components/ExplainButton';
 
 type Question = {
   id: string;
@@ -274,6 +275,9 @@ export default function QuizPage() {
               <p className="text-xs font-medium text-green-600 mb-2">💡 解説</p>
               <p className="text-sm text-gray-600 leading-relaxed">{q.explanation}</p>
             </div>
+          )}
+          {answered && (
+            <ExplainButton key={q.id} question={q.question} answer={q.answer} explanation={q.explanation} subject={q.subject} accentColor="green" />
           )}
         </div>
         <div className="flex justify-between items-center">
