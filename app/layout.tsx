@@ -1,10 +1,20 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import VersionChecker from '@/components/VersionChecker';
 
 export const metadata: Metadata = {
   title: 'MediQuiz AI — 医療系大学生のAI問題生成アプリ',
   description: '授業スライドをアップロードするだけでAIが問題を自動生成。',
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'MediQuiz AI',
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: '#16a34a',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

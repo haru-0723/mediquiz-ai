@@ -7,6 +7,7 @@ import LogoutButton from './LogoutButton';
 import HelpModal from '@/components/HelpModal';
 import { dashboardHelp } from '@/lib/helpContent';
 import GuideBanner from './GuideBanner';
+import AddToHomeScreen from '@/components/AddToHomeScreen';
 
 const FEATURE_CARDS = [
   { href: '/quiz',      icon: '⚡', title: '演習を始める',  desc: '科目・難易度を選んで演習' },
@@ -86,6 +87,7 @@ export default async function DashboardPage() {
   ].filter(Boolean).join(' ・ ');
 
   return (
+    <>
     <div className="min-h-screen bg-gray-50">
       <nav className="bg-white border-b px-4 sm:px-8 py-3 sm:py-4 flex items-center justify-between">
         <div className="flex items-center gap-2 flex-shrink-0">
@@ -313,5 +315,7 @@ export default async function DashboardPage() {
         </p>
       </div>
     </div>
+    <AddToHomeScreen />
+    </>
   );
 }
