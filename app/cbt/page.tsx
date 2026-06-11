@@ -248,9 +248,7 @@ async function handleStart() {
   const subjects = useManualSubjectList
     ? ['すべて', ...Array.from(new Set(allQuestions.map(q => q.subject ?? 'その他')))]
     : deptSubjects;
-  const availableCount = selectedSubject === 'すべて'
-    ? allQuestions.length
-    : allQuestions.filter(q => (q.subject ?? 'その他') === selectedSubject).length;
+
 
   if (loading) {
     return (
@@ -558,10 +556,6 @@ async function handleStart() {
                 </button>
               ))}
             </div>
-            <p className="text-xs text-gray-400 mt-2">
-              ストック問題数：{availableCount}問
-              {availableCount < questionCount && <span className="text-blue-500 ml-2">（不足分はAIが生成します）</span>}
-            </p>
           </div>
 
           <div>
