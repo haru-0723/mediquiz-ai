@@ -36,6 +36,12 @@ const MEDICAL_SUBJECTS = [
   'その他診療科', '医療面接・臨床推論', 'CBTでよく出るテーマ',
 ];
 
+const NURSING_SUBJECTS = [
+  'すべて', '人体の構造と機能', '疾病の成り立ちと回復の促進', '健康支援と社会保障制度',
+  '基礎看護学', '成人看護学', '老年看護学', '小児看護学', '母性看護学',
+  '精神看護学', '地域在宅看護学', '看護の統合と実践',
+];
+
 export default function CBTPage() {
   const supabase = createClient();
   const [allQuestions, setAllQuestions] = useState<Question[]>([]);
@@ -236,7 +242,8 @@ async function handleStart() {
   const deptSubjects: string[] = (() => {
     if (department.includes('薬学')) return PHARMACY_SUBJECTS;
     if (department.includes('医学') || department.includes('医師')) return MEDICAL_SUBJECTS;
-    return ['すべて', ...PHARMACY_SUBJECTS.slice(1), ...MEDICAL_SUBJECTS.slice(1)];
+    if (department.includes('看護')) return NURSING_SUBJECTS;
+    return ['すべて', ...PHARMACY_SUBJECTS.slice(1), ...MEDICAL_SUBJECTS.slice(1), ...NURSING_SUBJECTS.slice(1)];
   })();
   const subjects = useManualSubjectList
     ? ['すべて', ...Array.from(new Set(allQuestions.map(q => q.subject ?? 'その他')))]
@@ -536,7 +543,7 @@ async function handleStart() {
             </div>
             {!useManualSubjectList && (
               <p className="text-xs text-gray-400 mt-2">
-                {department.includes('薬学') ? '薬学部' : department.includes('医学') || department.includes('医師') ? '医学部' : '薬学部・医学部'}の科目リストを表示中
+                {department.includes('薬学') ? '薬学部' : department.includes('医学') || department.includes('医師') ? '医学部' : department.includes('看護') ? '看護学部' : '薬学部・医学部・看護学部'}の科目リストを表示中
               </p>
             )}
           </div>

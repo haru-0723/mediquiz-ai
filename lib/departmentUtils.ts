@@ -1,7 +1,8 @@
-export function getDepartmentType(department: string | null | undefined): 'medical' | 'pharmacy' | 'other' {
+export function getDepartmentType(department: string | null | undefined): 'medical' | 'pharmacy' | 'nursing' | 'other' {
   const d = department ?? '';
   if (d.includes('医学') || d.includes('医師')) return 'medical';
   if (d.includes('薬学')) return 'pharmacy';
+  if (d.includes('看護')) return 'nursing';
   return 'other';
 }
 
@@ -36,8 +37,19 @@ export function getSubjectInstruction(department: string | null | undefined): st
 export function getCBTSubjectInstruction(department: string | null | undefined): string {
   const d = department ?? '';
   if (d.includes('看護')) {
-    return `- subjectは必ず以下の看護系科目リストから最も適切なものを選んでください：
-  基礎看護学、成人看護学、老年看護学、小児看護学、母性看護学、精神看護学、在宅看護学、看護の統合と実践、解剖生理学、生化学、微生物学、免疫学、栄養学`;
+    return `- 以下の看護系CBT出題範囲を参照し、選択された科目の内容に沿った問題を生成してください：
+  人体の構造と機能：解剖学・生理学・生化学・人体構造機能学
+  疾病の成り立ちと回復の促進：病理学・薬理学・微生物学・免疫学・疾病治療学・臨床検査学
+  健康支援と社会保障制度：公衆衛生学・疫学・社会福祉・医療制度・生命倫理
+  基礎看護学：看護理論・看護過程・フィジカルアセスメント・バイタルサイン・看護技術
+  成人看護学：がん看護・周術期看護・慢性疾患看護・急性期看護・終末期看護・糖尿病・高血圧・心不全・COPD・脳梗塞
+  老年看護学：フレイル・認知症・転倒予防・高齢者薬物療法・介護保険制度
+  小児看護学：成長発達・予防接種・小児感染症・先天性疾患
+  母性看護学：妊娠・分娩・産褥期・新生児管理・母子保健
+  精神看護学：統合失調症・うつ病・双極症・不安障害・精神保健福祉法
+  地域在宅看護学：訪問看護・地域包括ケア・在宅療養支援・保健活動
+  看護の統合と実践：チーム医療・医療安全・感染管理・災害看護
+- subjectフィールドには選択された科目名（例：基礎看護学）をそのまま使用してください`;
   }
   if (d.includes('医学') || d.includes('医師')) {
     return `- 以下の医学部CBT出題範囲を参照し、選択された科目の内容に沿った問題を生成してください：
