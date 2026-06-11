@@ -62,6 +62,10 @@ export default function ExplainButton({ question, answer, explanation, subject, 
       setDeepExplanation('');
       return;
     }
+    if (status === 'upgrade') {
+      setStatus('idle');
+      return;
+    }
     setStatus('loading');
     try {
       const res = await fetch('/api/explain', {
@@ -84,24 +88,20 @@ export default function ExplainButton({ question, answer, explanation, subject, 
 
   return (
     <div className="mt-3">
-      {status !== 'upgrade' && (
-        <button
-          onClick={handleClick}
-          disabled={status === 'loading'}
-          className={`text-xs border px-3 py-1.5 rounded-lg transition-colors disabled:opacity-60 ${c.btn}`}
-        >
-          {status === 'loading' ? '⏳ AIが解説を生成しています...' : status === 'done' ? '▲ 詳しい解説を閉じる' : '💡 もっと詳しく解説する'}
-        </button>
-      )}
+      <button
+        onClick={handleClick}
+        disabled={status === 'loading'}
+        className={`text-xs border px-3 py-1.5 rounded-lg transition-colors disabled:opacity-60 ${c.btn}`}
+      >
+        {status === 'loading' ? '⏳ AIが解説を生成しています...' : status === 'done' ? '▲ 詳しい解説を閉じる' : '💡 もっと詳しく解説する'}
+      </button>
 
       {status === 'upgrade' && (
-        <div className={`mt-2 p-3 rounded-xl border ${c.border} ${c.bg}`}>
-          <p className={`text-xs font-medium ${c.text} mb-1`}>✨ スタンダードプランの機能です</p>
-          <p className="text-xs text-gray-500 mb-2">AI解説の深掘りは有料プランでご利用いただけます。</p>
-          <Link href="/pricing" className="text-xs bg-green-600 text-white px-3 py-1.5 rounded-lg hover:bg-green-700 inline-block">
+        <div className="mt-2">
+          <p className="text-xs text-gray-500">🔒 この機能はスタンダードプランのみ利用できます</p>
+          <Link href="/pricing" className="text-xs text-green-600 hover:underline font-medium">
             アップグレードする →
           </Link>
-          <button onClick={() => setStatus('idle')} className="ml-2 text-xs text-gray-400 hover:text-gray-600">閉じる</button>
         </div>
       )}
 
