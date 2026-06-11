@@ -24,6 +24,7 @@ const STANDARD_FEATURES = [
   { emoji: '📊', text: '苦手分野分析' },
   { emoji: '📅', text: '試験日カウントダウン' },
   { emoji: '📈', text: '演習履歴・正解率' },
+  { emoji: '🔍', text: 'AI解説の深掘り機能' },
 ];
 
 export default function PricingPage() {
