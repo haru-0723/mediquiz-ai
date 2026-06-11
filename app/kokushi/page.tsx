@@ -75,6 +75,7 @@ export default function KokushiPage() {
   const [loading, setLoading] = useState(true);
   const [isPaid, setIsPaid] = useState(false);
   const [department, setDepartment] = useState('');
+  const [allQuestions, setAllQuestions] = useState<Question[]>([]);
   const [phase, setPhase] = useState<'select' | 'quiz' | 'result'>('select');
   const [generating, setGenerating] = useState(false);
   const [questionCount, setQuestionCount] = useState(20);
@@ -104,7 +105,20 @@ export default function KokushiPage() {
         .eq('id', user.id)
         .single();
       setIsPaid(profile?.plan === 'standard');
-      setDepartment(profile?.department ?? '');
+      const dept = profile?.department ?? '';
+      setDepartment(dept);
+
+      const kokushiDeptType = getKokushiDept(dept);
+      if (kokushiDeptType !== 'unset') {
+        const { data } = await supabase
+          .from('questions')
+          .select('*')
+          .eq('is_kokushi', true)
+          .eq('kokushi_type', kokushiDeptType)
+          .order('created_at', { ascending: false });
+        if (data) setAllQuestions(data);
+      }
+
       setLoading(false);
     }
     load();
@@ -153,6 +167,7 @@ export default function KokushiPage() {
       'AIが国試問題を生成しています...',
       '科目別に問題を作成中...',
       '選択肢を調整しています...',
+      'ストック問題と合わせています...',
       'もうすぐ完成です...',
     ];
     let msgIndex = 0;
@@ -164,21 +179,54 @@ export default function KokushiPage() {
 
     try {
       const subject = selectedSubject.replace(/^\[(薬|医|看)\] /, '');
+
+      // 60%はAI生成、40%はストックから出題
+      const newCount = Math.ceil(questionCount * 0.6);
+      const stockCount = questionCount - newCount;
+
       const res = await fetch('/api/kokushi-generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ subject, count: questionCount }),
+        body: JSON.stringify({ subject, count: newCount }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
+      const newQuestions: Question[] = data.questions ?? [];
 
-      const generated: Question[] = data.questions.map((q: Question, i: number) => ({
-        ...q,
-        id: `kokushi-${Date.now()}-${i}`,
-      }));
+      // ストックから重複なしでランダム抽出
+      const newIds = new Set(newQuestions.map((q: Question) => q.id));
+      const filtered = selectedSubject === 'すべて'
+        ? allQuestions.filter(q => !newIds.has(q.id))
+        : allQuestions.filter(q => (q.subject ?? 'その他') === subject && !newIds.has(q.id));
+      const stockQuestions = [...filtered]
+        .sort(() => Math.random() - 0.5)
+        .slice(0, Math.min(stockCount, filtered.length));
+
+      // ストックが足りない場合は不足分をAI生成で補う
+      const shortfall = stockCount - stockQuestions.length;
+      let extraQuestions: Question[] = [];
+      if (shortfall > 0) {
+        const extraRes = await fetch('/api/kokushi-generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ subject, count: shortfall }),
+        });
+        const extraData = await extraRes.json();
+        if (extraRes.ok) extraQuestions = extraData.questions ?? [];
+      }
+
+      // allQuestionsを更新（重複IDは除外）
+      setAllQuestions(prev => {
+        const existingIds = new Set(prev.map(q => q.id));
+        const fresh = [...newQuestions, ...extraQuestions].filter((q: Question) => !existingIds.has(q.id));
+        return [...prev, ...fresh];
+      });
+
+      const finalQuestions = [...newQuestions, ...stockQuestions, ...extraQuestions]
+        .sort(() => Math.random() - 0.5);
 
       setProgress(100);
-      setQuestions(generated.sort(() => Math.random() - 0.5));
+      setQuestions(finalQuestions);
       setAnswers([]);
       setCurrent(0);
       setSelected(null);

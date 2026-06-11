@@ -187,23 +187,47 @@ export async function POST(request: NextRequest) {
 
     const { subject, count } = await request.json();
     const dept = getKokushiDept(profile?.department);
+    const kokushiType = dept === 'unset' ? 'other' : dept;
+    const isKokushi = dept !== 'unset';
 
     const BATCH_SIZE = 10;
-    const allQuestions: RawQuestion[] = [];
+    const allRawQuestions: RawQuestion[] = [];
     let remaining = count;
 
     while (remaining > 0) {
       const batchCount = Math.min(remaining, BATCH_SIZE);
       const batch = await generateBatch(dept, subject, batchCount);
-      allQuestions.push(...batch);
+      allRawQuestions.push(...batch);
       remaining -= batchCount;
     }
 
-    if (allQuestions.length === 0) {
+    if (allRawQuestions.length === 0) {
       throw new Error('問題を生成できませんでした');
     }
 
-    return NextResponse.json({ questions: allQuestions });
+    const questionsToSave = allRawQuestions.map((q: RawQuestion) => ({
+      user_id: user.id,
+      subject: q.subject,
+      question: q.question,
+      option_a: q.option_a,
+      option_b: q.option_b,
+      option_c: q.option_c,
+      option_d: q.option_d,
+      answer: q.answer,
+      explanation: q.explanation,
+      difficulty: q.difficulty,
+      is_kokushi: isKokushi,
+      kokushi_type: kokushiType,
+    }));
+
+    const { data: saved, error: saveError } = await supabase
+      .from('questions')
+      .insert(questionsToSave)
+      .select();
+
+    if (saveError) throw saveError;
+
+    return NextResponse.json({ questions: saved });
 
   } catch (e) {
     console.error(e);
