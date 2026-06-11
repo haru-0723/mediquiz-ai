@@ -32,21 +32,37 @@ export default async function DashboardPage() {
 
   const plan = profile?.plan ?? 'free';
   const isAdmin = user.email === ADMIN_EMAIL;
+
+  // 今週の月曜日 00:00:00 を算出
+  const now = new Date();
+  const daysFromMonday = now.getDay() === 0 ? 6 : now.getDay() - 1;
+  const monday = new Date(now);
+  monday.setDate(now.getDate() - daysFromMonday);
+  monday.setHours(0, 0, 0, 0);
+  const weekStart = monday.toISOString();
+
   const [
     { data: exams },
     { data: sessions },
+    { data: weekSessions },
     { data: allSessions },
     { data: materials },
   ] = await Promise.all([
     supabase.from('exams').select('*').eq('user_id', user.id).order('exam_date'),
     supabase.from('quiz_sessions').select('*').eq('user_id', user.id).order('completed_at', { ascending: false }).limit(5),
+    supabase.from('quiz_sessions').select('correct_count, total_questions').eq('user_id', user.id).gte('completed_at', weekStart),
     supabase.from('quiz_sessions').select('subject, correct_count, total_questions').eq('user_id', user.id).limit(500),
     supabase.from('materials').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
   ]);
-  const totalQuestions = sessions?.reduce((s, r) => s + r.total_questions, 0) ?? 0;
-  const totalCorrect = sessions?.reduce((s, r) => s + r.correct_count, 0) ?? 0;
-  const accuracy = totalQuestions > 0 ? Math.round((totalCorrect / totalQuestions) * 100) : 0;
-  const bestAccuracy = sessions && sessions.length > 0 ? Math.max(...sessions.map(s => Math.round((s.correct_count / s.total_questions) * 100))) : null;
+
+  const weekQuestions = weekSessions?.reduce((s, r) => s + r.total_questions, 0) ?? 0;
+  const weekCorrect = weekSessions?.reduce((s, r) => s + r.correct_count, 0) ?? 0;
+  const weekAccuracy = weekQuestions > 0 ? Math.round((weekCorrect / weekQuestions) * 100) : null;
+  const weekBestAccuracy = weekSessions && weekSessions.length > 0
+    ? Math.max(...weekSessions.map(s => Math.round((s.correct_count / s.total_questions) * 100)))
+    : null;
+  const weekSessionCount = weekSessions?.length ?? 0;
+  const hasWeekData = weekSessionCount > 0;
 
   // 科目別正解率
   const subjectMap: Record<string, { correct: number; total: number }> = {};
@@ -149,24 +165,24 @@ export default async function DashboardPage() {
         {/* 統計カード */}
         <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-6 sm:mb-8">
           <div className="bg-white rounded-2xl border p-4 sm:p-6">
-            <p className="text-xs sm:text-sm text-gray-400 mb-1">総学習問題数</p>
-            <p className="text-2xl sm:text-3xl font-semibold text-gray-900">{totalQuestions}</p>
-            <p className="text-xs text-gray-400 mt-1">{totalQuestions === 0 ? '問題を解いて記録を作ろう' : '問題解いてます！'}</p>
+            <p className="text-xs sm:text-sm text-gray-400 mb-1">今週の学習問題数</p>
+            <p className="text-2xl sm:text-3xl font-semibold text-gray-900">{hasWeekData ? weekQuestions : '--'}</p>
+            <p className="text-xs text-gray-400 mt-1">{hasWeekData ? '問題解いてます！' : '今週はまだ演習していません'}</p>
           </div>
           <div className="bg-white rounded-2xl border p-4 sm:p-6">
-            <p className="text-xs sm:text-sm text-gray-400 mb-1">総合正解率</p>
-            <p className="text-2xl sm:text-3xl font-semibold text-gray-900">{totalQuestions > 0 ? `${accuracy}%` : '--%'}</p>
-            <p className="text-xs text-gray-400 mt-1">{totalQuestions === 0 ? '演習を始めると表示されます' : '頑張ってます！'}</p>
+            <p className="text-xs sm:text-sm text-gray-400 mb-1">今週の正解率</p>
+            <p className="text-2xl sm:text-3xl font-semibold text-gray-900">{weekAccuracy !== null ? `${weekAccuracy}%` : '--'}</p>
+            <p className="text-xs text-gray-400 mt-1">{hasWeekData ? '頑張ってます！' : '今週はまだ演習していません'}</p>
           </div>
           <div className="bg-white rounded-2xl border p-4 sm:p-6">
-            <p className="text-xs sm:text-sm text-gray-400 mb-1">演習回数</p>
-            <p className="text-2xl sm:text-3xl font-semibold text-gray-900">{sessions?.length ?? 0}回</p>
-            <p className="text-xs text-gray-400 mt-1">毎日続けよう🔥</p>
+            <p className="text-xs sm:text-sm text-gray-400 mb-1">今週の演習回数</p>
+            <p className="text-2xl sm:text-3xl font-semibold text-gray-900">{hasWeekData ? `${weekSessionCount}回` : '--'}</p>
+            <p className="text-xs text-gray-400 mt-1">{hasWeekData ? '毎日続けよう🔥' : '今週はまだ演習していません'}</p>
           </div>
           <div className="bg-white rounded-2xl border p-4 sm:p-6">
-            <p className="text-xs sm:text-sm text-gray-400 mb-1">最高正解率</p>
-            <p className="text-2xl sm:text-3xl font-semibold text-gray-900">{bestAccuracy !== null ? `${bestAccuracy}%` : '--%'}</p>
-            <p className="text-xs text-gray-400 mt-1">自己ベストを更新しよう🏆</p>
+            <p className="text-xs sm:text-sm text-gray-400 mb-1">今週の最高正解率</p>
+            <p className="text-2xl sm:text-3xl font-semibold text-gray-900">{weekBestAccuracy !== null ? `${weekBestAccuracy}%` : '--'}</p>
+            <p className="text-xs text-gray-400 mt-1">{hasWeekData ? '自己ベストを更新しよう🏆' : '今週はまだ演習していません'}</p>
           </div>
         </div>
 
