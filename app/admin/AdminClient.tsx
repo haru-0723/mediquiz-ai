@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import Navbar from '@/components/Navbar';
+import type { UsageStats } from './page';
 
 type Question = {
   id: string;
@@ -26,7 +27,7 @@ type Report = {
   questions: Question | null;
 };
 
-export default function AdminClient({ reports: initialReports }: { reports: Report[] }) {
+export default function AdminClient({ reports: initialReports, usageStats }: { reports: Report[]; usageStats: UsageStats }) {
   const supabase = createClient();
   const [reports, setReports] = useState<Report[]>(initialReports);
   const [deleting, setDeleting] = useState<string | null>(null);
@@ -76,11 +77,81 @@ export default function AdminClient({ reports: initialReports }: { reports: Repo
     setDismissing(null);
   }
 
+  const now = new Date();
+  const monthLabel = `${now.getFullYear()}年${now.getMonth() + 1}月`;
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
 
       <div className="max-w-3xl mx-auto p-8">
+
+        {/* 使用状況ダッシュボード */}
+        <div className="mb-10">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">📊 使用状況ダッシュボード</h2>
+
+          {/* 累計 / 今月 カード */}
+          <div className="grid grid-cols-3 gap-4 mb-6">
+            {[
+              { label: 'AI問題生成', icon: '✨', total: usageStats.generateTotal, month: usageStats.generateMonth },
+              { label: 'CBTモード',  icon: '🎯', total: usageStats.cbtTotal,      month: usageStats.cbtMonth },
+              { label: '国試モード', icon: '📝', total: usageStats.kokushiTotal,  month: usageStats.kokushiMonth },
+            ].map(({ label, icon, total, month }) => (
+              <div key={label} className="bg-white rounded-2xl border p-5">
+                <p className="text-xs text-gray-400 mb-1">{icon} {label}</p>
+                <p className="text-3xl font-semibold text-gray-900 mb-1">{total.toLocaleString()}</p>
+                <p className="text-xs text-gray-400">累計</p>
+                <div className="mt-3 pt-3 border-t">
+                  <p className="text-lg font-semibold text-green-600">{month.toLocaleString()}</p>
+                  <p className="text-xs text-gray-400">{monthLabel}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* ユーザーランキング */}
+          <div className="bg-white rounded-2xl border p-6">
+            <h3 className="font-semibold text-gray-900 mb-4">🏆 利用回数ランキング（上位5名）</h3>
+            {usageStats.topUsers.length === 0 ? (
+              <p className="text-sm text-gray-400 text-center py-4">データがありません</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b text-xs text-gray-400">
+                      <th className="text-left pb-2 font-medium">順位</th>
+                      <th className="text-left pb-2 font-medium">ユーザーID</th>
+                      <th className="text-right pb-2 font-medium">AI生成</th>
+                      <th className="text-right pb-2 font-medium">CBT</th>
+                      <th className="text-right pb-2 font-medium">国試</th>
+                      <th className="text-right pb-2 font-medium">合計</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {usageStats.topUsers.map((u, i) => (
+                      <tr key={u.userId} className="py-2">
+                        <td className="py-2.5 pr-3">
+                          <span className={`inline-flex w-6 h-6 items-center justify-center rounded-full text-xs font-bold ${
+                            i === 0 ? 'bg-yellow-100 text-yellow-700' :
+                            i === 1 ? 'bg-gray-100 text-gray-600' :
+                            i === 2 ? 'bg-orange-100 text-orange-600' :
+                            'bg-gray-50 text-gray-400'
+                          }`}>{i + 1}</span>
+                        </td>
+                        <td className="py-2.5 pr-3 font-mono text-xs text-gray-500 max-w-[140px] truncate">{u.userId}</td>
+                        <td className="py-2.5 text-right text-gray-700">{u.generate}</td>
+                        <td className="py-2.5 text-right text-gray-700">{u.cbt}</td>
+                        <td className="py-2.5 text-right text-gray-700">{u.kokushi}</td>
+                        <td className="py-2.5 text-right font-semibold text-gray-900">{u.total}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-2xl font-semibold text-gray-900">報告された問題</h1>
