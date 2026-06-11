@@ -266,7 +266,7 @@ async function handleStart() {
           <h1 className="text-2xl font-semibold text-gray-900 mb-2">CBTモード</h1>
           <div className="bg-white rounded-2xl border p-8 text-center">
             <div className="text-4xl mb-4">🎓</div>
-            <p className="text-gray-600 mb-4">現在、薬学部・医学部のみCBTモードに対応しています</p>
+            <p className="text-gray-600 mb-4">現在、薬学部・医学部・看護学部のみCBTモードに対応しています</p>
             <Link href="/settings" className="text-sm text-green-600 hover:underline">
               プロフィールで学部を設定する →
             </Link>
