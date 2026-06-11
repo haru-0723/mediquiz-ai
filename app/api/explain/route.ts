@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
 
     const { question, answer, explanation, subject } = await request.json();
 
-    const prompt = `以下の医療系国家試験の問題について、医学生・看護学生・薬学生が理解しやすいよう詳しく解説してください。なぜその答えが正解なのか、他の選択肢がなぜ間違いなのか、臨床的な背景も含めて説明してください。不正確な情報は絶対に書かないで。必要であれば、論文など、学術的に信頼のある所から情報を調べるようにして。
+    const prompt = `以下の医療系国家試験の問題について、医学生・看護学生・薬学生が理解しやすいよう詳しく解説してください。なぜその答えが正解なのか、他の選択肢がなぜ間違いなのか、臨床的な背景も含めて説明してください。不正確な情報は絶対に書かないで。必要であれば、論文など、学術的に信頼のある所から情報を調べるようにして。解説は簡潔にまとめて、800文字以内で完結させてください。途中で切れないように必ず最後まで書いてください。
 
 科目：${subject ?? '不明'}
 問題：${question}
@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
 
     const response = await anthropic.messages.create({
       model: 'claude-sonnet-4-6',
-      max_tokens: 2048,
+      max_tokens: 4096,
       messages: [{ role: 'user', content: prompt }],
     });
 
