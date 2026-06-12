@@ -130,7 +130,10 @@ export default function AdminClient({ reports: initialReports, usageStats }: { r
 
           {/* ユーザーランキング */}
           <div className="bg-white rounded-2xl border p-6">
-            <h3 className="font-semibold text-gray-900 mb-4">🏆 演習回数ランキング（上位10名）</h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-gray-900">🏆 AI利用回数ランキング（上位10名）</h3>
+              <span className="text-xs text-gray-400">全{usageStats.totalUsers}名</span>
+            </div>
             {usageStats.topUsers.length === 0 ? (
               <p className="text-sm text-gray-400 text-center py-4">データがありません</p>
             ) : (
@@ -141,9 +144,10 @@ export default function AdminClient({ reports: initialReports, usageStats }: { r
                       <th className="text-left pb-2 font-medium">順位</th>
                       <th className="text-left pb-2 font-medium">ユーザー</th>
                       <th className="text-left pb-2 font-medium">プラン</th>
-                      <th className="text-right pb-2 font-medium">演習回数</th>
-                      <th className="text-right pb-2 font-medium">回答問題数</th>
-                      <th className="text-right pb-2 font-medium">正解率</th>
+                      <th className="text-right pb-2 font-medium">AI生成</th>
+                      <th className="text-right pb-2 font-medium">CBT</th>
+                      <th className="text-right pb-2 font-medium">国試</th>
+                      <th className="text-right pb-2 font-medium">合計</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
@@ -161,22 +165,25 @@ export default function AdminClient({ reports: initialReports, usageStats }: { r
                           {u.department || u.university ? (
                             <div>
                               <p className="text-xs font-medium text-gray-700 truncate">{u.department ?? '学部未設定'}</p>
-                              <p className="text-xs text-gray-400 truncate">{[u.university, u.grade ? `${u.grade}年` : null].filter(Boolean).join(' · ') || '大学未設定'}</p>
+                              <p className="text-xs text-gray-400 truncate">
+                                {[u.university, u.grade ? `${u.grade}年` : null].filter(Boolean).join(' · ') || '大学未設定'}
+                              </p>
                             </div>
                           ) : (
-                            <span className="font-mono text-xs text-gray-400 truncate block">{u.userId.slice(0, 8)}…</span>
+                            <span className="font-mono text-xs text-gray-400">{u.userId.slice(0, 8)}…</span>
                           )}
                         </td>
                         <td className="py-2.5 pr-3">
-                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${u.plan === 'standard' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                            u.plan === 'standard' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
+                          }`}>
                             {u.plan === 'standard' ? '有料' : '無料'}
                           </span>
                         </td>
-                        <td className="py-2.5 text-right font-semibold text-gray-900">{u.sessions}回</td>
-                        <td className="py-2.5 text-right text-gray-700">{u.questions}問</td>
-                        <td className="py-2.5 text-right text-gray-700">
-                          {u.questions > 0 ? `${Math.round((u.correct / u.questions) * 100)}%` : '--'}
-                        </td>
+                        <td className="py-2.5 text-right text-gray-700">{u.generate}</td>
+                        <td className="py-2.5 text-right text-gray-700">{u.cbt}</td>
+                        <td className="py-2.5 text-right text-gray-700">{u.kokushi}</td>
+                        <td className="py-2.5 text-right font-semibold text-gray-900">{u.total}</td>
                       </tr>
                     ))}
                   </tbody>

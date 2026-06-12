@@ -5,6 +5,18 @@ import { ADMIN_EMAIL } from '@/lib/constants';
 
 export const dynamic = 'force-dynamic';
 
+export type TopUser = {
+  userId: string;
+  generate: number;
+  cbt: number;
+  kokushi: number;
+  total: number;
+  university: string | null;
+  department: string | null;
+  grade: number | null;
+  plan: string | null;
+};
+
 export type UsageStats = {
   generateTotal: number;
   cbtTotal: number;
@@ -12,16 +24,8 @@ export type UsageStats = {
   generateMonth: number;
   cbtMonth: number;
   kokushiMonth: number;
-  topUsers: Array<{
-    userId: string;
-    sessions: number;
-    questions: number;
-    correct: number;
-    university: string | null;
-    department: string | null;
-    grade: number | null;
-    plan: string | null;
-  }>;
+  totalUsers: number;
+  topUsers: TopUser[];
 };
 
 export default async function AdminPage() {
@@ -43,7 +47,9 @@ export default async function AdminPage() {
     { count: cbtTotal },
     { count: generateMonth },
     { count: cbtMonth },
-    { data: allSessions },
+    { data: allProfiles },
+    { data: generateLogs },
+    { data: cbtLogs },
   ] = await Promise.all([
     supabase
       .from('question_reports')
@@ -54,46 +60,67 @@ export default async function AdminPage() {
     supabase.from('cbt_logs').select('*', { count: 'exact', head: true }),
     supabase.from('generate_logs').select('*', { count: 'exact', head: true }).gte('created_at', monthStr),
     supabase.from('cbt_logs').select('*', { count: 'exact', head: true }).gte('created_at', monthStr),
-    supabase.from('quiz_sessions').select('user_id, total_questions, correct_count').limit(10000),
+    supabase.from('profiles').select('id, university, department, grade, plan').limit(1000),
+    supabase.from('generate_logs').select('user_id').limit(10000),
+    supabase.from('cbt_logs').select('user_id').limit(10000),
   ]);
 
   // kokushi_logs はテーブルが存在しない場合もあるので個別に取得
   let kokushiTotal = 0, kokushiMonth = 0;
+  let kokushiLogs: { user_id: string }[] = [];
   const kokushiTotalRes = await supabase.from('kokushi_logs').select('*', { count: 'exact', head: true });
   if (!kokushiTotalRes.error) {
     kokushiTotal = kokushiTotalRes.count ?? 0;
-    const monthRes = await supabase.from('kokushi_logs').select('*', { count: 'exact', head: true }).gte('created_at', monthStr);
+    const [monthRes, logsRes] = await Promise.all([
+      supabase.from('kokushi_logs').select('*', { count: 'exact', head: true }).gte('created_at', monthStr),
+      supabase.from('kokushi_logs').select('user_id').limit(10000),
+    ]);
     kokushiMonth = monthRes.count ?? 0;
+    kokushiLogs = (logsRes.data ?? []) as { user_id: string }[];
   }
 
-  // quiz_sessions からユーザーごとの演習回数・問題数・正解数を集計
-  const sessionStats: Record<string, { sessions: number; questions: number; correct: number }> = {};
-  for (const s of allSessions ?? []) {
-    if (!sessionStats[s.user_id]) sessionStats[s.user_id] = { sessions: 0, questions: 0, correct: 0 };
-    sessionStats[s.user_id].sessions++;
-    sessionStats[s.user_id].questions += s.total_questions as number;
-    sessionStats[s.user_id].correct += s.correct_count as number;
+  // profiles を起点に全ユーザーの利用回数を集計
+  const profileMap = Object.fromEntries(
+    (allProfiles ?? []).map(p => [p.id, p])
+  );
+
+  // 全 profiles ユーザーを 0 カウントで初期化
+  const userStats: Record<string, { generate: number; cbt: number; kokushi: number }> = {};
+  for (const p of allProfiles ?? []) {
+    userStats[p.id] = { generate: 0, cbt: 0, kokushi: 0 };
   }
-  const topUsers = Object.entries(sessionStats)
-    .map(([userId, stats]) => ({ userId, ...stats }))
-    .sort((a, b) => b.sessions - a.sessions)
+
+  // generate_logs を user_id ごとに集計
+  for (const log of generateLogs ?? []) {
+    if (!userStats[log.user_id]) userStats[log.user_id] = { generate: 0, cbt: 0, kokushi: 0 };
+    userStats[log.user_id].generate++;
+  }
+
+  // cbt_logs を user_id ごとに集計
+  for (const log of cbtLogs ?? []) {
+    if (!userStats[log.user_id]) userStats[log.user_id] = { generate: 0, cbt: 0, kokushi: 0 };
+    userStats[log.user_id].cbt++;
+  }
+
+  // kokushi_logs を user_id ごとに集計
+  for (const log of kokushiLogs) {
+    if (!userStats[log.user_id]) userStats[log.user_id] = { generate: 0, cbt: 0, kokushi: 0 };
+    userStats[log.user_id].kokushi++;
+  }
+
+  // 合計利用回数でソートして上位10名を取得
+  const topUsers: TopUser[] = Object.entries(userStats)
+    .map(([userId, counts]) => ({
+      userId,
+      ...counts,
+      total: counts.generate + counts.cbt + counts.kokushi,
+      university: profileMap[userId]?.university ?? null,
+      department: profileMap[userId]?.department ?? null,
+      grade: profileMap[userId]?.grade ?? null,
+      plan: profileMap[userId]?.plan ?? null,
+    }))
+    .sort((a, b) => b.total - a.total)
     .slice(0, 10);
-
-  // top users のプロフィール情報を取得
-  const topUserIds = topUsers.map(u => u.userId);
-  const { data: topProfiles } = topUserIds.length > 0
-    ? await supabase.from('profiles').select('id, university, department, grade, plan').in('id', topUserIds)
-    : { data: [] as { id: string; university: string | null; department: string | null; grade: number | null; plan: string | null }[] };
-
-  const profileMap = Object.fromEntries((topProfiles ?? []).map(p => [p.id, p]));
-
-  const topUsersWithProfile = topUsers.map(u => ({
-    ...u,
-    university: profileMap[u.userId]?.university ?? null,
-    department: profileMap[u.userId]?.department ?? null,
-    grade: profileMap[u.userId]?.grade ?? null,
-    plan: profileMap[u.userId]?.plan ?? null,
-  }));
 
   const usageStats: UsageStats = {
     generateTotal: generateTotal ?? 0,
@@ -102,7 +129,8 @@ export default async function AdminPage() {
     generateMonth: generateMonth ?? 0,
     cbtMonth: cbtMonth ?? 0,
     kokushiMonth,
-    topUsers: topUsersWithProfile,
+    totalUsers: allProfiles?.length ?? 0,
+    topUsers,
   };
 
   return <AdminClient reports={reports ?? []} usageStats={usageStats} />;
