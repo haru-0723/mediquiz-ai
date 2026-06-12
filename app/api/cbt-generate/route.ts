@@ -162,6 +162,8 @@ export async function POST(request: NextRequest) {
 
     if (saveError) throw saveError;
 
+    await supabase.from('cbt_logs').insert({ user_id: user.id });
+
     return NextResponse.json({ questions: saved });
 
   } catch (e) {

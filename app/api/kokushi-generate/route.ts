@@ -227,6 +227,8 @@ export async function POST(request: NextRequest) {
 
     if (saveError) throw saveError;
 
+    await supabase.from('kokushi_logs').insert({ user_id: user.id });
+
     return NextResponse.json({ questions: saved });
 
   } catch (e) {

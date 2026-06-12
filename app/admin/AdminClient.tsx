@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import Navbar from '@/components/Navbar';
 import type { UsageStats } from './page';
@@ -29,7 +30,16 @@ type Report = {
 
 export default function AdminClient({ reports: initialReports, usageStats }: { reports: Report[]; usageStats: UsageStats }) {
   const supabase = createClient();
+  const router = useRouter();
   const [reports, setReports] = useState<Report[]>(initialReports);
+  const [refreshing, setRefreshing] = useState(false);
+
+  async function handleRefresh() {
+    setRefreshing(true);
+    router.refresh();
+    // refresh() はサーバーデータ再取得後に自動で再レンダリングされるため、短い遅延でフラグをリセット
+    setTimeout(() => setRefreshing(false), 1000);
+  }
   const [deleting, setDeleting] = useState<string | null>(null);
   const [dismissing, setDismissing] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -88,7 +98,15 @@ export default function AdminClient({ reports: initialReports, usageStats }: { r
 
         {/* 使用状況ダッシュボード */}
         <div className="mb-10">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">📊 使用状況ダッシュボード</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold text-gray-900">📊 使用状況ダッシュボード</h2>
+            <button
+              onClick={handleRefresh}
+              disabled={refreshing}
+              className="text-xs text-gray-500 border border-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-50 disabled:opacity-60 transition-colors">
+              {refreshing ? '更新中...' : '🔄 更新'}
+            </button>
+          </div>
 
           {/* 累計 / 今月 カード */}
           <div className="grid grid-cols-3 gap-4 mb-6">
@@ -111,7 +129,7 @@ export default function AdminClient({ reports: initialReports, usageStats }: { r
 
           {/* ユーザーランキング */}
           <div className="bg-white rounded-2xl border p-6">
-            <h3 className="font-semibold text-gray-900 mb-4">🏆 利用回数ランキング（上位5名）</h3>
+            <h3 className="font-semibold text-gray-900 mb-4">🏆 演習回数ランキング（上位10名）</h3>
             {usageStats.topUsers.length === 0 ? (
               <p className="text-sm text-gray-400 text-center py-4">データがありません</p>
             ) : (
@@ -121,10 +139,9 @@ export default function AdminClient({ reports: initialReports, usageStats }: { r
                     <tr className="border-b text-xs text-gray-400">
                       <th className="text-left pb-2 font-medium">順位</th>
                       <th className="text-left pb-2 font-medium">ユーザーID</th>
-                      <th className="text-right pb-2 font-medium">AI生成</th>
-                      <th className="text-right pb-2 font-medium">CBT</th>
-                      <th className="text-right pb-2 font-medium">国試</th>
-                      <th className="text-right pb-2 font-medium">合計</th>
+                      <th className="text-right pb-2 font-medium">演習回数</th>
+                      <th className="text-right pb-2 font-medium">回答問題数</th>
+                      <th className="text-right pb-2 font-medium">正解率</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
@@ -139,10 +156,11 @@ export default function AdminClient({ reports: initialReports, usageStats }: { r
                           }`}>{i + 1}</span>
                         </td>
                         <td className="py-2.5 pr-3 font-mono text-xs text-gray-500 max-w-[140px] truncate">{u.userId}</td>
-                        <td className="py-2.5 text-right text-gray-700">{u.generate}</td>
-                        <td className="py-2.5 text-right text-gray-700">{u.cbt}</td>
-                        <td className="py-2.5 text-right text-gray-700">{u.kokushi}</td>
-                        <td className="py-2.5 text-right font-semibold text-gray-900">{u.total}</td>
+                        <td className="py-2.5 text-right font-semibold text-gray-900">{u.sessions}回</td>
+                        <td className="py-2.5 text-right text-gray-700">{u.questions}問</td>
+                        <td className="py-2.5 text-right text-gray-700">
+                          {u.questions > 0 ? `${Math.round((u.correct / u.questions) * 100)}%` : '--'}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
