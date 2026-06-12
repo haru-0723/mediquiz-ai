@@ -17,6 +17,10 @@ export type UsageStats = {
     sessions: number;
     questions: number;
     correct: number;
+    university: string | null;
+    department: string | null;
+    grade: number | null;
+    plan: string | null;
   }>;
 };
 
@@ -75,6 +79,22 @@ export default async function AdminPage() {
     .sort((a, b) => b.sessions - a.sessions)
     .slice(0, 10);
 
+  // top users のプロフィール情報を取得
+  const topUserIds = topUsers.map(u => u.userId);
+  const { data: topProfiles } = topUserIds.length > 0
+    ? await supabase.from('profiles').select('id, university, department, grade, plan').in('id', topUserIds)
+    : { data: [] as { id: string; university: string | null; department: string | null; grade: number | null; plan: string | null }[] };
+
+  const profileMap = Object.fromEntries((topProfiles ?? []).map(p => [p.id, p]));
+
+  const topUsersWithProfile = topUsers.map(u => ({
+    ...u,
+    university: profileMap[u.userId]?.university ?? null,
+    department: profileMap[u.userId]?.department ?? null,
+    grade: profileMap[u.userId]?.grade ?? null,
+    plan: profileMap[u.userId]?.plan ?? null,
+  }));
+
   const usageStats: UsageStats = {
     generateTotal: generateTotal ?? 0,
     cbtTotal: cbtTotal ?? 0,
@@ -82,7 +102,7 @@ export default async function AdminPage() {
     generateMonth: generateMonth ?? 0,
     cbtMonth: cbtMonth ?? 0,
     kokushiMonth,
-    topUsers,
+    topUsers: topUsersWithProfile,
   };
 
   return <AdminClient reports={reports ?? []} usageStats={usageStats} />;

@@ -46,9 +46,10 @@ export default function AdminClient({ reports: initialReports, usageStats }: { r
   const [editForm, setEditForm] = useState<Partial<Question>>({});
   const [savingEdit, setSavingEdit] = useState(false);
 
-  async function handleDeleteQuestion(questionId: string, reportId: string) {
+  async function handleDeleteQuestion(questionId: string) {
     if (!confirm('この問題を削除しますか？関連するレポートも削除されます。')) return;
     setDeleting(questionId);
+    await supabase.from('question_reports').delete().eq('question_id', questionId);
     await supabase.from('questions').delete().eq('id', questionId);
     setReports(reports.filter(r => r.question_id !== questionId));
     setDeleting(null);
@@ -138,7 +139,8 @@ export default function AdminClient({ reports: initialReports, usageStats }: { r
                   <thead>
                     <tr className="border-b text-xs text-gray-400">
                       <th className="text-left pb-2 font-medium">順位</th>
-                      <th className="text-left pb-2 font-medium">ユーザーID</th>
+                      <th className="text-left pb-2 font-medium">ユーザー</th>
+                      <th className="text-left pb-2 font-medium">プラン</th>
                       <th className="text-right pb-2 font-medium">演習回数</th>
                       <th className="text-right pb-2 font-medium">回答問題数</th>
                       <th className="text-right pb-2 font-medium">正解率</th>
@@ -155,7 +157,21 @@ export default function AdminClient({ reports: initialReports, usageStats }: { r
                             'bg-gray-50 text-gray-400'
                           }`}>{i + 1}</span>
                         </td>
-                        <td className="py-2.5 pr-3 font-mono text-xs text-gray-500 max-w-[140px] truncate">{u.userId}</td>
+                        <td className="py-2.5 pr-3 max-w-[160px]">
+                          {u.department || u.university ? (
+                            <div>
+                              <p className="text-xs font-medium text-gray-700 truncate">{u.department ?? '学部未設定'}</p>
+                              <p className="text-xs text-gray-400 truncate">{[u.university, u.grade ? `${u.grade}年` : null].filter(Boolean).join(' · ') || '大学未設定'}</p>
+                            </div>
+                          ) : (
+                            <span className="font-mono text-xs text-gray-400 truncate block">{u.userId.slice(0, 8)}…</span>
+                          )}
+                        </td>
+                        <td className="py-2.5 pr-3">
+                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${u.plan === 'standard' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                            {u.plan === 'standard' ? '有料' : '無料'}
+                          </span>
+                        </td>
                         <td className="py-2.5 text-right font-semibold text-gray-900">{u.sessions}回</td>
                         <td className="py-2.5 text-right text-gray-700">{u.questions}問</td>
                         <td className="py-2.5 text-right text-gray-700">
@@ -209,7 +225,7 @@ export default function AdminClient({ reports: initialReports, usageStats }: { r
                       {dismissing === report.id ? '処理中...' : '却下する'}
                     </button>
                     <button
-                      onClick={() => handleDeleteQuestion(report.question_id, report.id)}
+                      onClick={() => handleDeleteQuestion(report.question_id)}
                       disabled={deleting === report.question_id}
                       className="text-xs text-red-400 hover:text-red-600 border border-red-200 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-60">
                       {deleting === report.question_id ? '削除中...' : '問題を削除'}
