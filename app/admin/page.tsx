@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { redirect } from 'next/navigation';
 import AdminClient from './AdminClient';
 import { ADMIN_EMAIL } from '@/lib/constants';
@@ -29,12 +30,16 @@ export type UsageStats = {
 };
 
 export default async function AdminPage() {
+  // 認証チェックは通常クライアント（RLS あり）
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user || user.email !== ADMIN_EMAIL) {
     redirect('/dashboard');
   }
+
+  // データ取得は管理者クライアント（Service Role Key / RLS バイパス）
+  const admin = createAdminClient();
 
   const startOfMonth = new Date();
   startOfMonth.setDate(1);
@@ -51,33 +56,43 @@ export default async function AdminPage() {
     { data: generateLogs },
     { data: cbtLogs },
   ] = await Promise.all([
-    supabase
+    admin
       .from('question_reports')
       .select('*, questions(id,question,option_a,option_b,option_c,option_d,answer,explanation,subject,difficulty)')
       .order('created_at', { ascending: false })
       .limit(50),
-    supabase.from('generate_logs').select('*', { count: 'exact', head: true }),
-    supabase.from('cbt_logs').select('*', { count: 'exact', head: true }),
-    supabase.from('generate_logs').select('*', { count: 'exact', head: true }).gte('created_at', monthStr),
-    supabase.from('cbt_logs').select('*', { count: 'exact', head: true }).gte('created_at', monthStr),
-    supabase.from('profiles').select('id, university, department, grade, plan').limit(1000),
-    supabase.from('generate_logs').select('user_id').limit(10000),
-    supabase.from('cbt_logs').select('user_id').limit(10000),
+    admin.from('generate_logs').select('*', { count: 'exact', head: true }),
+    admin.from('cbt_logs').select('*', { count: 'exact', head: true }),
+    admin.from('generate_logs').select('*', { count: 'exact', head: true }).gte('created_at', monthStr),
+    admin.from('cbt_logs').select('*', { count: 'exact', head: true }).gte('created_at', monthStr),
+    admin.from('profiles').select('id, university, department, grade, plan').limit(1000),
+    admin.from('generate_logs').select('user_id').limit(10000),
+    admin.from('cbt_logs').select('user_id').limit(10000),
   ]);
+
+  // --- デバッグログ ---
+  const uniqueGenerateUserIds = Array.from(new Set((generateLogs ?? []).map(l => l.user_id)));
+  const uniqueCbtUserIds = Array.from(new Set((cbtLogs ?? []).map(l => l.user_id)));
+  console.log('[Admin] generate_logs 総件数:', generateLogs?.length ?? 0, '/ ユニークユーザー数:', uniqueGenerateUserIds.length);
+  console.log('[Admin] generate_logs ユーザーID一覧:', uniqueGenerateUserIds);
+  console.log('[Admin] cbt_logs 総件数:', cbtLogs?.length ?? 0, '/ ユニークユーザー数:', uniqueCbtUserIds.length);
+  console.log('[Admin] profiles 総件数:', allProfiles?.length ?? 0);
+  // -------------------
 
   // kokushi_logs はテーブルが存在しない場合もあるので個別に取得
   let kokushiTotal = 0, kokushiMonth = 0;
   let kokushiLogs: { user_id: string }[] = [];
-  const kokushiTotalRes = await supabase.from('kokushi_logs').select('*', { count: 'exact', head: true });
+  const kokushiTotalRes = await admin.from('kokushi_logs').select('*', { count: 'exact', head: true });
   if (!kokushiTotalRes.error) {
     kokushiTotal = kokushiTotalRes.count ?? 0;
     const [monthRes, logsRes] = await Promise.all([
-      supabase.from('kokushi_logs').select('*', { count: 'exact', head: true }).gte('created_at', monthStr),
-      supabase.from('kokushi_logs').select('user_id').limit(10000),
+      admin.from('kokushi_logs').select('*', { count: 'exact', head: true }).gte('created_at', monthStr),
+      admin.from('kokushi_logs').select('user_id').limit(10000),
     ]);
     kokushiMonth = monthRes.count ?? 0;
     kokushiLogs = (logsRes.data ?? []) as { user_id: string }[];
   }
+  console.log('[Admin] kokushi_logs 総件数:', kokushiTotal);
 
   // profiles を起点に全ユーザーの利用回数を集計
   const profileMap = Object.fromEntries(
@@ -121,6 +136,8 @@ export default async function AdminPage() {
     }))
     .sort((a, b) => b.total - a.total)
     .slice(0, 10);
+
+  console.log('[Admin] ランキング上位10名:', topUsers.map(u => ({ userId: u.userId.slice(0, 8), total: u.total, generate: u.generate })));
 
   const usageStats: UsageStats = {
     generateTotal: generateTotal ?? 0,
