@@ -2,12 +2,12 @@ import { NextResponse } from 'next/server';
 
 export async function GET() {
   const config = {
-    apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY ?? '',
-    authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN ?? '',
-    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID ?? '',
-    storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET ?? '',
-    messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID ?? '',
-    appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID ?? '',
+    apiKey:            'AIzaSyAQTishxb78pQBh-UoXJpFTHiIaGKkUhik',
+    authDomain:        'mediquiz-ai-ec88a.firebaseapp.com',
+    projectId:         'mediquiz-ai-ec88a',
+    storageBucket:     'mediquiz-ai-ec88a.firebasestorage.app',
+    messagingSenderId: '599937901456',
+    appId:             '1:599937901456:web:4cfce5e7cf6d54b3254915',
   };
 
   const sw = `
