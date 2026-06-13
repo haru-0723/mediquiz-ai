@@ -10,6 +10,7 @@ import GuideBanner from './GuideBanner';
 import AddToHomeScreen from '@/components/AddToHomeScreen';
 
 const FEATURE_CARDS = [
+  { href: '/today',    icon: '📅', title: '今日の問題',    desc: '毎日5問で実力アップ' },
   { href: '/quiz',      icon: '⚡', title: '演習を始める',  desc: '科目・難易度を選んで演習' },
   { href: '/review',   icon: '🔁', title: '復習モード',    desc: '間違えた問題を再チャレンジ' },
   { href: '/cbt',      icon: '🎯', title: 'CBTモード',      desc: '本番形式で実力を測る' },
