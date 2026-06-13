@@ -7,6 +7,7 @@ import LogoutButton from './LogoutButton';
 import HelpModal from '@/components/HelpModal';
 import { dashboardHelp } from '@/lib/helpContent';
 import GuideBanner from './GuideBanner';
+import AddToHomeScreen from '@/components/AddToHomeScreen';
 
 const FEATURE_CARDS = [
   { href: '/quiz',      icon: '⚡', title: '演習を始める',  desc: '科目・難易度を選んで演習' },
@@ -134,6 +135,8 @@ export default async function DashboardPage() {
             </div>
           </Link>
         </div>
+
+        <AddToHomeScreen inline />
 
         {/* 学部未設定バナー */}
         {!profile?.department && (

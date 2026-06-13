@@ -5,8 +5,9 @@ import { useEffect, useState } from 'react';
 const STORAGE_KEY = 'pwa-banner-dismissed';
 
 type Platform = 'ios' | 'android' | null;
+type Props = { inline?: boolean };
 
-export default function AddToHomeScreen() {
+export default function AddToHomeScreen({ inline = false }: Props) {
   const [platform, setPlatform] = useState<Platform>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
@@ -29,7 +30,6 @@ export default function AddToHomeScreen() {
       return;
     }
 
-    // Android / Chrome: beforeinstallprompt イベントを待つ
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const handler = (e: any) => {
       e.preventDefault();
@@ -45,9 +45,7 @@ export default function AddToHomeScreen() {
     if (!deferredPrompt) return;
     deferredPrompt.prompt();
     const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === 'accepted') {
-      dismiss();
-    }
+    if (outcome === 'accepted') dismiss();
     setDeferredPrompt(null);
   }
 
@@ -57,6 +55,40 @@ export default function AddToHomeScreen() {
   }
 
   if (!visible || !platform) return null;
+
+  if (inline) {
+    return (
+      <div className="sm:hidden mb-4">
+        <div className="bg-green-50 border border-green-200 rounded-xl p-3 flex items-start gap-3">
+          <span className="text-xl flex-shrink-0">📱</span>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-green-800">
+              ホーム画面に追加できます
+            </p>
+            {platform === 'ios' ? (
+              <p className="text-xs text-green-700 mt-0.5 leading-relaxed">
+                Safari の <span className="font-medium">共有（□↑）</span> →「ホーム画面に追加」
+              </p>
+            ) : (
+              <button
+                onClick={handleAndroidInstall}
+                className="mt-1.5 text-xs bg-green-600 text-white px-3 py-1 rounded-lg font-medium hover:bg-green-700 transition-colors"
+              >
+                ホーム画面に追加する
+              </button>
+            )}
+          </div>
+          <button
+            onClick={dismiss}
+            className="flex-shrink-0 text-green-400 hover:text-green-600 text-lg leading-none"
+            aria-label="閉じる"
+          >
+            ×
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 px-4 pb-6 pointer-events-none">
