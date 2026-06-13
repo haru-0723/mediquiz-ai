@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 
 const STORAGE_KEY = 'pwa-banner-dismissed';
 
-type Platform = 'ios' | 'android' | null;
+type Platform = 'ios' | 'android' | 'line-ios' | 'line-android' | null;
 type Props = { inline?: boolean };
 
 export default function AddToHomeScreen({ inline = false }: Props) {
@@ -17,28 +17,41 @@ export default function AddToHomeScreen({ inline = false }: Props) {
     if (localStorage.getItem(STORAGE_KEY)) return;
 
     const ua = navigator.userAgent;
+    const isLine = ua.includes('Line/');
     const isIOS = /iPad|iPhone|iPod/.test(ua) && !(ua.includes('CriOS') || ua.includes('FxiOS'));
+    const isAndroid = /Android/.test(ua);
     const isStandalone =
       window.matchMedia('(display-mode: standalone)').matches ||
       ('standalone' in window.navigator && (window.navigator as Navigator & { standalone: boolean }).standalone);
 
     if (isStandalone) return;
 
+    // LINEアプリ内ブラウザ
+    if (isLine) {
+      setPlatform(isIOS ? 'line-ios' : 'line-android');
+      setVisible(true);
+      return;
+    }
+
+    // 通常 iOS Safari
     if (isIOS) {
       setPlatform('ios');
       setVisible(true);
       return;
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const handler = (e: any) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-      setPlatform('android');
-      setVisible(true);
-    };
-    window.addEventListener('beforeinstallprompt', handler);
-    return () => window.removeEventListener('beforeinstallprompt', handler);
+    // Android Chrome: beforeinstallprompt を待つ
+    if (isAndroid) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const handler = (e: any) => {
+        e.preventDefault();
+        setDeferredPrompt(e);
+        setPlatform('android');
+        setVisible(true);
+      };
+      window.addEventListener('beforeinstallprompt', handler);
+      return () => window.removeEventListener('beforeinstallprompt', handler);
+    }
   }, []);
 
   async function handleAndroidInstall() {
@@ -56,31 +69,60 @@ export default function AddToHomeScreen({ inline = false }: Props) {
 
   if (!visible || !platform) return null;
 
+  // LINE内ブラウザ向けコンテンツ
+  const lineContent = platform === 'line-ios' ? (
+    <>
+      <p className="text-sm font-semibold text-orange-800">
+        Safariで開いてホーム画面に追加できます
+      </p>
+      <p className="text-xs text-orange-700 mt-0.5 leading-relaxed">
+        右下の <span className="font-medium">「…」→「ブラウザで開く」</span> をタップ後、Safariの共有ボタン（□↑）→「ホーム画面に追加」
+      </p>
+    </>
+  ) : (
+    <>
+      <p className="text-sm font-semibold text-orange-800">
+        Chromeで開いてホーム画面に追加できます
+      </p>
+      <p className="text-xs text-orange-700 mt-0.5 leading-relaxed">
+        右上の <span className="font-medium">「…」→「他のアプリで開く」</span> でChromeを選択後、メニューから「ホーム画面に追加」
+      </p>
+    </>
+  );
+
+  const isLineVariant = platform === 'line-ios' || platform === 'line-android';
+
   if (inline) {
     return (
       <div className="sm:hidden mb-4">
-        <div className="bg-green-50 border border-green-200 rounded-xl p-3 flex items-start gap-3">
+        <div className={`border rounded-xl p-3 flex items-start gap-3 ${
+          isLineVariant ? 'bg-orange-50 border-orange-200' : 'bg-green-50 border-green-200'
+        }`}>
           <span className="text-xl flex-shrink-0">📱</span>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-green-800">
-              ホーム画面に追加できます
-            </p>
-            {platform === 'ios' ? (
-              <p className="text-xs text-green-700 mt-0.5 leading-relaxed">
-                Safari の <span className="font-medium">共有（□↑）</span> →「ホーム画面に追加」
-              </p>
-            ) : (
-              <button
-                onClick={handleAndroidInstall}
-                className="mt-1.5 text-xs bg-green-600 text-white px-3 py-1 rounded-lg font-medium hover:bg-green-700 transition-colors"
-              >
-                ホーム画面に追加する
-              </button>
+            {isLineVariant ? lineContent : (
+              <>
+                <p className="text-sm font-semibold text-green-800">ホーム画面に追加できます</p>
+                {platform === 'ios' ? (
+                  <p className="text-xs text-green-700 mt-0.5 leading-relaxed">
+                    Safari の <span className="font-medium">共有（□↑）</span> →「ホーム画面に追加」
+                  </p>
+                ) : (
+                  <button
+                    onClick={handleAndroidInstall}
+                    className="mt-1.5 text-xs bg-green-600 text-white px-3 py-1 rounded-lg font-medium hover:bg-green-700 transition-colors"
+                  >
+                    ホーム画面に追加する
+                  </button>
+                )}
+              </>
             )}
           </div>
           <button
             onClick={dismiss}
-            className="flex-shrink-0 text-green-400 hover:text-green-600 text-lg leading-none"
+            className={`flex-shrink-0 text-lg leading-none ${
+              isLineVariant ? 'text-orange-400 hover:text-orange-600' : 'text-green-400 hover:text-green-600'
+            }`}
             aria-label="閉じる"
           >
             ×
@@ -97,21 +139,25 @@ export default function AddToHomeScreen({ inline = false }: Props) {
           <div className="flex items-start gap-3">
             <span className="text-2xl flex-shrink-0">📱</span>
             <div>
-              <p className="text-sm font-semibold text-gray-900">
-                ホーム画面に追加してアプリとして使えます！
-              </p>
-              {platform === 'ios' ? (
-                <p className="text-xs text-gray-500 mt-1 leading-relaxed">
-                  Safari の <span className="font-medium text-gray-700">共有ボタン（□↑）</span> をタップ
-                  → <span className="font-medium text-gray-700">「ホーム画面に追加」</span> を選択
-                </p>
-              ) : (
-                <button
-                  onClick={handleAndroidInstall}
-                  className="mt-2 text-xs bg-green-600 text-white px-4 py-1.5 rounded-lg font-medium hover:bg-green-700 transition-colors"
-                >
-                  ホーム画面に追加する
-                </button>
+              {isLineVariant ? lineContent : (
+                <>
+                  <p className="text-sm font-semibold text-gray-900">
+                    ホーム画面に追加してアプリとして使えます！
+                  </p>
+                  {platform === 'ios' ? (
+                    <p className="text-xs text-gray-500 mt-1 leading-relaxed">
+                      Safari の <span className="font-medium text-gray-700">共有ボタン（□↑）</span> をタップ
+                      → <span className="font-medium text-gray-700">「ホーム画面に追加」</span> を選択
+                    </p>
+                  ) : (
+                    <button
+                      onClick={handleAndroidInstall}
+                      className="mt-2 text-xs bg-green-600 text-white px-4 py-1.5 rounded-lg font-medium hover:bg-green-700 transition-colors"
+                    >
+                      ホーム画面に追加する
+                    </button>
+                  )}
+                </>
               )}
             </div>
           </div>
