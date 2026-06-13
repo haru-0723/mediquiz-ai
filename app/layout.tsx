@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import VersionChecker from '@/components/VersionChecker';
+import AddToHomeScreen from '@/components/AddToHomeScreen';
 
 export const metadata: Metadata = {
   title: 'MediQuiz AI — 医療系大学生のAI問題生成アプリ',
@@ -30,6 +31,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <VersionChecker />
         {children}
+        <AddToHomeScreen />
       </body>
     </html>
   );
