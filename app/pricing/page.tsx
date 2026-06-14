@@ -17,6 +17,7 @@ const STANDARD_FEATURES = [
   { emoji: '✨', text: 'AI問題生成：無制限' },
   { emoji: '📝', text: '問題保存：無制限' },
   { emoji: '🎯', text: 'CBT模試：無制限' },
+  { emoji: '📝', text: '国試モード：無制限' },
   { emoji: '📤', text: '教材アップロード：無制限' },
   { emoji: '⚡', text: '問題演習' },
   { emoji: '🔁', text: '復習モード' },
