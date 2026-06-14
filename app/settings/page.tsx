@@ -201,22 +201,7 @@ export default function SettingsPage() {
           </Link>
         </div>
 
-        {/* 教材管理 */}
-        <div className="bg-white rounded-2xl border p-6">
-          <h2 className="font-semibold text-gray-900 mb-4">教材管理</h2>
-          <div className="space-y-3">
-            <Link href="/materials"
-              className="block w-full text-center border border-gray-200 rounded-xl py-3 text-sm text-gray-600 hover:border-gray-300 transition-colors">
-              📁 教材一覧・削除
-            </Link>
-            <Link href="/upload"
-              className="block w-full text-center border border-gray-200 rounded-xl py-3 text-sm text-gray-600 hover:border-gray-300 transition-colors">
-              📤 教材をアップロード
-            </Link>
-          </div>
-        </div>
-
-        {/* 危険な操作 */}
+{/* 危険な操作 */}
         <div className="bg-white rounded-2xl border border-red-100 p-6">
           <h2 className="font-semibold text-red-600 mb-4">アカウント削除</h2>
           <p className="text-sm text-gray-500 mb-4">アカウントを削除すると、すべてのデータが失われます。この操作は取り消せません。</p>

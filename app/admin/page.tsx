@@ -8,7 +8,9 @@ export const dynamic = 'force-dynamic';
 
 export type TopUser = {
   userId: string;
+  name: string | null;
   generate: number;
+  quiz: number;
   cbt: number;
   kokushi: number;
   total: number;
@@ -20,9 +22,11 @@ export type TopUser = {
 
 export type UsageStats = {
   generateTotal: number;
+  quizTotal: number;
   cbtTotal: number;
   kokushiTotal: number;
   generateMonth: number;
+  quizMonth: number;
   cbtMonth: number;
   kokushiMonth: number;
   totalUsers: number;
@@ -30,7 +34,6 @@ export type UsageStats = {
 };
 
 export default async function AdminPage() {
-  // 認証チェックは通常クライアント（RLS あり）
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -38,7 +41,6 @@ export default async function AdminPage() {
     redirect('/dashboard');
   }
 
-  // データ取得は管理者クライアント（Service Role Key / RLS バイパス）
   const admin = createAdminClient();
 
   const startOfMonth = new Date();
@@ -48,13 +50,16 @@ export default async function AdminPage() {
 
   const [
     { data: reports },
-    { count: generateTotal },
-    { count: cbtTotal },
+    { count: generateTotal, error: genTotalErr },
+    { count: cbtTotal, error: cbtTotalErr },
     { count: generateMonth },
     { count: cbtMonth },
-    { data: allProfiles },
-    { data: generateLogs },
-    { data: cbtLogs },
+    { data: allProfiles, error: profilesErr },
+    { data: generateLogs, error: genLogsErr },
+    { data: cbtLogs, error: cbtLogsErr },
+    quizTotalRes,
+    quizMonthRes,
+    quizLogsRes,
   ] = await Promise.all([
     admin
       .from('question_reports')
@@ -65,21 +70,35 @@ export default async function AdminPage() {
     admin.from('cbt_logs').select('*', { count: 'exact', head: true }),
     admin.from('generate_logs').select('*', { count: 'exact', head: true }).gte('created_at', monthStr),
     admin.from('cbt_logs').select('*', { count: 'exact', head: true }).gte('created_at', monthStr),
-    admin.from('profiles').select('id, university, department, grade, plan').limit(1000),
-    admin.from('generate_logs').select('user_id').limit(10000),
-    admin.from('cbt_logs').select('user_id').limit(10000),
+    admin.from('profiles').select('id, name, university, department, grade, plan').limit(5000),
+    admin.from('generate_logs').select('user_id').limit(50000),
+    admin.from('cbt_logs').select('user_id').limit(50000),
+    admin.from('quiz_sessions').select('*', { count: 'exact', head: true }),
+    admin.from('quiz_sessions').select('*', { count: 'exact', head: true }).gte('created_at', monthStr),
+    admin.from('quiz_sessions').select('user_id').limit(50000),
   ]);
 
-  // --- デバッグログ ---
+  if (genTotalErr) console.error('[Admin] generate_logs count error:', genTotalErr);
+  if (cbtTotalErr) console.error('[Admin] cbt_logs count error:', cbtTotalErr);
+  if (profilesErr) console.error('[Admin] profiles error:', profilesErr);
+  if (genLogsErr) console.error('[Admin] generate_logs fetch error:', genLogsErr);
+  if (cbtLogsErr) console.error('[Admin] cbt_logs fetch error:', cbtLogsErr);
+  if (quizTotalRes.error) console.error('[Admin] quiz_sessions count error:', quizTotalRes.error);
+  if (quizLogsRes.error) console.error('[Admin] quiz_sessions fetch error:', quizLogsRes.error);
+
+  const quizTotal = quizTotalRes.error ? 0 : (quizTotalRes.count ?? 0);
+  const quizMonth = quizMonthRes.error ? 0 : (quizMonthRes.count ?? 0);
+  const quizLogs: { user_id: string }[] = quizLogsRes.error ? [] : ((quizLogsRes.data ?? []) as { user_id: string }[]);
+
   const uniqueGenerateUserIds = Array.from(new Set((generateLogs ?? []).map(l => l.user_id)));
   const uniqueCbtUserIds = Array.from(new Set((cbtLogs ?? []).map(l => l.user_id)));
+  const uniqueQuizUserIds = Array.from(new Set(quizLogs.map(l => l.user_id)));
   console.log('[Admin] generate_logs 総件数:', generateLogs?.length ?? 0, '/ ユニークユーザー数:', uniqueGenerateUserIds.length);
-  console.log('[Admin] generate_logs ユーザーID一覧:', uniqueGenerateUserIds);
   console.log('[Admin] cbt_logs 総件数:', cbtLogs?.length ?? 0, '/ ユニークユーザー数:', uniqueCbtUserIds.length);
+  console.log('[Admin] quiz_sessions 総件数:', quizLogs.length, '/ ユニークユーザー数:', uniqueQuizUserIds.length);
   console.log('[Admin] profiles 総件数:', allProfiles?.length ?? 0);
-  // -------------------
+  console.log('[Admin] generate_logs ユーザーID(先頭10件):', uniqueGenerateUserIds.slice(0, 10));
 
-  // kokushi_logs はテーブルが存在しない場合もあるので個別に取得
   let kokushiTotal = 0, kokushiMonth = 0;
   let kokushiLogs: { user_id: string }[] = [];
   const kokushiTotalRes = await admin.from('kokushi_logs').select('*', { count: 'exact', head: true });
@@ -87,48 +106,48 @@ export default async function AdminPage() {
     kokushiTotal = kokushiTotalRes.count ?? 0;
     const [monthRes, logsRes] = await Promise.all([
       admin.from('kokushi_logs').select('*', { count: 'exact', head: true }).gte('created_at', monthStr),
-      admin.from('kokushi_logs').select('user_id').limit(10000),
+      admin.from('kokushi_logs').select('user_id').limit(50000),
     ]);
     kokushiMonth = monthRes.count ?? 0;
     kokushiLogs = (logsRes.data ?? []) as { user_id: string }[];
   }
   console.log('[Admin] kokushi_logs 総件数:', kokushiTotal);
 
-  // profiles を起点に全ユーザーの利用回数を集計
   const profileMap = Object.fromEntries(
     (allProfiles ?? []).map(p => [p.id, p])
   );
 
-  // 全 profiles ユーザーを 0 カウントで初期化
-  const userStats: Record<string, { generate: number; cbt: number; kokushi: number }> = {};
+  const userStats: Record<string, { generate: number; quiz: number; cbt: number; kokushi: number }> = {};
   for (const p of allProfiles ?? []) {
-    userStats[p.id] = { generate: 0, cbt: 0, kokushi: 0 };
+    userStats[p.id] = { generate: 0, quiz: 0, cbt: 0, kokushi: 0 };
   }
 
-  // generate_logs を user_id ごとに集計
   for (const log of generateLogs ?? []) {
-    if (!userStats[log.user_id]) userStats[log.user_id] = { generate: 0, cbt: 0, kokushi: 0 };
+    if (!userStats[log.user_id]) userStats[log.user_id] = { generate: 0, quiz: 0, cbt: 0, kokushi: 0 };
     userStats[log.user_id].generate++;
   }
 
-  // cbt_logs を user_id ごとに集計
   for (const log of cbtLogs ?? []) {
-    if (!userStats[log.user_id]) userStats[log.user_id] = { generate: 0, cbt: 0, kokushi: 0 };
+    if (!userStats[log.user_id]) userStats[log.user_id] = { generate: 0, quiz: 0, cbt: 0, kokushi: 0 };
     userStats[log.user_id].cbt++;
   }
 
-  // kokushi_logs を user_id ごとに集計
+  for (const log of quizLogs) {
+    if (!userStats[log.user_id]) userStats[log.user_id] = { generate: 0, quiz: 0, cbt: 0, kokushi: 0 };
+    userStats[log.user_id].quiz++;
+  }
+
   for (const log of kokushiLogs) {
-    if (!userStats[log.user_id]) userStats[log.user_id] = { generate: 0, cbt: 0, kokushi: 0 };
+    if (!userStats[log.user_id]) userStats[log.user_id] = { generate: 0, quiz: 0, cbt: 0, kokushi: 0 };
     userStats[log.user_id].kokushi++;
   }
 
-  // 合計利用回数でソートして上位10名を取得
   const topUsers: TopUser[] = Object.entries(userStats)
     .map(([userId, counts]) => ({
       userId,
+      name: profileMap[userId]?.name ?? null,
       ...counts,
-      total: counts.generate + counts.cbt + counts.kokushi,
+      total: counts.generate + counts.quiz + counts.cbt + counts.kokushi,
       university: profileMap[userId]?.university ?? null,
       department: profileMap[userId]?.department ?? null,
       grade: profileMap[userId]?.grade ?? null,
@@ -137,13 +156,22 @@ export default async function AdminPage() {
     .sort((a, b) => b.total - a.total)
     .slice(0, 10);
 
-  console.log('[Admin] ランキング上位10名:', topUsers.map(u => ({ userId: u.userId.slice(0, 8), total: u.total, generate: u.generate })));
+  console.log('[Admin] ランキング上位10名:', topUsers.map(u => ({
+    userId: u.userId.slice(0, 8),
+    name: u.name,
+    total: u.total,
+    generate: u.generate,
+    quiz: u.quiz,
+    cbt: u.cbt,
+  })));
 
   const usageStats: UsageStats = {
     generateTotal: generateTotal ?? 0,
+    quizTotal,
     cbtTotal: cbtTotal ?? 0,
     kokushiTotal,
     generateMonth: generateMonth ?? 0,
+    quizMonth,
     cbtMonth: cbtMonth ?? 0,
     kokushiMonth,
     totalUsers: allProfiles?.length ?? 0,

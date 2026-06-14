@@ -110,9 +110,10 @@ export default function AdminClient({ reports: initialReports, usageStats }: { r
           </div>
 
           {/* 累計 / 今月 カード */}
-          <div className="grid grid-cols-3 gap-4 mb-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             {[
               { label: 'AI問題生成', icon: '✨', total: usageStats.generateTotal, month: usageStats.generateMonth },
+              { label: 'クイズ',     icon: '📖', total: usageStats.quizTotal,     month: usageStats.quizMonth },
               { label: 'CBTモード',  icon: '🎯', total: usageStats.cbtTotal,      month: usageStats.cbtMonth },
               { label: '国試モード', icon: '📝', total: usageStats.kokushiTotal,  month: usageStats.kokushiMonth },
             ].map(({ label, icon, total, month }) => (
@@ -145,6 +146,7 @@ export default function AdminClient({ reports: initialReports, usageStats }: { r
                       <th className="text-left pb-2 font-medium">ユーザー</th>
                       <th className="text-left pb-2 font-medium">プラン</th>
                       <th className="text-right pb-2 font-medium">AI生成</th>
+                      <th className="text-right pb-2 font-medium">クイズ</th>
                       <th className="text-right pb-2 font-medium">CBT</th>
                       <th className="text-right pb-2 font-medium">国試</th>
                       <th className="text-right pb-2 font-medium">合計</th>
@@ -162,7 +164,14 @@ export default function AdminClient({ reports: initialReports, usageStats }: { r
                           }`}>{i + 1}</span>
                         </td>
                         <td className="py-2.5 pr-3 max-w-[160px]">
-                          {u.department || u.university ? (
+                          {u.name ? (
+                            <div>
+                              <p className="text-xs font-medium text-gray-700 truncate">{u.name}</p>
+                              <p className="text-xs text-gray-400 truncate">
+                                {[u.university, u.grade ? `${u.grade}年` : null].filter(Boolean).join(' · ') || u.department || ''}
+                              </p>
+                            </div>
+                          ) : u.department || u.university ? (
                             <div>
                               <p className="text-xs font-medium text-gray-700 truncate">{u.department ?? '学部未設定'}</p>
                               <p className="text-xs text-gray-400 truncate">
@@ -181,6 +190,7 @@ export default function AdminClient({ reports: initialReports, usageStats }: { r
                           </span>
                         </td>
                         <td className="py-2.5 text-right text-gray-700">{u.generate}</td>
+                        <td className="py-2.5 text-right text-gray-700">{u.quiz}</td>
                         <td className="py-2.5 text-right text-gray-700">{u.cbt}</td>
                         <td className="py-2.5 text-right text-gray-700">{u.kokushi}</td>
                         <td className="py-2.5 text-right font-semibold text-gray-900">{u.total}</td>
