@@ -9,6 +9,7 @@ const FREE_FEATURES = [
   { emoji: '🎯', text: 'CBT模試：月2回まで' },
   { emoji: '📤', text: '教材アップロード：3件まで' },
   { emoji: '⚡', text: '問題演習' },
+  { emoji: '📚', text: 'マイ問題集（フォルダ管理）' },
   { emoji: '📅', text: '試験日カウントダウン' },
 ];
 
