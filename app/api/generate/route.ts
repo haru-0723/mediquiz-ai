@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { getSubjectInstruction } from '@/lib/departmentUtils';
 
 if (!process.env.ANTHROPIC_API_KEY) {
@@ -135,8 +136,10 @@ ${getSubjectInstruction(profile?.department)}`
       throw new Error('問題データが見つかりません');
     }
 
-    // 生成ログを記録
-    await supabase.from('generate_logs').insert({ user_id: user.id });
+    // 生成ログを記録（adminクライアントでRLSをバイパス）
+    const admin = createAdminClient();
+    const { error: logError } = await admin.from('generate_logs').insert({ user_id: user.id });
+    if (logError) console.error('[generate] log insert error:', logError);
 
     return NextResponse.json({ questions: parsed.questions });
 

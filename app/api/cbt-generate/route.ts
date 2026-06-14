@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { getDepartmentType, getCBTSubjectInstruction } from '@/lib/departmentUtils';
 
 if (!process.env.ANTHROPIC_API_KEY) {
@@ -162,7 +163,10 @@ export async function POST(request: NextRequest) {
 
     if (saveError) throw saveError;
 
-    await supabase.from('cbt_logs').insert({ user_id: user.id });
+    // ログを記録（adminクライアントでRLSをバイパス）
+    const admin = createAdminClient();
+    const { error: logError } = await admin.from('cbt_logs').insert({ user_id: user.id });
+    if (logError) console.error('[cbt-generate] log insert error:', logError);
 
     return NextResponse.json({ questions: saved });
 
