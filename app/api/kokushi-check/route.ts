@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+// kokushi_logsへの書き込みはkokushi-generateで行うためここではimport不要
 
 export async function POST(_request: NextRequest) {
   try {
@@ -14,7 +15,6 @@ export async function POST(_request: NextRequest) {
       .single();
 
     if (profile?.plan === 'standard') {
-      await supabase.from('kokushi_logs').insert({ user_id: user.id });
       return NextResponse.json({ allowed: true });
     }
 

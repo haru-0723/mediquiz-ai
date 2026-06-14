@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 if (!process.env.ANTHROPIC_API_KEY) {
   throw new Error('ANTHROPIC_API_KEY is not set');
@@ -227,7 +228,10 @@ export async function POST(request: NextRequest) {
 
     if (saveError) throw saveError;
 
-    await supabase.from('kokushi_logs').insert({ user_id: user.id });
+    // ログを記録（adminクライアントでRLSをバイパス）
+    const admin = createAdminClient();
+    const { error: logError } = await admin.from('kokushi_logs').insert({ user_id: user.id });
+    if (logError) console.error('[kokushi-generate] log insert error:', logError);
 
     return NextResponse.json({ questions: saved });
 

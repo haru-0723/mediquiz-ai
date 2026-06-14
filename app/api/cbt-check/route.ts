@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 export async function POST(request: NextRequest) {
   try {
@@ -18,12 +19,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ allowed: true });
     }
 
-    // 無料プランは月2回まで
+    // 無料プランは月2回まで（adminクライアントでRLSバイパス）
+    const admin = createAdminClient();
     const startOfMonth = new Date();
     startOfMonth.setDate(1);
     startOfMonth.setHours(0, 0, 0, 0);
 
-    const { count } = await supabase
+    const { count } = await admin
       .from('cbt_logs')
       .select('*', { count: 'exact', head: true })
       .eq('user_id', user.id)
@@ -36,9 +38,6 @@ export async function POST(request: NextRequest) {
         upgrade: true
       });
     }
-
-    // 利用回数を記録
-    await supabase.from('cbt_logs').insert({ user_id: user.id });
 
     return NextResponse.json({ allowed: true });
   } catch (e) {
