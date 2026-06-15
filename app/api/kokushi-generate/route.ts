@@ -66,13 +66,16 @@ function extractQuestions(text: string): RawQuestion[] {
   return questions;
 }
 
-type KokushiDept = 'pharmacy' | 'medical' | 'nursing' | 'unset';
+type KokushiDept = 'pharmacy' | 'medical' | 'nursing' | 'pt' | 'ot' | 'st' | 'unset';
 
 function getKokushiDept(department: string | null | undefined): KokushiDept {
   const d = department ?? '';
   if (d.includes('薬学')) return 'pharmacy';
   if (d.includes('医学') || d.includes('医師')) return 'medical';
   if (d.includes('看護')) return 'nursing';
+  if (d.includes('理学療法')) return 'pt';
+  if (d.includes('作業療法')) return 'ot';
+  if (d.includes('言語聴覚')) return 'st';
   return 'unset';
 }
 
@@ -83,7 +86,10 @@ function getKokushiPrompt(dept: KokushiDept, subject: string, batchCount: number
     pharmacy: '薬剤師国家試験',
     medical: '医師国家試験',
     nursing: '看護師国家試験',
-    unset: '医療系国家試験（薬剤師・医師・看護師）',
+    pt: '理学療法士国家試験',
+    ot: '作業療法士国家試験',
+    st: '言語聴覚士国家試験',
+    unset: '医療系国家試験（薬剤師・医師・看護師・PT・OT・ST）',
   }[dept];
 
   const subjectInstruction: Record<KokushiDept, string> = {
@@ -130,7 +136,21 @@ function getKokushiPrompt(dept: KokushiDept, subject: string, batchCount: number
 状況設定問題：糖尿病患者・脳梗塞患者・心不全患者・COPD患者・認知症高齢者・妊婦・小児感染症・精神疾患患者の事例
 - subjectフィールドには選択した科目名（例：成人看護学）をそのまま使用してください`,
 
-    unset: `薬剤師・医師・看護師国家試験の出題範囲から選択された科目の問題を作成してください。
+    pt: `理学療法士国家試験の出題範囲：
+共通科目：解剖学・生理学・運動学・人間発達学・医学概論・病理学概論・臨床医学総論・リハビリテーション医学・臨床心理学・精神障害と臨床医学・骨関節障害・慢性疼痛・中枢神経障害・末梢神経筋障害・小児障害・内部障害・がん関連障害・老年期障害・保健医療福祉・リハビリテーション概論
+専門科目：基礎理学療法学・理学療法管理学・理学療法評価学（筋力・関節可動域・歩行分析・バランス・神経評価）・理学療法治療学（運動療法・物理療法・ADL訓練・義肢装具）・地域理学療法学（在宅リハビリ・地域包括ケア・介護保険）・臨床実習
+- subjectフィールドには選択した科目名をそのまま使用してください`,
+
+    ot: `作業療法士国家試験の出題範囲：
+共通科目：解剖学・生理学・運動学・人間発達学・医学概論・病理学概論・臨床医学総論・リハビリテーション医学・臨床心理学・精神障害と臨床医学・骨関節障害・慢性疼痛・中枢神経障害・末梢神経筋障害・小児障害・内部障害・がん関連障害・老年期障害・保健医療福祉・リハビリテーション概論
+専門科目：基礎作業療法学・作業療法管理学・作業療法評価学（ADL評価・認知機能評価・感覚機能評価・精神機能評価）・作業療法治療学（身体障害・精神障害・発達障害・高次脳機能障害）・地域作業療法学（在宅復帰・就労支援・地域包括ケア）・臨床実習
+- subjectフィールドには選択した科目名をそのまま使用してください`,
+
+    st: `言語聴覚士国家試験の出題範囲：
+基礎医学（解剖学・生理学・神経科学）・臨床医学（内科学・神経内科学・精神医学・小児科学・耳鼻咽喉科学）・臨床歯科医学（口腔解剖・嚥下関連）・音声言語聴覚医学（音声障害・構音障害・吃音・嚥下障害）・心理学（発達心理学・認知心理学・臨床心理学）・音声言語学（音韻論・形態論・統語論）・社会福祉教育・言語聴覚障害学総論・失語高次脳機能障害学・言語発達障害学・発声発語嚥下障害学・聴覚障害学
+- subjectフィールドには選択した科目名をそのまま使用してください`,
+
+    unset: `薬剤師・医師・看護師・理学療法士・作業療法士・言語聴覚士国家試験の出題範囲から選択された科目の問題を作成してください。
 - subjectフィールドには選択した科目名をそのまま使用してください`,
   };
 

@@ -26,12 +26,15 @@ type Answer = {
   isCorrect: boolean;
 };
 
-type KokushiDept = 'pharmacy' | 'medical' | 'nursing' | 'unset';
+type KokushiDept = 'pharmacy' | 'medical' | 'nursing' | 'pt' | 'ot' | 'st' | 'unset';
 
 function getKokushiDept(department: string): KokushiDept {
   if (department.includes('薬学')) return 'pharmacy';
   if (department.includes('医学') || department.includes('医師')) return 'medical';
   if (department.includes('看護')) return 'nursing';
+  if (department.includes('理学療法')) return 'pt';
+  if (department.includes('作業療法')) return 'ot';
+  if (department.includes('言語聴覚')) return 'st';
   return 'unset';
 }
 
@@ -50,17 +53,39 @@ const NURSING_SUBJECTS = [
   '看護の統合と実践', '状況設定問題',
 ];
 
+const PT_SUBJECTS = [
+  'すべて', '解剖学', '生理学', '運動学', '理学療法評価学', '理学療法治療学',
+  '地域理学療法学', 'リハビリテーション医学', '臨床医学',
+];
+
+const OT_SUBJECTS = [
+  'すべて', '解剖学', '生理学', '運動学', '作業療法評価学', '作業療法治療学',
+  '地域作業療法学', 'リハビリテーション医学', '臨床医学',
+];
+
+const ST_SUBJECTS = [
+  'すべて', '基礎医学', '臨床医学', '臨床歯科医学', '音声言語聴覚医学', '心理学',
+  '音声言語学', '社会福祉教育', '言語聴覚障害学総論', '失語高次脳機能障害学',
+  '言語発達障害学', '発声発語嚥下障害学', '聴覚障害学',
+];
+
 const ALL_SUBJECTS = [
   'すべて',
   ...PHARMACY_SUBJECTS.slice(1).map(s => `[薬] ${s}`),
   ...MEDICAL_SUBJECTS.slice(1).map(s => `[医] ${s}`),
   ...NURSING_SUBJECTS.slice(1).map(s => `[看] ${s}`),
+  ...PT_SUBJECTS.slice(1).map(s => `[PT] ${s}`),
+  ...OT_SUBJECTS.slice(1).map(s => `[OT] ${s}`),
+  ...ST_SUBJECTS.slice(1).map(s => `[ST] ${s}`),
 ];
 
 function getSubjects(dept: KokushiDept): string[] {
   if (dept === 'pharmacy') return PHARMACY_SUBJECTS;
   if (dept === 'medical') return MEDICAL_SUBJECTS;
   if (dept === 'nursing') return NURSING_SUBJECTS;
+  if (dept === 'pt') return PT_SUBJECTS;
+  if (dept === 'ot') return OT_SUBJECTS;
+  if (dept === 'st') return ST_SUBJECTS;
   return ALL_SUBJECTS;
 }
 
@@ -68,6 +93,9 @@ const EXAM_LABELS: Record<KokushiDept, string> = {
   pharmacy: '薬剤師国家試験',
   medical: '医師国家試験',
   nursing: '看護師国家試験',
+  pt: '理学療法士国家試験',
+  ot: '作業療法士国家試験',
+  st: '言語聴覚士国家試験',
   unset: '国家試験',
 };
 
@@ -179,7 +207,7 @@ export default function KokushiPage() {
     }, 2000);
 
     try {
-      const subject = selectedSubject.replace(/^\[(薬|医|看)\] /, '');
+      const subject = selectedSubject.replace(/^\[(薬|医|看|PT|OT|ST)\] /, '');
 
       // 60%はAI生成、40%はストックから出題
       const newCount = Math.ceil(questionCount * 0.6);
@@ -302,7 +330,7 @@ export default function KokushiPage() {
             <h2 className="text-lg font-semibold text-gray-900 mb-2">スタンダードプランの機能です</h2>
             <p className="text-sm text-gray-500 mb-6">
               国試モードは有料プランでご利用いただけます。<br />
-              薬剤師・医師・看護師国家試験レベルの本格問題で合格を目指しましょう。
+              薬剤師・医師・看護師・PT・OT・ST国家試験レベルの本格問題で合格を目指しましょう。
             </p>
             <Link href="/pricing"
               className="inline-block bg-purple-600 text-white px-6 py-3 rounded-xl text-sm font-medium hover:bg-purple-700">
@@ -563,7 +591,7 @@ export default function KokushiPage() {
         </p>
         {dept === 'unset' && (
           <p className="text-xs text-yellow-600 bg-yellow-50 px-3 py-2 rounded-xl mb-6">
-            プロフィールで学部を設定すると、対応する国試の科目リストが表示されます。
+            プロフィールで学部を設定すると、対応する国試の科目リストが表示されます（薬・医・看護・PT・OT・ST対応）。
             <Link href="/settings" className="underline ml-1 font-medium">設定する →</Link>
           </p>
         )}
