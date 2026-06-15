@@ -79,7 +79,6 @@ export default function GeneratePage() {
   async function handleGenerate() {
     if (selectedIds.length === 0) return;
     setError('');
-    setSupplementText('');
     setChecking(true);
     try {
       const checkResults = await Promise.all(
@@ -97,7 +96,7 @@ export default function GeneratePage() {
         setCheckIssues(issuesList.join('\n'));
         setShowCheckDialog(true);
       } else {
-        await executeGenerate('');
+        await executeGenerate(supplementText);
       }
     } catch {
       setChecking(false);
@@ -573,6 +572,17 @@ export default function GeneratePage() {
               <span>合計 {selectedIds.length * count}問生成</span>
               <span>10問</span>
             </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">出題の指示（任意）</label>
+            <textarea
+              value={supplementText}
+              onChange={e => setSupplementText(e.target.value)}
+              placeholder="例：呈色反応をメインに出題して　/ テストで聞かれそうな知識問題　/ 基礎的な部分だけ"
+              className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
+              rows={2}
+            />
           </div>
 
           {error && <ErrorBanner message={error} />}
