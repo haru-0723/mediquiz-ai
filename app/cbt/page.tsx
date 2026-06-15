@@ -282,18 +282,40 @@ async function handleStart() {
     );
   }
 
-  if (activeDeptType === 'other') {
+  const CBT_ALLOWED = ['medical', 'pharmacy', 'nursing'];
+  const isCbtAllowed = CBT_ALLOWED.includes(activeDeptType);
+
+  if (!isCbtAllowed) {
+    const isRehabOrOther = ['pt', 'ot', 'st', 'other'].includes(activeDeptType);
     return (
       <div className="min-h-screen bg-gray-50">
         <Navbar />
         <div className="max-w-xl mx-auto p-8">
           <h1 className="text-2xl font-semibold text-gray-900 mb-2">CBTモード</h1>
-          <div className="bg-white rounded-2xl border p-8 text-center">
+          <div className="bg-white rounded-2xl border p-10 text-center">
             <div className="text-4xl mb-4">🎓</div>
-            <p className="text-gray-600 mb-4">現在、薬学部・医学部・看護学部・PT・OT・STのみCBTモードに対応しています</p>
-            <Link href="/settings" className="text-sm text-green-600 hover:underline">
-              設定から「目指している国試」を設定する →
-            </Link>
+            <p className="text-gray-700 font-medium mb-2">このモードは医学部・薬学部・看護学部向けです</p>
+            {isRehabOrOther ? (
+              <>
+                <p className="text-sm text-gray-500 mb-6">
+                  PT・OT・ST向けの国家試験対策は国試モードをご利用ください。
+                </p>
+                <Link href="/kokushi"
+                  className="inline-block bg-purple-600 text-white px-6 py-3 rounded-xl text-sm font-medium hover:bg-purple-700 transition-colors">
+                  国試モードへ →
+                </Link>
+              </>
+            ) : (
+              <>
+                <p className="text-sm text-gray-500 mb-6">
+                  プロフィールで「目指している国試」を設定してください。
+                </p>
+                <Link href="/settings"
+                  className="inline-block bg-green-600 text-white px-6 py-3 rounded-xl text-sm font-medium hover:bg-green-700 transition-colors">
+                  プロフィールを設定する →
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </div>

@@ -14,7 +14,7 @@ const FEATURE_CARDS = [
   { href: '/today',    icon: '📅', title: '今日の問題',    desc: '毎日5問で実力アップ' },
   { href: '/quiz',      icon: '⚡', title: '演習を始める',  desc: '科目・難易度を選んで演習' },
   { href: '/review',   icon: '🔁', title: '復習モード',    desc: '間違えた問題を再チャレンジ' },
-  { href: '/cbt',      icon: '🎯', title: 'CBTモード',      desc: '本番形式で実力を測る' },
+  { href: '/cbt',      icon: '🎯', title: 'CBTモード',      desc: '医学部・薬学部・看護学部向けの模試形式' },
   { href: '/generate', icon: '✨', title: 'AI問題生成',    desc: '教材からAIが問題を自動作成' },
   { href: '/questions',icon: '📚', title: 'マイ問題集',    desc: '自分の問題をフォルダ管理' },
   { href: '/materials',icon: '📤', title: '教材管理',      desc: 'PDFや画像をアップロード' },
