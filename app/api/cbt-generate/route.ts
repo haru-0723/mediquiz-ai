@@ -76,6 +76,7 @@ async function generateBatch(
   subject: string,
   batchCount: number,
   department: string | null | undefined,
+  targetExam?: string | null,
 ): Promise<RawQuestion[]> {
   const prompt = `あなたは医療系大学生の国家試験・定期試験対策を支援するAIです。
 ${subject !== 'すべて' ? `「${subject}」分野の` : '医療系（看護・医学・薬学・リハビリ）の'}CBT形式の4択問題を${batchCount}問作成してください。
@@ -91,7 +92,7 @@ Rules:
 - answer must be: A, B, C, or D (letter only)
 - 問題文・選択肢・解説はすべて日本語で書く
 - 国家試験レベルを意識した問題を作成する
-${getCBTSubjectInstruction(department)}
+${getCBTSubjectInstruction(department, targetExam)}
 - 選択肢A〜Dの文章の長さをできるだけ揃える（正解だけ長くならないように）
 - 選択肢は全て同じくらいの文字数・文体にする
 - 正解を長く詳しく書かない
@@ -116,7 +117,7 @@ export async function POST(request: NextRequest) {
 
     const { data: profile } = await supabase
       .from('profiles')
-      .select('department')
+      .select('department, target_exam')
       .eq('id', user.id)
       .single();
 
@@ -129,7 +130,7 @@ export async function POST(request: NextRequest) {
 
     while (remaining > 0) {
       const batchCount = Math.min(remaining, BATCH_SIZE);
-      const batch = await generateBatch(subject, batchCount, profile?.department);
+      const batch = await generateBatch(subject, batchCount, profile?.department, profile?.target_exam);
       allRawQuestions.push(...batch);
       remaining -= batchCount;
     }
@@ -138,7 +139,7 @@ export async function POST(request: NextRequest) {
       throw new Error('問題を生成できませんでした');
     }
 
-    const deptType = getDepartmentType(profile?.department);
+    const deptType = getDepartmentType(profile?.department, profile?.target_exam);
     const isCbt = deptType !== 'other';
 
     const questionsToSave = allRawQuestions.map((q: RawQuestion) => ({

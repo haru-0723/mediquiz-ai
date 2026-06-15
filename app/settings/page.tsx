@@ -14,6 +14,7 @@ export default function SettingsPage() {
   const [university, setUniversity] = useState('');
   const [department, setDepartment] = useState('');
   const [grade, setGrade] = useState('');
+  const [targetExam, setTargetExam] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -32,6 +33,7 @@ export default function SettingsPage() {
         setUniversity(profile.university ?? '');
         setDepartment(profile.department ?? '');
         setGrade(profile.grade ? String(profile.grade) : '');
+        setTargetExam(profile.target_exam ?? '');
       }
       setLoading(false);
     }
@@ -54,6 +56,7 @@ export default function SettingsPage() {
         university: university || null,
         department: department || null,
         grade: grade ? parseInt(grade) : null,
+        target_exam: targetExam || null,
       }).eq('id', user.id);
 
       setSaved(true);
@@ -138,6 +141,20 @@ export default function SettingsPage() {
               <input type="text" value={department} onChange={e => setDepartment(e.target.value)}
                 className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
                 placeholder="例：医学部医学科" />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">目指している国試</label>
+              <select value={targetExam} onChange={e => setTargetExam(e.target.value)}
+                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
+                <option value="">選択してください</option>
+                <option value="medical">医師国家試験</option>
+                <option value="pharmacy">薬剤師国家試験</option>
+                <option value="nursing">看護師国家試験</option>
+                <option value="pt">理学療法士国家試験</option>
+                <option value="ot">作業療法士国家試験</option>
+                <option value="st">言語聴覚士国家試験</option>
+                <option value="other">その他</option>
+              </select>
             </div>
             <div>
               <label className="block text-xs text-gray-500 mb-1">学年</label>

@@ -68,7 +68,9 @@ function extractQuestions(text: string): RawQuestion[] {
 
 type KokushiDept = 'pharmacy' | 'medical' | 'nursing' | 'pt' | 'ot' | 'st' | 'unset';
 
-function getKokushiDept(department: string | null | undefined): KokushiDept {
+function getKokushiDept(department: string | null | undefined, targetExam?: string | null): KokushiDept {
+  const valid: KokushiDept[] = ['pharmacy', 'medical', 'nursing', 'pt', 'ot', 'st'];
+  if (targetExam && valid.includes(targetExam as KokushiDept)) return targetExam as KokushiDept;
   const d = department ?? '';
   if (d.includes('薬学')) return 'pharmacy';
   if (d.includes('医学') || d.includes('医師')) return 'medical';
@@ -195,7 +197,7 @@ export async function POST(request: NextRequest) {
 
     const { data: profile } = await supabase
       .from('profiles')
-      .select('plan, department')
+      .select('plan, department, target_exam')
       .eq('id', user.id)
       .single();
 
@@ -207,7 +209,7 @@ export async function POST(request: NextRequest) {
     }
 
     const { subject, count } = await request.json();
-    const dept = getKokushiDept(profile?.department);
+    const dept = getKokushiDept(profile?.department, profile?.target_exam);
     const kokushiType = dept === 'unset' ? 'other' : dept;
     const isKokushi = dept !== 'unset';
 

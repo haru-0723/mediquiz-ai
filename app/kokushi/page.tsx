@@ -28,7 +28,9 @@ type Answer = {
 
 type KokushiDept = 'pharmacy' | 'medical' | 'nursing' | 'pt' | 'ot' | 'st' | 'unset';
 
-function getKokushiDept(department: string): KokushiDept {
+function getKokushiDept(department: string, targetExam?: string | null): KokushiDept {
+  const valid: KokushiDept[] = ['pharmacy', 'medical', 'nursing', 'pt', 'ot', 'st'];
+  if (targetExam && valid.includes(targetExam as KokushiDept)) return targetExam as KokushiDept;
   if (department.includes('薬学')) return 'pharmacy';
   if (department.includes('医学') || department.includes('医師')) return 'medical';
   if (department.includes('看護')) return 'nursing';
@@ -104,6 +106,7 @@ export default function KokushiPage() {
   const [loading, setLoading] = useState(true);
   const [isPaid, setIsPaid] = useState(false);
   const [department, setDepartment] = useState('');
+  const [targetExam, setTargetExam] = useState<string | null>(null);
   const [allQuestions, setAllQuestions] = useState<Question[]>([]);
   const [phase, setPhase] = useState<'select' | 'quiz' | 'result'>('select');
   const [generating, setGenerating] = useState(false);
@@ -130,14 +133,16 @@ export default function KokushiPage() {
       if (!user) { setLoading(false); return; }
       const { data: profile } = await supabase
         .from('profiles')
-        .select('plan, department')
+        .select('plan, department, target_exam')
         .eq('id', user.id)
         .single();
       setIsPaid(profile?.plan === 'standard');
       const dept = profile?.department ?? '';
       setDepartment(dept);
+      const exam = profile?.target_exam ?? null;
+      setTargetExam(exam);
 
-      const kokushiDeptType = getKokushiDept(dept);
+      const kokushiDeptType = getKokushiDept(dept, exam);
       if (kokushiDeptType !== 'unset') {
         const { data } = await supabase
           .from('questions')
@@ -153,7 +158,7 @@ export default function KokushiPage() {
     load();
   }, []);
 
-  const dept = getKokushiDept(department);
+  const dept = getKokushiDept(department, targetExam);
   const subjects = getSubjects(dept);
 
   const handleFinish = useCallback((currentAnswers: Answer[], currentQuestions: Question[]) => {
@@ -591,7 +596,7 @@ export default function KokushiPage() {
         </p>
         {dept === 'unset' && (
           <p className="text-xs text-yellow-600 bg-yellow-50 px-3 py-2 rounded-xl mb-6">
-            プロフィールで学部を設定すると、対応する国試の科目リストが表示されます（薬・医・看護・PT・OT・ST対応）。
+            設定で「目指している国試」を設定すると、対応する科目リストが表示されます（薬・医・看護・PT・OT・ST対応）。
             <Link href="/settings" className="underline ml-1 font-medium">設定する →</Link>
           </p>
         )}

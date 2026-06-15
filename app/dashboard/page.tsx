@@ -29,7 +29,7 @@ export default async function DashboardPage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('plan, university, department, grade')
+    .select('plan, university, department, grade, target_exam')
     .eq('id', user.id)
     .single();
 
@@ -141,12 +141,12 @@ export default async function DashboardPage() {
         <PushNotification />
         <AddToHomeScreen inline />
 
-        {/* 学部未設定バナー */}
-        {!profile?.department && (
+        {/* 国試未設定バナー */}
+        {(!profile?.target_exam || profile.target_exam === 'other') && (
           <div className="mb-6 sm:mb-8 flex items-start sm:items-center gap-3 bg-yellow-50 border border-yellow-200 rounded-xl px-4 py-3">
             <span className="text-lg flex-shrink-0">📝</span>
             <p className="text-sm text-yellow-800 flex-1">
-              学部・学科を設定すると、AIが最適な科目の問題を生成します
+              目指している国試を設定すると、AIが最適な科目の問題を生成します
             </p>
             <Link href="/settings" className="text-xs text-yellow-700 font-medium hover:underline whitespace-nowrap flex-shrink-0">
               プロフィールを設定する →

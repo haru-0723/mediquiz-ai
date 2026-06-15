@@ -1,4 +1,14 @@
-export function getDepartmentType(department: string | null | undefined): 'medical' | 'pharmacy' | 'nursing' | 'pt' | 'ot' | 'st' | 'other' {
+const VALID_EXAM_TYPES = ['medical', 'pharmacy', 'nursing', 'pt', 'ot', 'st'] as const;
+type ExamType = typeof VALID_EXAM_TYPES[number] | 'other';
+
+export function getDepartmentType(
+  department: string | null | undefined,
+  targetExam?: string | null,
+): ExamType {
+  // target_exam が設定されていれば優先
+  if (targetExam && VALID_EXAM_TYPES.includes(targetExam as typeof VALID_EXAM_TYPES[number])) {
+    return targetExam as ExamType;
+  }
   const d = department ?? '';
   if (d.includes('医学') || d.includes('医師')) return 'medical';
   if (d.includes('薬学')) return 'pharmacy';
@@ -49,9 +59,12 @@ export function getSubjectInstruction(department: string | null | undefined): st
 }
 
 // CBT問題生成（cbt-generate/route.ts）用：学部別の詳細サブカテゴリ付きリスト
-export function getCBTSubjectInstruction(department: string | null | undefined): string {
-  const d = department ?? '';
-  if (d.includes('看護')) {
+export function getCBTSubjectInstruction(
+  department: string | null | undefined,
+  targetExam?: string | null,
+): string {
+  const deptType = getDepartmentType(department, targetExam);
+  if (deptType === 'nursing') {
     return `- 以下の看護系CBT出題範囲を参照し、選択された科目の内容に沿った問題を生成してください：
   人体の構造と機能：解剖学・生理学・生化学・人体構造機能学
   疾病の成り立ちと回復の促進：病理学・薬理学・微生物学・免疫学・疾病治療学・臨床検査学
@@ -66,7 +79,7 @@ export function getCBTSubjectInstruction(department: string | null | undefined):
   看護の統合と実践：チーム医療・医療安全・感染管理・災害看護
 - subjectフィールドには選択された科目名（例：基礎看護学）をそのまま使用してください`;
   }
-  if (d.includes('医学') || d.includes('医師')) {
+  if (deptType === 'medical') {
     return `- 以下の医学部CBT出題範囲を参照し、選択された科目の内容に沿った問題を生成してください：
   基礎医学：解剖学・組織学・発生学・生理学・生化学・分子生物学・遺伝学・免疫学・微生物学・病理学・薬理学
   社会医学：公衆衛生学・疫学・医療統計学・医療制度・医療倫理・法医学
@@ -77,7 +90,7 @@ export function getCBTSubjectInstruction(department: string | null | undefined):
   CBTでよく出るテーマ：胸痛・呼吸困難・発熱・意識障害・腹痛・頭痛・浮腫・貧血・糖尿病・高血圧・心電図・胸部X線・血液検査・酸塩基平衡
 - subjectフィールドには選択された科目名（例：基礎医学）をそのまま使用してください`;
   }
-  if (d.includes('薬学')) {
+  if (deptType === 'pharmacy') {
     return `- 以下の薬学部CBT出題範囲を参照し、選択された科目の内容に沿った問題を生成してください：
   物理系薬学：物理化学・分析化学・放射化学・薬品分析・機器分析
   化学系薬学：有機化学・生薬化学・天然物化学・医薬品化学・構造解析
@@ -91,7 +104,7 @@ export function getCBTSubjectInstruction(department: string | null | undefined):
   基本事項：ヒューマニズム・医療倫理・コミュニケーション
 - subjectフィールドには選択された科目名（例：物理系薬学）をそのまま使用してください`;
   }
-  if (d.includes('理学療法')) {
+  if (deptType === 'pt') {
     return `- 以下の理学療法士CBT出題範囲を参照し、選択された科目の内容に沿った問題を生成してください：
   解剖学・生理学・運動学・人間発達学・医学概論・病理学概論・臨床医学総論・リハビリテーション医学・臨床心理学・骨関節障害・慢性疼痛・中枢神経障害・末梢神経筋障害・小児障害・内部障害・老年期障害・保健医療福祉
   理学療法評価学：筋力評価・関節可動域測定・歩行分析・バランス評価・神経系評価
@@ -99,7 +112,7 @@ export function getCBTSubjectInstruction(department: string | null | undefined):
   地域理学療法学：在宅リハビリ・地域包括ケア・介護保険
 - subjectフィールドには選択された科目名をそのまま使用してください`;
   }
-  if (d.includes('作業療法')) {
+  if (deptType === 'ot') {
     return `- 以下の作業療法士CBT出題範囲を参照し、選択された科目の内容に沿った問題を生成してください：
   解剖学・生理学・運動学・人間発達学・医学概論・病理学概論・臨床医学総論・リハビリテーション医学・臨床心理学・骨関節障害・中枢神経障害・精神障害・小児障害・老年期障害・保健医療福祉
   作業療法評価学：ADL評価・認知機能評価・感覚機能評価・精神機能評価
@@ -107,7 +120,7 @@ export function getCBTSubjectInstruction(department: string | null | undefined):
   地域作業療法学：在宅復帰・就労支援・地域包括ケア
 - subjectフィールドには選択された科目名をそのまま使用してください`;
   }
-  if (d.includes('言語聴覚')) {
+  if (deptType === 'st') {
     return `- 以下の言語聴覚士CBT出題範囲を参照し、選択された科目の内容に沿った問題を生成してください：
   基礎医学：解剖学・生理学・神経科学
   臨床医学：内科学・神経内科学・精神医学・小児科学・耳鼻咽喉科学
@@ -117,10 +130,6 @@ export function getCBTSubjectInstruction(department: string | null | undefined):
   音声言語学：音韻論・形態論・統語論
   言語聴覚障害学総論・失語高次脳機能障害学・言語発達障害学・発声発語嚥下障害学・聴覚障害学
 - subjectフィールドには選択された科目名をそのまま使用してください`;
-  }
-  if (d.includes('リハビリ')) {
-    return `- subjectは必ず以下のリハビリ系科目リストから最も適切なものを選んでください：
-  運動学、解剖学、神経学、整形外科学、内部障害学、日常生活活動学、理学療法評価学、作業療法学`;
   }
   return `- 以下の科目リストを参照し、出題範囲に応じた問題を生成してください。subjectフィールドには選択された科目名をそのまま使用してください：
   薬学部：物理系薬学・化学系薬学・生物系薬学・薬理・薬物治療系・薬剤系・情報系・衛生薬学・薬学臨床・薬学と社会・基本事項

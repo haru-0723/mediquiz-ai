@@ -43,6 +43,22 @@ const NURSING_SUBJECTS = [
   '精神看護学', '地域在宅看護学', '看護の統合と実践',
 ];
 
+const PT_SUBJECTS = [
+  'すべて', '解剖学', '生理学', '運動学', '理学療法評価学', '理学療法治療学',
+  '地域理学療法学', 'リハビリテーション医学', '臨床医学',
+];
+
+const OT_SUBJECTS = [
+  'すべて', '解剖学', '生理学', '運動学', '作業療法評価学', '作業療法治療学',
+  '地域作業療法学', 'リハビリテーション医学', '臨床医学',
+];
+
+const ST_SUBJECTS = [
+  'すべて', '基礎医学', '臨床医学', '臨床歯科医学', '音声言語聴覚医学', '心理学',
+  '音声言語学', '社会福祉教育', '言語聴覚障害学総論', '失語高次脳機能障害学',
+  '言語発達障害学', '発声発語嚥下障害学', '聴覚障害学',
+];
+
 export default function CBTPage() {
   const supabase = createClient();
   const [allQuestions, setAllQuestions] = useState<Question[]>([]);
@@ -64,6 +80,7 @@ export default function CBTPage() {
   const [reportedSet, setReportedSet] = useState<Set<number>>(new Set<number>());
   const [submittingReport, setSubmittingReport] = useState(false);
   const [department, setDepartment] = useState('');
+  const [targetExam, setTargetExam] = useState<string | null>(null);
   const [useManualSubjectList, setUseManualSubjectList] = useState(false);
   const [progress, setProgress] = useState(0);
   const [progressMessage, setProgressMessage] = useState('');
@@ -74,13 +91,15 @@ export default function CBTPage() {
       if (user) {
         const { data: profileData } = await supabase
           .from('profiles')
-          .select('department')
+          .select('department, target_exam')
           .eq('id', user.id)
           .single();
         const dept = profileData?.department ?? '';
         if (dept) setDepartment(dept);
+        const exam = profileData?.target_exam ?? null;
+        setTargetExam(exam);
 
-        const deptType = getDepartmentType(dept);
+        const deptType = getDepartmentType(dept, exam);
         if (deptType !== 'other') {
           const { data } = await supabase
             .from('questions')
@@ -240,10 +259,14 @@ async function handleStart() {
     return `${m}:${s.toString().padStart(2, '0')}`;
   }
 
+  const activeDeptType = getDepartmentType(department, targetExam);
   const deptSubjects: string[] = (() => {
-    if (department.includes('薬学')) return PHARMACY_SUBJECTS;
-    if (department.includes('医学') || department.includes('医師')) return MEDICAL_SUBJECTS;
-    if (department.includes('看護')) return NURSING_SUBJECTS;
+    if (activeDeptType === 'pharmacy') return PHARMACY_SUBJECTS;
+    if (activeDeptType === 'medical') return MEDICAL_SUBJECTS;
+    if (activeDeptType === 'nursing') return NURSING_SUBJECTS;
+    if (activeDeptType === 'pt') return PT_SUBJECTS;
+    if (activeDeptType === 'ot') return OT_SUBJECTS;
+    if (activeDeptType === 'st') return ST_SUBJECTS;
     return ['すべて', ...PHARMACY_SUBJECTS.slice(1), ...MEDICAL_SUBJECTS.slice(1), ...NURSING_SUBJECTS.slice(1)];
   })();
   const subjects = useManualSubjectList
@@ -259,7 +282,7 @@ async function handleStart() {
     );
   }
 
-  if (getDepartmentType(department) === 'other') {
+  if (activeDeptType === 'other') {
     return (
       <div className="min-h-screen bg-gray-50">
         <Navbar />
@@ -267,9 +290,9 @@ async function handleStart() {
           <h1 className="text-2xl font-semibold text-gray-900 mb-2">CBTモード</h1>
           <div className="bg-white rounded-2xl border p-8 text-center">
             <div className="text-4xl mb-4">🎓</div>
-            <p className="text-gray-600 mb-4">現在、薬学部・医学部・看護学部のみCBTモードに対応しています</p>
+            <p className="text-gray-600 mb-4">現在、薬学部・医学部・看護学部・PT・OT・STのみCBTモードに対応しています</p>
             <Link href="/settings" className="text-sm text-green-600 hover:underline">
-              プロフィールで学部を設定する →
+              設定から「目指している国試」を設定する →
             </Link>
           </div>
         </div>
@@ -545,7 +568,7 @@ async function handleStart() {
             </div>
             {!useManualSubjectList && (
               <p className="text-xs text-gray-400 mt-2">
-                {department.includes('薬学') ? '薬学部' : department.includes('医学') || department.includes('医師') ? '医学部' : department.includes('看護') ? '看護学部' : '薬学部・医学部・看護学部'}の科目リストを表示中
+                {activeDeptType === 'pharmacy' ? '薬学部' : activeDeptType === 'medical' ? '医学部' : activeDeptType === 'nursing' ? '看護学部' : activeDeptType === 'pt' ? '理学療法士' : activeDeptType === 'ot' ? '作業療法士' : activeDeptType === 'st' ? '言語聴覚士' : '薬学部・医学部・看護学部'}の科目リストを表示中
               </p>
             )}
           </div>
