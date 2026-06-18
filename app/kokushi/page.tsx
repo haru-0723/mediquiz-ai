@@ -161,7 +161,7 @@ export default function KokushiPage() {
   const dept = getKokushiDept(department, targetExam);
   const subjects = getSubjects(dept);
 
-  const handleFinish = useCallback((currentAnswers: Answer[], currentQuestions: Question[]) => {
+  const handleFinish = useCallback(async (currentAnswers: Answer[], currentQuestions: Question[]) => {
     const remaining = currentQuestions.slice(currentAnswers.length);
     const finalAnswers = [
       ...currentAnswers,
@@ -169,8 +169,28 @@ export default function KokushiPage() {
     ];
     setAnswers(finalAnswers);
     window.scrollTo(0, 0);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const answerMap = new Map(finalAnswers.map(a => [a.questionId, a]));
+      const subjectMap: Record<string, { correct: number; total: number }> = {};
+      for (const q of currentQuestions) {
+        const subj = q.subject ?? 'その他';
+        if (!subjectMap[subj]) subjectMap[subj] = { correct: 0, total: 0 };
+        subjectMap[subj].total++;
+        if (answerMap.get(q.id)?.isCorrect) subjectMap[subj].correct++;
+      }
+      await supabase.from('quiz_sessions').insert(
+        Object.entries(subjectMap).map(([subject, { correct, total }]) => ({
+          user_id: user.id,
+          subject,
+          correct_count: correct,
+          total_questions: total,
+          mode: 'kokushi',
+        }))
+      );
+    }
     setPhase('result');
-  }, []);
+  }, [supabase]);
 
   useEffect(() => {
     if (phase !== 'quiz') return;
@@ -395,22 +415,34 @@ export default function KokushiPage() {
 
           {Object.keys(subjectStats).length > 0 && (
             <div className="bg-white rounded-2xl border p-6 mb-6">
-              <h3 className="font-semibold text-gray-900 mb-4">🔍 科目別正答率</h3>
+              <h3 className="font-semibold text-gray-900 mb-4">📊 苦手分野分析</h3>
               <div className="space-y-3">
                 {Object.entries(subjectStats)
                   .sort((a, b) => (a[1].correct / a[1].total) - (b[1].correct / b[1].total))
                   .map(([subject, stat]) => {
                     const pct = Math.round((stat.correct / stat.total) * 100);
+                    const isWeak = pct <= 60;
+                    const isReview = pct > 60 && pct <= 80;
                     return (
-                      <div key={subject}>
-                        <div className="flex justify-between text-sm mb-1">
-                          <span className="text-gray-700">{subject}</span>
-                          <span className={`font-medium ${pct >= 80 ? 'text-green-600' : pct >= 60 ? 'text-yellow-600' : 'text-red-500'}`}>{pct}%</span>
+                      <div key={subject} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-sm text-gray-700 truncate">{subject}</span>
+                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium flex-shrink-0 ${isWeak ? 'bg-red-100 text-red-600' : isReview ? 'bg-yellow-100 text-yellow-600' : 'bg-green-100 text-green-600'}`}>
+                              {isWeak ? '苦手' : isReview ? '要復習' : '得意'}
+                            </span>
+                            <span className={`text-sm font-medium flex-shrink-0 ${isWeak ? 'text-red-500' : isReview ? 'text-yellow-600' : 'text-green-600'}`}>{pct}%</span>
+                          </div>
+                          <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                            <div className={`h-full rounded-full ${isWeak ? 'bg-red-400' : isReview ? 'bg-yellow-400' : 'bg-green-500'}`}
+                              style={{ width: `${pct}%` }} />
+                          </div>
+                          <p className="text-xs text-gray-400 mt-1">{stat.total}問中{stat.correct}問正解</p>
                         </div>
-                        <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                          <div className={`h-full rounded-full ${pct >= 80 ? 'bg-green-500' : pct >= 60 ? 'bg-yellow-500' : 'bg-red-400'}`}
-                            style={{ width: `${pct}%` }} />
-                        </div>
+                        <Link href={`/review?subject=${encodeURIComponent(subject)}`}
+                          className="flex-shrink-0 text-xs text-green-600 border border-green-200 px-3 py-1.5 rounded-lg hover:bg-green-50">
+                          復習する
+                        </Link>
                       </div>
                     );
                   })}
