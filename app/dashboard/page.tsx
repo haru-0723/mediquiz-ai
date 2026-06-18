@@ -238,12 +238,20 @@ export default async function DashboardPage() {
             {sessions && sessions.length > 0 ? (
               <div className="space-y-3">
                 {sessions.map(session => {
+                  const mode = (session.mode as string | null) ?? 'quiz';
+                  const acc = Math.round((session.correct_count / session.total_questions) * 100);
+                  const modeLabel = mode === 'cbt' ? 'CBT' : mode === 'kokushi' ? '国試' : '演習';
+                  const modeCls = mode === 'cbt' ? 'bg-blue-100 text-blue-600' : mode === 'kokushi' ? 'bg-purple-100 text-purple-600' : 'bg-gray-100 text-gray-500';
                   return (
                     <div key={session.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">{session.subject ?? '演習'}</p>
+                      <div className="min-w-0 mr-2">
+                        <div className="flex items-center gap-1.5 mb-0.5">
+                          <span className={`text-xs px-1.5 py-0.5 rounded font-medium flex-shrink-0 ${modeCls}`}>{modeLabel}</span>
+                          <p className="text-sm font-medium text-gray-900 truncate">{session.subject ?? '演習'}</p>
+                        </div>
                         <p className="text-xs text-gray-400">{session.total_questions}問</p>
                       </div>
+                      <span className={`text-sm font-semibold flex-shrink-0 ${acc >= 80 ? 'text-green-600' : acc >= 60 ? 'text-yellow-600' : 'text-red-500'}`}>{acc}%</span>
                     </div>
                   );
                 })}
