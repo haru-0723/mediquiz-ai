@@ -53,7 +53,7 @@ export default async function DashboardPage() {
     { data: materials },
   ] = await Promise.all([
     supabase.from('exams').select('*').eq('user_id', user.id).order('exam_date'),
-    supabase.from('quiz_sessions').select('*').eq('user_id', user.id).order('completed_at', { ascending: false }).limit(5),
+    supabase.from('quiz_sessions').select('*').eq('user_id', user.id).order('completed_at', { ascending: false }).limit(50),
     supabase.from('quiz_sessions').select('correct_count, total_questions').eq('user_id', user.id).gte('completed_at', weekStart),
     supabase.from('quiz_sessions').select('subject, correct_count, total_questions, mode').eq('user_id', user.id).limit(500),
     supabase.from('materials').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
@@ -67,6 +67,27 @@ export default async function DashboardPage() {
     : null;
   const weekSessionCount = weekSessions?.length ?? 0;
   const hasWeekData = weekSessionCount > 0;
+
+  // 最近の演習（CBT・国試は同一分にまとめて1件扱い）
+  type SessionEntry = { id: string; label: string; mode: string; total: number; correct: number; completedAt: string };
+  const recentSessions: SessionEntry[] = [];
+  const seen = new Set<string>();
+  for (const s of sessions ?? []) {
+    const mode = (s.mode as string | null) ?? 'quiz';
+    if (mode === 'quiz') {
+      recentSessions.push({ id: s.id, label: s.subject ?? '演習', mode, total: s.total_questions, correct: s.correct_count, completedAt: s.completed_at });
+    } else {
+      const key = mode + '_' + (s.completed_at as string).slice(0, 16);
+      if (!seen.has(key)) {
+        seen.add(key);
+        const group = (sessions ?? []).filter(r => ((r.mode as string | null) ?? 'quiz') === mode && (r.completed_at as string).slice(0, 16) === (s.completed_at as string).slice(0, 16));
+        const total = group.reduce((a, r) => a + r.total_questions, 0);
+        const correct = group.reduce((a, r) => a + r.correct_count, 0);
+        recentSessions.push({ id: key, label: mode === 'cbt' ? 'CBT模試' : '国試模試', mode, total, correct, completedAt: s.completed_at });
+      }
+    }
+    if (recentSessions.length >= 5) break;
+  }
 
   // 科目別正解率（mode別）
   function buildSubjectStats(sessions: typeof allSessions, modes: string[]) {
@@ -235,21 +256,20 @@ export default async function DashboardPage() {
           <ExamSection userId={user.id} initialExams={exams ?? []} />
           <div className="bg-white rounded-2xl border p-4 sm:p-6">
             <h2 className="font-semibold text-gray-900 mb-4">最近の演習</h2>
-            {sessions && sessions.length > 0 ? (
+            {recentSessions.length > 0 ? (
               <div className="space-y-3">
-                {sessions.map(session => {
-                  const mode = (session.mode as string | null) ?? 'quiz';
-                  const acc = Math.round((session.correct_count / session.total_questions) * 100);
-                  const modeLabel = mode === 'cbt' ? 'CBT' : mode === 'kokushi' ? '国試' : '演習';
-                  const modeCls = mode === 'cbt' ? 'bg-blue-100 text-blue-600' : mode === 'kokushi' ? 'bg-purple-100 text-purple-600' : 'bg-gray-100 text-gray-500';
+                {recentSessions.map(session => {
+                  const acc = Math.round((session.correct / session.total) * 100);
+                  const modeLabel = session.mode === 'cbt' ? 'CBT' : session.mode === 'kokushi' ? '国試' : '演習';
+                  const modeCls = session.mode === 'cbt' ? 'bg-blue-100 text-blue-600' : session.mode === 'kokushi' ? 'bg-purple-100 text-purple-600' : 'bg-gray-100 text-gray-500';
                   return (
                     <div key={session.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
                       <div className="min-w-0 mr-2">
                         <div className="flex items-center gap-1.5 mb-0.5">
                           <span className={`text-xs px-1.5 py-0.5 rounded font-medium flex-shrink-0 ${modeCls}`}>{modeLabel}</span>
-                          <p className="text-sm font-medium text-gray-900 truncate">{session.subject ?? '演習'}</p>
+                          <p className="text-sm font-medium text-gray-900 truncate">{session.label}</p>
                         </div>
-                        <p className="text-xs text-gray-400">{session.total_questions}問</p>
+                        <p className="text-xs text-gray-400">{session.total}問</p>
                       </div>
                       <span className={`text-sm font-semibold flex-shrink-0 ${acc >= 80 ? 'text-green-600' : acc >= 60 ? 'text-yellow-600' : 'text-red-500'}`}>{acc}%</span>
                     </div>
