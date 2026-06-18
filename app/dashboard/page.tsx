@@ -86,7 +86,6 @@ export default async function DashboardPage() {
       }))
       .sort((a, b) => a.accuracy - b.accuracy);
   }
-  const subjectStats = buildSubjectStats(allSessions, ['quiz']);
   const cbtStats = buildSubjectStats(allSessions, ['cbt']);
   const kokushiStats = buildSubjectStats(allSessions, ['kokushi']);
   const profileSummary = [
@@ -214,13 +213,6 @@ export default async function DashboardPage() {
           </div>
         ) : (
           <div className="space-y-4 mb-6 sm:mb-8">
-            {/* 演習 */}
-            <WeakAnalysisCard
-              title="📊 苦手分野分析（演習）"
-              stats={subjectStats}
-              emptyMessage="演習を行うと分析が表示されます"
-              emptyLink="/quiz"
-            />
             {/* CBT */}
             <WeakAnalysisCard
               title="🎯 苦手分野分析（CBT）"
