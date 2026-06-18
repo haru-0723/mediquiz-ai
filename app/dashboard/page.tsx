@@ -83,7 +83,7 @@ export default async function DashboardPage() {
         const group = (sessions ?? []).filter(r => ((r.mode as string | null) ?? 'quiz') === mode && (r.completed_at as string).slice(0, 16) === (s.completed_at as string).slice(0, 16));
         const total = group.reduce((a, r) => a + r.total_questions, 0);
         const correct = group.reduce((a, r) => a + r.correct_count, 0);
-        recentSessions.push({ id: key, label: mode === 'cbt' ? 'CBT模試' : '国試模試', mode, total, correct, completedAt: s.completed_at });
+        recentSessions.push({ id: key, label: mode === 'cbt' ? 'CBT演習' : '国試演習', mode, total, correct, completedAt: s.completed_at });
       }
     }
     if (recentSessions.length >= 5) break;
