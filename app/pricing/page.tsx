@@ -15,7 +15,7 @@ const FREE_FEATURES = [
 ];
 
 const STANDARD_FEATURES = [
-  { emoji: '✨', text: 'AI問題生成：1日30回' },
+  { emoji: '✨', text: 'AI問題生成：1日15回' },
   { emoji: '📝', text: '問題保存：無制限' },
   { emoji: '🎯', text: 'CBT模試：月15回' },
   { emoji: '📝', text: '国試モード：月15回' },
