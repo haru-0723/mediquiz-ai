@@ -30,12 +30,12 @@ export async function POST(request: NextRequest) {
       .gte('created_at', startOfMonth.toISOString());
 
     const isStandard = profile?.plan === 'standard';
-    const limit = isStandard ? 30 : 2;
+    const limit = isStandard ? 15 : 2;
     if ((count ?? 0) >= limit) {
       return NextResponse.json({
         allowed: false,
         error: isStandard
-          ? 'スタンダードプランのCBT模試は月30回までです。プレミアムプランにアップグレードしてください。'
+          ? 'スタンダードプランのCBT模試は月15回までです。プレミアムプランにアップグレードしてください。'
           : '無料プランのCBT模試は月2回までです。スタンダードプランにアップグレードしてください。',
         upgrade: true
       });
