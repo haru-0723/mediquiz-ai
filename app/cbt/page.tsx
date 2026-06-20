@@ -333,7 +333,7 @@ async function handleStart() {
           <h1 className="text-2xl font-semibold text-gray-900 mb-2">CBTモード</h1>
           <div className="bg-white rounded-2xl border p-10 text-center">
             <div className="text-4xl mb-4">🎓</div>
-            <p className="text-gray-700 font-medium mb-2">このモードは医学部・薬学部・看護学部向けです</p>
+            <p className="text-gray-700 font-medium mb-2">このモードは医学部・歯学部・薬学部・看護学部向けです</p>
             {isRehabOrOther ? (
               <>
                 <p className="text-sm text-gray-500 mb-6">
@@ -641,7 +641,7 @@ async function handleStart() {
             </div>
             {!useManualSubjectList && (
               <p className="text-xs text-gray-400 mt-2">
-                {activeDeptType === 'pharmacy' ? '薬学部' : activeDeptType === 'medical' ? '医学部' : activeDeptType === 'nursing' ? '看護学部' : activeDeptType === 'pt' ? '理学療法士' : activeDeptType === 'ot' ? '作業療法士' : activeDeptType === 'st' ? '言語聴覚士' : '薬学部・医学部・看護学部'}の科目リストを表示中
+                {activeDeptType === 'pharmacy' ? '薬学部' : activeDeptType === 'medical' ? '医学部' : activeDeptType === 'nursing' ? '看護学部' : activeDeptType === 'pt' ? '理学療法士' : activeDeptType === 'ot' ? '作業療法士' : activeDeptType === 'st' ? '言語聴覚士' : activeDeptType === 'dental' ? '歯学部' : '薬学部・医学部・看護学部'}の科目リストを表示中
               </p>
             )}
           </div>
