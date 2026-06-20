@@ -7,6 +7,7 @@ const FREE_FEATURES = [
   { emoji: '✨', text: 'AI問題生成：1日2回まで' },
   { emoji: '📝', text: '問題保存：30問まで' },
   { emoji: '🎯', text: 'CBT模試：月2回まで' },
+  { emoji: '📝', text: '国試モード：月2回まで' },
   { emoji: '📤', text: '教材アップロード：3件まで' },
   { emoji: '⚡', text: '問題演習' },
   { emoji: '📚', text: 'マイ問題集（フォルダ管理）' },

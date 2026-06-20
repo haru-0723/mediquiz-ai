@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-// kokushi_logsへの書き込みはkokushi-generateで行うためここではimport不要
+import { createAdminClient } from '@/lib/supabase/admin';
 
 export async function POST(_request: NextRequest) {
   try {
@@ -18,11 +18,27 @@ export async function POST(_request: NextRequest) {
       return NextResponse.json({ allowed: true });
     }
 
-    return NextResponse.json({
-      allowed: false,
-      error: '国試モードはスタンダードプランの機能です。アップグレードしてご利用ください。',
-      upgrade: true,
-    });
+    // 無料プランは月2回まで
+    const admin = createAdminClient();
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+
+    const { count } = await admin
+      .from('kokushi_logs')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+      .gte('created_at', startOfMonth.toISOString());
+
+    if ((count ?? 0) >= 2) {
+      return NextResponse.json({
+        allowed: false,
+        error: '無料プランの国試モードは月2回までです。スタンダードプランにアップグレードしてください。',
+        upgrade: true,
+      });
+    }
+
+    return NextResponse.json({ allowed: true });
   } catch (e) {
     console.error(e);
     return NextResponse.json({ error: 'エラーが発生しました' }, { status: 500 });
