@@ -66,10 +66,10 @@ function extractQuestions(text: string): RawQuestion[] {
   return questions;
 }
 
-type KokushiDept = 'pharmacy' | 'medical' | 'nursing' | 'pt' | 'ot' | 'st' | 'unset';
+type KokushiDept = 'pharmacy' | 'medical' | 'nursing' | 'pt' | 'ot' | 'st' | 'dental' | 'unset';
 
 function getKokushiDept(department: string | null | undefined, targetExam?: string | null): KokushiDept {
-  const valid: KokushiDept[] = ['pharmacy', 'medical', 'nursing', 'pt', 'ot', 'st'];
+  const valid: KokushiDept[] = ['pharmacy', 'medical', 'nursing', 'pt', 'ot', 'st', 'dental'];
   if (targetExam && valid.includes(targetExam as KokushiDept)) return targetExam as KokushiDept;
   const d = department ?? '';
   if (d.includes('薬学')) return 'pharmacy';
@@ -78,6 +78,7 @@ function getKokushiDept(department: string | null | undefined, targetExam?: stri
   if (d.includes('理学療法')) return 'pt';
   if (d.includes('作業療法')) return 'ot';
   if (d.includes('言語聴覚')) return 'st';
+  if (d.includes('歯学') || d.includes('歯科')) return 'dental';
   return 'unset';
 }
 
@@ -91,6 +92,7 @@ function getKokushiPrompt(dept: KokushiDept, subject: string, batchCount: number
     pt: '理学療法士国家試験',
     ot: '作業療法士国家試験',
     st: '言語聴覚士国家試験',
+    dental: '歯科医師国家試験',
     unset: '医療系国家試験（薬剤師・医師・看護師・PT・OT・ST）',
   }[dept];
 
@@ -151,6 +153,32 @@ function getKokushiPrompt(dept: KokushiDept, subject: string, batchCount: number
     st: `言語聴覚士国家試験の出題範囲：
 基礎医学（解剖学・生理学・神経科学）・臨床医学（内科学・神経内科学・精神医学・小児科学・耳鼻咽喉科学）・臨床歯科医学（口腔解剖・嚥下関連）・音声言語聴覚医学（音声障害・構音障害・吃音・嚥下障害）・心理学（発達心理学・認知心理学・臨床心理学）・音声言語学（音韻論・形態論・統語論）・社会福祉教育・言語聴覚障害学総論・失語高次脳機能障害学・言語発達障害学・発声発語嚥下障害学・聴覚障害学
 - subjectフィールドには選択した科目名をそのまま使用してください`,
+
+    dental: `歯科医師国家試験の出題範囲：
+必修問題：医療倫理・患者安全・感染予防・救急処置・社会保障・歯科医師法
+口腔解剖学：歯の形態・歯列・顎骨・顎関節・口腔軟組織の解剖・神経・血管分布
+生理学・口腔生理学：咀嚼・嚥下・発音・唾液分泌・歯髄の生理・顎運動
+口腔生化学：エナメル質・象牙質・セメント質の成分・石灰化・フッ化物の作用
+病理学・口腔病理学：炎症・腫瘍・う蝕・歯周炎の病理組織像・顎骨病変
+免疫・細菌・微生物学：口腔細菌・歯周病原菌・う蝕関連菌・感染症・消毒滅菌
+薬理学・口腔薬理学：局所麻酔薬・鎮痛薬・抗菌薬・血管収縮薬・歯科用薬剤
+歯科理工学：歯科材料（印象材・セメント・コンポジットレジン・合金・セラミックス）の性質と操作
+法医学・歯科法医学：個人識別・歯科鑑定・医事法規
+保存修復学：う蝕治療・コンポジットレジン修復・インレー・コンポマー・接着技法
+歯内治療学：根管治療・抜髄・感染根管処置・根尖病変・根管充填材
+歯周治療学：歯周病の分類・スケーリング・ルートプレーニング・歯周外科・メインテナンス
+全部床義歯学・部分床義歯学：印象・咬合採得・人工歯排列・義歯設計・クラスプ設計
+冠橋義歯学・インプラント学：クラウン・ブリッジの適応と設計・インプラント外科・補綴
+口腔外科学：抜歯・嚢胞・腫瘍・顎骨骨折・顎関節症・口腔癌・唾液腺疾患
+矯正歯科学：不正咬合の分類・矯正力・固定式・可撤式装置・保定・成長期矯正
+小児歯科学：乳歯の特徴・混合歯列期・小児のう蝕・外傷・行動管理
+全身麻酔・歯科麻酔学：局所麻酔法・全身麻酔・鎮静法・術前術後管理
+歯科放射線学・臨床診断：デンタルX線・パノラマ・CBCT・口腔癌の画像診断・読影
+摂食嚥下・高齢者歯科：嚥下機能評価・義歯管理・口腔機能低下症・訪問歯科
+予防・口腔衛生学：う蝕予防・歯周病予防・フッ化物・シーラント・口腔保健指導
+社会歯科学：医療保険制度・地域歯科保健・疫学・統計・歯科医療管理
+内科学・全身疾患：高血圧・糖尿病・心疾患・血液疾患・免疫疾患の歯科との関連・全身管理
+- subjectフィールドには選択した科目名（例：保存修復学）をそのまま使用してください`,
 
     unset: `薬剤師・医師・看護師・理学療法士・作業療法士・言語聴覚士国家試験の出題範囲から選択された科目の問題を作成してください。
 - subjectフィールドには選択した科目名をそのまま使用してください`,
