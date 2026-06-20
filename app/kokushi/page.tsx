@@ -26,10 +26,10 @@ type Answer = {
   isCorrect: boolean;
 };
 
-type KokushiDept = 'pharmacy' | 'medical' | 'nursing' | 'pt' | 'ot' | 'st' | 'unset';
+type KokushiDept = 'pharmacy' | 'medical' | 'nursing' | 'pt' | 'ot' | 'st' | 'dental' | 'unset';
 
 function getKokushiDept(department: string, targetExam?: string | null): KokushiDept {
-  const valid: KokushiDept[] = ['pharmacy', 'medical', 'nursing', 'pt', 'ot', 'st'];
+  const valid: KokushiDept[] = ['pharmacy', 'medical', 'nursing', 'pt', 'ot', 'st', 'dental'];
   if (targetExam && valid.includes(targetExam as KokushiDept)) return targetExam as KokushiDept;
   if (department.includes('薬学')) return 'pharmacy';
   if (department.includes('医学') || department.includes('医師')) return 'medical';
@@ -37,6 +37,7 @@ function getKokushiDept(department: string, targetExam?: string | null): Kokushi
   if (department.includes('理学療法')) return 'pt';
   if (department.includes('作業療法')) return 'ot';
   if (department.includes('言語聴覚')) return 'st';
+  if (department.includes('歯学') || department.includes('歯科')) return 'dental';
   return 'unset';
 }
 
@@ -71,6 +72,11 @@ const ST_SUBJECTS = [
   '言語発達障害学', '発声発語嚥下障害学', '聴覚障害学',
 ];
 
+const DENTAL_SUBJECTS = [
+  'すべて', '必修問題', '基礎歯学', '歯科保存学', '歯周病学', '歯科補綴学',
+  '口腔外科学', '小児歯科学', '歯科矯正学', '口腔衛生学', '歯科放射線学', '社会歯科学',
+];
+
 const ALL_SUBJECTS = [
   'すべて',
   ...PHARMACY_SUBJECTS.slice(1).map(s => `[薬] ${s}`),
@@ -88,6 +94,7 @@ function getSubjects(dept: KokushiDept): string[] {
   if (dept === 'pt') return PT_SUBJECTS;
   if (dept === 'ot') return OT_SUBJECTS;
   if (dept === 'st') return ST_SUBJECTS;
+  if (dept === 'dental') return DENTAL_SUBJECTS;
   return ALL_SUBJECTS;
 }
 
@@ -98,6 +105,7 @@ const EXAM_LABELS: Record<KokushiDept, string> = {
   pt: '理学療法士国家試験',
   ot: '作業療法士国家試験',
   st: '言語聴覚士国家試験',
+  dental: '歯科医師国家試験',
   unset: '国家試験',
 };
 

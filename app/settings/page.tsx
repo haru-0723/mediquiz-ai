@@ -153,6 +153,7 @@ export default function SettingsPage() {
                 <option value="pt">理学療法士国家試験</option>
                 <option value="ot">作業療法士国家試験</option>
                 <option value="st">言語聴覚士国家試験</option>
+                <option value="dental">歯科医師国家試験</option>
                 <option value="other">その他</option>
               </select>
             </div>

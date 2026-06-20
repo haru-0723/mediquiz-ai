@@ -59,6 +59,11 @@ const ST_SUBJECTS = [
   '言語発達障害学', '発声発語嚥下障害学', '聴覚障害学',
 ];
 
+const DENTAL_SUBJECTS = [
+  'すべて', '基礎歯学', '歯科保存学', '歯周病学', '歯科補綴学', '口腔外科学',
+  '小児歯科学', '歯科矯正学', '口腔衛生学', '歯科放射線学', '社会歯科学',
+];
+
 export default function CBTPage() {
   const supabase = createClient();
   const [allQuestions, setAllQuestions] = useState<Question[]>([]);
@@ -287,6 +292,7 @@ async function handleStart() {
     if (activeDeptType === 'pt') return PT_SUBJECTS;
     if (activeDeptType === 'ot') return OT_SUBJECTS;
     if (activeDeptType === 'st') return ST_SUBJECTS;
+    if (activeDeptType === 'dental') return DENTAL_SUBJECTS;
     return ['すべて', ...PHARMACY_SUBJECTS.slice(1), ...MEDICAL_SUBJECTS.slice(1), ...NURSING_SUBJECTS.slice(1)];
   })();
   const subjects = useManualSubjectList
@@ -302,7 +308,7 @@ async function handleStart() {
     );
   }
 
-  const CBT_ALLOWED = ['medical', 'pharmacy', 'nursing'];
+  const CBT_ALLOWED = ['medical', 'pharmacy', 'nursing', 'dental'];
   const isCbtAllowed = CBT_ALLOWED.includes(activeDeptType);
 
   if (!isCbtAllowed) {

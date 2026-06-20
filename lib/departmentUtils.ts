@@ -1,4 +1,4 @@
-const VALID_EXAM_TYPES = ['medical', 'pharmacy', 'nursing', 'pt', 'ot', 'st'] as const;
+const VALID_EXAM_TYPES = ['medical', 'pharmacy', 'nursing', 'pt', 'ot', 'st', 'dental'] as const;
 type ExamType = typeof VALID_EXAM_TYPES[number] | 'other';
 
 export function getDepartmentType(
@@ -16,6 +16,7 @@ export function getDepartmentType(
   if (d.includes('理学療法')) return 'pt';
   if (d.includes('作業療法')) return 'ot';
   if (d.includes('言語聴覚')) return 'st';
+  if (d.includes('歯学') || d.includes('歯科')) return 'dental';
   return 'other';
 }
 
@@ -45,6 +46,10 @@ export function getSubjectInstruction(department: string | null | undefined): st
   if (d.includes('言語聴覚')) {
     return `- subjectは必ず以下の言語聴覚系科目リストから最も適切なものを選んでください：
   基礎医学、臨床医学、臨床歯科医学、音声言語聴覚医学、心理学、音声言語学、社会福祉教育、言語聴覚障害学総論、失語高次脳機能障害学、言語発達障害学、発声発語嚥下障害学、聴覚障害学`;
+  }
+  if (d.includes('歯学') || d.includes('歯科')) {
+    return `- subjectは必ず以下の歯学系科目リストから最も適切なものを選んでください：
+  解剖学、生理学、生化学、病理学、薬理学、微生物学、口腔解剖学、口腔生理学、口腔病理学、歯科補綴学、歯科保存学、口腔外科学、歯周病学、小児歯科学、歯科矯正学、口腔衛生学`;
   }
   if (d.includes('リハビリ')) {
     return `- subjectは必ず以下のリハビリ系科目リストから最も適切なものを選んでください：
@@ -129,6 +134,19 @@ export function getCBTSubjectInstruction(
   心理学：発達心理学・認知心理学・臨床心理学
   音声言語学：音韻論・形態論・統語論
   言語聴覚障害学総論・失語高次脳機能障害学・言語発達障害学・発声発語嚥下障害学・聴覚障害学
+- subjectフィールドには選択された科目名をそのまま使用してください`;
+  }
+  if (deptType === 'dental') {
+    return `- 以下の歯学部CBT出題範囲を参照し、選択された科目の内容に沿った問題を生成してください：
+  基礎歯学：解剖学・生理学・生化学・病理学・薬理学・微生物学・口腔解剖学・口腔生理学・口腔病理学・口腔微生物学
+  歯科保存学：う蝕治療・歯内療法・歯周病学
+  歯科補綴学：全部床義歯・部分床義歯・クラウンブリッジ・インプラント
+  口腔外科学：歯科麻酔・抜歯・嚢胞・腫瘍・顎骨骨折
+  小児歯科学：小児の歯科治療・発育と発達
+  歯科矯正学：不正咬合・矯正治療
+  口腔衛生学：予防歯科・地域歯科保健・疫学
+  歯科放射線学：口内法X線・パノラマX線・CT
+  社会歯科学：歯科医療制度・歯科医師倫理
 - subjectフィールドには選択された科目名をそのまま使用してください`;
   }
   return `- 以下の科目リストを参照し、出題範囲に応じた問題を生成してください。subjectフィールドには選択された科目名をそのまま使用してください：
