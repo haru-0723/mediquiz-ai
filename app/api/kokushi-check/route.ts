@@ -14,11 +14,10 @@ export async function POST(_request: NextRequest) {
       .eq('id', user.id)
       .single();
 
-    if (profile?.plan === 'standard' || profile?.plan === 'premium') {
+    if (profile?.plan === 'premium') {
       return NextResponse.json({ allowed: true });
     }
 
-    // 無料プランは月2回まで
     const admin = createAdminClient();
     const startOfMonth = new Date();
     startOfMonth.setDate(1);
@@ -30,10 +29,14 @@ export async function POST(_request: NextRequest) {
       .eq('user_id', user.id)
       .gte('created_at', startOfMonth.toISOString());
 
-    if ((count ?? 0) >= 2) {
+    const isStandard = profile?.plan === 'standard';
+    const limit = isStandard ? 15 : 2;
+    if ((count ?? 0) >= limit) {
       return NextResponse.json({
         allowed: false,
-        error: '無料プランの国試モードは月2回までです。スタンダードプランにアップグレードしてください。',
+        error: isStandard
+          ? 'スタンダードプランの国試モードは月15回までです。プレミアムプランにアップグレードしてください。'
+          : '無料プランの国試モードは月2回までです。スタンダードプランにアップグレードしてください。',
         upgrade: true,
       });
     }

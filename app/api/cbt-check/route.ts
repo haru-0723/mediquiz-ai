@@ -14,11 +14,10 @@ export async function POST(request: NextRequest) {
       .eq('id', user.id)
       .single();
 
-    if (profile && (profile.plan === 'standard' || profile.plan === 'premium')) {
+    if (profile?.plan === 'premium') {
       return NextResponse.json({ allowed: true });
     }
 
-    // 無料プランは月2回まで（adminクライアントでRLSバイパス）
     const admin = createAdminClient();
     const startOfMonth = new Date();
     startOfMonth.setDate(1);
@@ -30,10 +29,14 @@ export async function POST(request: NextRequest) {
       .eq('user_id', user.id)
       .gte('created_at', startOfMonth.toISOString());
 
-    if ((count ?? 0) >= 2) {
+    const isStandard = profile?.plan === 'standard';
+    const limit = isStandard ? 30 : 2;
+    if ((count ?? 0) >= limit) {
       return NextResponse.json({
         allowed: false,
-        error: '無料プランのCBT模試は月2回までです。スタンダードプランにアップグレードしてください。',
+        error: isStandard
+          ? 'スタンダードプランのCBT模試は月30回までです。プレミアムプランにアップグレードしてください。'
+          : '無料プランのCBT模試は月2回までです。スタンダードプランにアップグレードしてください。',
         upgrade: true
       });
     }

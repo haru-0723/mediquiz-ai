@@ -23,8 +23,8 @@ export async function POST(request: NextRequest) {
       .eq('id', user.id)
       .single();
 
-    // 無料プランの場合、制限チェック
-    if (!profile || profile.plan === 'free') {
+    // プラン別制限チェック
+    if (!profile || profile.plan === 'free' || profile.plan === 'standard') {
       const startOfDay = new Date();
       startOfDay.setHours(0, 0, 0, 0);
 
@@ -34,9 +34,13 @@ export async function POST(request: NextRequest) {
         .eq('user_id', user.id)
         .gte('created_at', startOfDay.toISOString());
 
-      if ((generateCount ?? 0) >= 2) {
+      const isFree = !profile || profile.plan === 'free';
+      const limit = isFree ? 2 : 30;
+      if ((generateCount ?? 0) >= limit) {
         return NextResponse.json({
-          error: '無料プランのAI問題生成は1日2回までです。スタンダードプランにアップグレードしてください。',
+          error: isFree
+            ? '無料プランのAI問題生成は1日2回までです。スタンダードプランにアップグレードしてください。'
+            : 'スタンダードプランのAI問題生成は1日30回までです。プレミアムプランにアップグレードしてください。',
           upgrade: true
         }, { status: 403 });
       }
