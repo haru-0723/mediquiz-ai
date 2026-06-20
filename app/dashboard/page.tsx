@@ -143,9 +143,9 @@ export default async function DashboardPage() {
           <div className="flex items-center gap-2 mb-2">
             <Link
               href="/pricing"
-              className={`text-xs px-2.5 py-1 rounded-full font-medium ${plan === 'standard' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-600'}`}
+              className={`text-xs px-2.5 py-1 rounded-full font-medium ${plan === 'premium' ? 'bg-purple-100 text-purple-700' : plan === 'standard' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-600'}`}
             >
-              {plan === 'standard' ? '⭐ スタンダード' : '🔓 無料プラン'}
+              {plan === 'premium' ? '👑 プレミアム' : plan === 'standard' ? '⭐ スタンダード' : '🔓 無料プラン'}
             </Link>
           </div>
           <Link href="/settings" className="group block bg-white rounded-2xl border p-4 sm:p-6 hover:border-green-300 hover:shadow-sm transition-all">
@@ -221,7 +221,7 @@ export default async function DashboardPage() {
         </div>
 
         {/* 苦手分野分析 */}
-        {plan !== 'standard' ? (
+        {plan !== 'standard' && plan !== 'premium' ? (
           <div className="bg-white rounded-2xl border p-4 sm:p-6 mb-6 sm:mb-8">
             <h2 className="font-semibold text-gray-900 mb-4">📊 苦手分野分析</h2>
             <div className="text-center py-6">

@@ -168,7 +168,7 @@ export default function KokushiPage() {
         .select('plan, department, target_exam')
         .eq('id', user.id)
         .single();
-      setIsPaid(profile?.plan === 'standard');
+      setIsPaid(profile?.plan === 'standard' || profile?.plan === 'premium');
       const dept = profile?.department ?? '';
       setDepartment(dept);
       const exam = profile?.target_exam ?? null;
