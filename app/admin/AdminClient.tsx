@@ -62,15 +62,16 @@ export default function AdminClient({ reports: initialReports, usageStats }: { r
 
   async function handleSaveEdit(questionId: string) {
     setSavingEdit(true);
-    await supabase.from('questions').update({
-      question: editForm.question,
-      option_a: editForm.option_a,
-      option_b: editForm.option_b,
-      option_c: editForm.option_c,
-      option_d: editForm.option_d,
-      answer: editForm.answer,
-      explanation: editForm.explanation,
-    }).eq('id', questionId);
+    const res = await fetch('/api/admin/update-question', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ questionId, updates: editForm }),
+    });
+    if (!res.ok) {
+      alert('保存に失敗しました');
+      setSavingEdit(false);
+      return;
+    }
     setReports(reports.map(r =>
       r.question_id === questionId
         ? { ...r, questions: { ...r.questions!, ...editForm } as Question }
