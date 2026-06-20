@@ -25,9 +25,13 @@ export async function POST(request: NextRequest) {
     const customerId = session.customer as string;
     const subscriptionId = session.subscription as string;
 
+    // 購入したpriceIDでプランを判定
+    const lineItems = await stripe.checkout.sessions.listLineItems(session.id);
+    const priceId = lineItems.data[0]?.price?.id;
+    const plan = priceId === process.env.STRIPE_PREMIUM_PRICE_ID ? 'premium' : 'standard';
+
     if (email) {
       const { data: users } = await supabase.auth.admin.listUsers();
-      // メール確認済みユーザーのみ対象（未確認アカウントへのプラン付与を防ぐ）
       const user = users?.users.find(
         u => u.email === email && u.email_confirmed_at !== null
       );
@@ -35,7 +39,7 @@ export async function POST(request: NextRequest) {
         await supabase.from('profiles').upsert({
           id: user.id,
           email: user.email,
-          plan: 'standard',
+          plan,
           stripe_customer_id: customerId,
           stripe_subscription_id: subscriptionId,
         });

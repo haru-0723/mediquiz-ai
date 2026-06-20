@@ -92,7 +92,7 @@ export default function ReviewPage() {
     }
   }
 
-  function handleNext() {
+  async function handleNext() {
     const q = quizQuestions[current];
     const isCorrect = selected === q.answer;
     const newResults = [...results, { correct: isCorrect }];
@@ -102,6 +102,18 @@ export default function ReviewPage() {
       setSelected(null);
       setAnswered(false);
     } else {
+      const correct = newResults.filter(r => r.correct).length;
+      const subjects = Array.from(new Set(quizQuestions.map(q => q.subject).filter(Boolean)));
+      const subject = subjects.length === 1 ? subjects[0]! : '復習';
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase.from('quiz_sessions').insert({
+          user_id: user.id,
+          subject,
+          total_questions: newResults.length,
+          correct_count: correct,
+        });
+      }
       setPhase('result');
     }
   }

@@ -19,9 +19,9 @@ export async function POST(request: NextRequest) {
       .eq('id', user.id)
       .single();
 
-    if (profile?.plan !== 'standard') {
+    if (profile?.plan !== 'standard' && profile?.plan !== 'premium') {
       return NextResponse.json(
-        { error: 'AI解説の深掘りはスタンダードプランの機能です。', upgrade: true },
+        { error: 'AI解説の深掘りはスタンダードプラン以上の機能です。', upgrade: true },
         { status: 403 },
       );
     }

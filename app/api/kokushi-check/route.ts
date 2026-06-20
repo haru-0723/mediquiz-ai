@@ -14,7 +14,7 @@ export async function POST(_request: NextRequest) {
       .eq('id', user.id)
       .single();
 
-    if (profile?.plan === 'standard') {
+    if (profile?.plan === 'standard' || profile?.plan === 'premium') {
       return NextResponse.json({ allowed: true });
     }
 

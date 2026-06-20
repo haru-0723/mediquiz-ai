@@ -30,28 +30,49 @@ const STANDARD_FEATURES = [
   { emoji: '🔍', text: 'AI解説の深掘り機能' },
 ];
 
-export default function PricingPage() {
-  const [loading, setLoading] = useState(false);
+const PREMIUM_FEATURES = [
+  { emoji: '✨', text: 'AI問題生成：無制限' },
+  { emoji: '📝', text: '問題保存：無制限' },
+  { emoji: '🎯', text: 'CBT模試：無制限' },
+  { emoji: '📝', text: '国試モード：無制限' },
+  { emoji: '📤', text: '教材アップロード：無制限' },
+  { emoji: '⚡', text: '問題演習' },
+  { emoji: '🔁', text: '復習モード' },
+  { emoji: '📚', text: 'マイ問題集（フォルダ管理）' },
+  { emoji: '🗂️', text: 'PDFエクスポート' },
+  { emoji: '📊', text: '苦手分野分析' },
+  { emoji: '📅', text: '試験日カウントダウン' },
+  { emoji: '📈', text: '演習履歴・正解率' },
+  { emoji: '🔍', text: 'AI解説の深掘り機能' },
+  { emoji: '⚡', text: 'スタンダードの全機能' },
+];
 
-  async function handleUpgrade() {
-    setLoading(true);
+export default function PricingPage() {
+  const [loading, setLoading] = useState<'standard' | 'premium' | null>(null);
+
+  async function handleUpgrade(plan: 'standard' | 'premium') {
+    setLoading(plan);
     try {
-      const res = await fetch('/api/stripe/checkout', { method: 'POST' });
+      const res = await fetch('/api/stripe/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan }),
+      });
       const data = await res.json();
       if (data.error) {
         alert('エラー：' + data.error);
-        setLoading(false);
+        setLoading(null);
         return;
       }
       if (data.url) {
         window.location.href = data.url;
       } else {
         alert('URLが取得できませんでした');
-        setLoading(false);
+        setLoading(null);
       }
     } catch (e) {
       alert('通信エラーが発生しました：' + e);
-      setLoading(false);
+      setLoading(null);
     }
   }
 
@@ -67,15 +88,15 @@ export default function PricingPage() {
         <Link href="/dashboard" className="text-sm text-gray-500 hover:text-gray-700">ダッシュボードへ</Link>
       </nav>
 
-      <div className="max-w-3xl mx-auto px-4 sm:px-8 py-12 sm:py-16">
+      <div className="max-w-4xl mx-auto px-4 sm:px-8 py-12 sm:py-16">
         <div className="text-center mb-10 sm:mb-12">
           <h1 className="text-2xl sm:text-3xl font-semibold text-gray-900 mb-3">料金プラン</h1>
           <p className="text-gray-500 text-sm sm:text-base">まずは無料で試してみてください</p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 sm:gap-6">
           {/* 無料プラン */}
-          <div className="bg-white rounded-2xl border p-6 sm:p-8 flex flex-col">
+          <div className="bg-white rounded-2xl border p-6 flex flex-col">
             <div className="mb-6">
               <h2 className="text-lg font-semibold text-gray-900 mb-1">無料プラン</h2>
               <div className="text-3xl font-bold text-gray-900 mb-1">
@@ -98,7 +119,7 @@ export default function PricingPage() {
           </div>
 
           {/* スタンダードプラン */}
-          <div className="bg-white rounded-2xl border-2 border-green-500 p-6 sm:p-8 relative flex flex-col">
+          <div className="bg-white rounded-2xl border-2 border-green-500 p-6 relative flex flex-col">
             <span className="absolute -top-3 left-5 bg-green-500 text-white text-xs px-3 py-1 rounded-full font-medium">おすすめ</span>
             <div className="mb-6">
               <h2 className="text-lg font-semibold text-gray-900 mb-1">スタンダード</h2>
@@ -115,9 +136,32 @@ export default function PricingPage() {
                 </li>
               ))}
             </ul>
-            <button onClick={handleUpgrade} disabled={loading}
+            <button onClick={() => handleUpgrade('standard')} disabled={loading !== null}
               className="w-full bg-green-600 text-white rounded-xl py-3 text-sm font-medium hover:bg-green-700 disabled:opacity-60 transition-colors">
-              {loading ? '処理中...' : 'アップグレードする →'}
+              {loading === 'standard' ? '処理中...' : 'アップグレードする →'}
+            </button>
+          </div>
+
+          {/* プレミアムプラン */}
+          <div className="bg-white rounded-2xl border p-6 relative flex flex-col">
+            <div className="mb-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-1">プレミアム</h2>
+              <div className="text-3xl font-bold text-gray-900 mb-1">
+                ¥1,480 <span className="text-base font-normal text-gray-400">/ 月</span>
+              </div>
+              <p className="text-sm text-gray-400">国試直前の追い込みに</p>
+            </div>
+            <ul className="space-y-2.5 mb-8 flex-1">
+              {PREMIUM_FEATURES.map(f => (
+                <li key={f.text} className="flex items-center gap-2.5 text-sm text-gray-700">
+                  <span className="text-base w-5 flex-shrink-0">{f.emoji}</span>
+                  {f.text}
+                </li>
+              ))}
+            </ul>
+            <button onClick={() => handleUpgrade('premium')} disabled={loading !== null}
+              className="w-full border border-gray-800 text-gray-800 rounded-xl py-3 text-sm font-medium hover:bg-gray-50 disabled:opacity-60 transition-colors">
+              {loading === 'premium' ? '処理中...' : 'プレミアムにする →'}
             </button>
           </div>
         </div>

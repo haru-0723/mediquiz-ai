@@ -180,15 +180,15 @@ export default function SettingsPage() {
         {/* プラン */}
         <div className="bg-white rounded-2xl border p-6">
           <h2 className="font-semibold text-gray-900 mb-4">プラン</h2>
-          <div className={`p-4 rounded-xl mb-4 ${plan === 'standard' ? 'bg-green-50 border border-green-200' : 'bg-gray-50'}`}>
+          <div className={`p-4 rounded-xl mb-4 ${plan === 'premium' ? 'bg-purple-50 border border-purple-200' : plan === 'standard' ? 'bg-green-50 border border-green-200' : 'bg-gray-50'}`}>
             <p className="text-sm font-semibold text-gray-900">
-              {plan === 'standard' ? '⭐ スタンダードプラン' : '無料プラン'}
+              {plan === 'premium' ? '👑 プレミアムプラン' : plan === 'standard' ? '⭐ スタンダードプラン' : '無料プラン'}
             </p>
             <p className="text-xs text-gray-500 mt-1">
-              {plan === 'standard' ? '¥980/月 · 全機能使い放題' : '一部機能に制限あり'}
+              {plan === 'premium' ? '¥1,480/月 · 全機能無制限' : plan === 'standard' ? '¥980/月 · 全機能使い放題' : '一部機能に制限あり'}
             </p>
           </div>
-          {plan === 'standard' ? (
+          {plan === 'standard' || plan === 'premium' ? (
             <div className="space-y-3">
               {stripeCustomerId ? (
                 <>

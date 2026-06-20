@@ -229,9 +229,9 @@ export async function POST(request: NextRequest) {
       .eq('id', user.id)
       .single();
 
-    if (profile?.plan !== 'standard') {
+    if (profile?.plan !== 'standard' && profile?.plan !== 'premium') {
       return NextResponse.json({
-        error: '国試モードはスタンダードプランの機能です。',
+        error: '国試モードはスタンダードプラン以上の機能です。',
         upgrade: true,
       }, { status: 403 });
     }

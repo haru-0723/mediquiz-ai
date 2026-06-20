@@ -251,7 +251,7 @@ export default function GeneratePage() {
     setAnswered(true);
   }
 
-  function handleNext() {
+  async function handleNext() {
     const q = questions[current];
     const isCorrect = selected?.charAt(0) === q.answer;
     const newResults = [...results, { correct: isCorrect }];
@@ -263,6 +263,16 @@ export default function GeneratePage() {
       setAnswered(false);
     } else {
       window.scrollTo(0, 0);
+      const correct = newResults.filter(r => r.correct).length;
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase.from('quiz_sessions').insert({
+          user_id: user.id,
+          subject: 'AI生成問題',
+          total_questions: newResults.length,
+          correct_count: correct,
+        });
+      }
       setPhase('result');
     }
   }
