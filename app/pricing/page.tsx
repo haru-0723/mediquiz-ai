@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 
 const FREE_FEATURES = [
-  { emoji: '✨', text: 'AI問題生成：1日3回まで' },
+  { emoji: '✨', text: 'AI問題生成：1日2回まで' },
   { emoji: '📝', text: '問題保存：30問まで' },
   { emoji: '🎯', text: 'CBT模試：月2回まで' },
   { emoji: '📤', text: '教材アップロード：3件まで' },

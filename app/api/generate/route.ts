@@ -34,9 +34,9 @@ export async function POST(request: NextRequest) {
         .eq('user_id', user.id)
         .gte('created_at', startOfDay.toISOString());
 
-      if ((generateCount ?? 0) >= 3) {
+      if ((generateCount ?? 0) >= 2) {
         return NextResponse.json({
-          error: '無料プランのAI問題生成は1日3回までです。スタンダードプランにアップグレードしてください。',
+          error: '無料プランのAI問題生成は1日2回までです。スタンダードプランにアップグレードしてください。',
           upgrade: true
         }, { status: 403 });
       }
