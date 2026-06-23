@@ -41,7 +41,7 @@ export default function GeneratePage() {
   const [showCheckDialog, setShowCheckDialog] = useState(false);
   const [checkIssues, setCheckIssues] = useState('');
   const [supplementText, setSupplementText] = useState('');
-  const [format, setFormat] = useState<'4択' | '○×'>('4択');
+  const [format, setFormat] = useState<'4択' | '○×' | '穴埋め'>('4択');
 
   useEffect(() => {
     async function load() {
@@ -600,10 +600,10 @@ export default function GeneratePage() {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">出題形式</label>
             <div className="flex gap-3">
-              {(['4択', '○×'] as const).map(f => (
+              {(['4択', '○×', '穴埋め'] as const).map(f => (
                 <button key={f} onClick={() => setFormat(f)}
                   className={`flex-1 py-2.5 rounded-xl border text-sm font-medium transition-colors ${format === f ? 'bg-green-600 text-white border-green-600' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}>
-                  {f === '4択' ? '4択問題' : '○×問題'}
+                  {f === '4択' ? '4択問題' : f === '○×' ? '○×問題' : '穴埋め問題'}
                 </button>
               ))}
             </div>

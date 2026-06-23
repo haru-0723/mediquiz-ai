@@ -101,7 +101,27 @@ export async function POST(request: NextRequest) {
           },
           {
             type: 'text',
-            text: format === '○×'
+            text: format === '穴埋め'
+              ? `この画像は医療系大学生の教材です。画像の内容をもとに穴埋め選択問題を${count}問作成してください。
+
+IMPORTANT: Return ONLY a JSON object. No explanation, no markdown, no code blocks. Just raw JSON.
+
+Required format:
+{"questions":[{"question":"〜は【　　】である。","options":["A. 選択肢1","B. 選択肢2","C. 選択肢3","D. 選択肢4"],"answer":"A","explanation":"解説文","difficulty":"easy"}]}
+
+Rules:
+- difficulty must be: easy, medium, or hard
+- answer must be: A, B, C, or D (letter only)
+- 問題文・選択肢・解説はすべて日本語で書く
+- 問題文には必ず【　　】を1箇所入れて穴埋め形式にする
+- 選択肢は【　　】に入る語句のみを書く（短く簡潔に）
+- 国家試験レベルを意識した問題を作成する
+- 画像に写っている内容から問題を作成する
+- 正解はA・B・C・Dが均等になるように分散させてください
+- 画像に手書き文字やメモ書きが含まれている場合、周囲の文脈から補完してください
+${supplementText ? `- 【出題の指示】以下の指示を最優先で守って問題を作成してください：${supplementText}` : ''}
+${getSubjectInstruction(profile?.department)}`
+              : format === '○×'
               ? `この画像は医療系大学生の教材です。画像の内容をもとに○×問題を${count}問作成してください。
 
 IMPORTANT: Return ONLY a JSON object. No explanation, no markdown, no code blocks. Just raw JSON.
