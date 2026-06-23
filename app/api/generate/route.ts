@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const { materialId, count = 5, supplementText = '' } = await request.json();
+    const { materialId, count = 5, supplementText = '', format = '4択' } = await request.json();
 
     const { data: material } = await supabase
       .from('materials')
@@ -101,7 +101,27 @@ export async function POST(request: NextRequest) {
           },
           {
             type: 'text',
-            text: `この画像は医療系大学生の教材です。画像の内容をもとに4択問題を${count}問作成してください。
+            text: format === '○×'
+              ? `この画像は医療系大学生の教材です。画像の内容をもとに○×問題を${count}問作成してください。
+
+IMPORTANT: Return ONLY a JSON object. No explanation, no markdown, no code blocks. Just raw JSON.
+
+Required format:
+{"questions":[{"question":"〜である。","options":["○. 正しい","×. 誤り"],"answer":"○","explanation":"解説文","difficulty":"easy"}]}
+
+Rules:
+- difficulty must be: easy, medium, or hard
+- answer must be: ○ or × (symbol only)
+- options must always be exactly ["○. 正しい", "×. 誤り"]
+- 問題文・解説はすべて日本語で書く
+- 問題文は「〜である。」「〜はどれか。」などの断定文または疑問文にする
+- 国家試験レベルを意識した問題を作成する
+- 画像に写っている内容から問題を作成する
+- ○と×が均等になるように分散させてください
+- 画像に手書き文字やメモ書きが含まれている場合、周囲の文脈から補完してください
+${supplementText ? `- 【出題の指示】以下の指示を最優先で守って問題を作成してください：${supplementText}` : ''}
+${getSubjectInstruction(profile?.department)}`
+              : `この画像は医療系大学生の教材です。画像の内容をもとに4択問題を${count}問作成してください。
 
 IMPORTANT: Return ONLY a JSON object. No explanation, no markdown, no code blocks. Just raw JSON.
 

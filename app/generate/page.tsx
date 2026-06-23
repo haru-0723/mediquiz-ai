@@ -41,6 +41,7 @@ export default function GeneratePage() {
   const [showCheckDialog, setShowCheckDialog] = useState(false);
   const [checkIssues, setCheckIssues] = useState('');
   const [supplementText, setSupplementText] = useState('');
+  const [format, setFormat] = useState<'4択' | '○×'>('4択');
 
   useEffect(() => {
     async function load() {
@@ -133,7 +134,7 @@ export default function GeneratePage() {
           fetch('/api/generate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ materialId: id, count, supplementText: supplement }),
+            body: JSON.stringify({ materialId: id, count, supplementText: supplement, format }),
           }).then(res => res.json())
         )
       );
@@ -253,7 +254,8 @@ export default function GeneratePage() {
 
   async function handleNext() {
     const q = questions[current];
-    const isCorrect = selected?.charAt(0) === q.answer;
+    const selectedKey = format === '○×' ? selected?.charAt(0) : selected?.charAt(0);
+    const isCorrect = selectedKey === q.answer;
     const newResults = [...results, { correct: isCorrect }];
     setResults(newResults);
     setShowReportForm(false);
@@ -436,26 +438,47 @@ export default function GeneratePage() {
               <span className="bg-gray-100 text-gray-500 text-xs px-3 py-1 rounded-full">{q.difficulty === 'easy' ? '基礎' : q.difficulty === 'hard' ? '応用' : '標準'}</span>
             </div>
             <p className="text-base font-medium text-gray-900 leading-relaxed mb-6">{q.question}</p>
-            <div className="space-y-3">
-              {q.options.map(opt => {
-                const letter = opt.charAt(0);
-                const isCorrect = letter === q.answer;
-                const isSelected = selected?.charAt(0) === letter;
-                let cls = 'flex items-center gap-3 p-4 rounded-xl border cursor-pointer transition-all ';
-                if (!answered) cls += 'border-gray-200 hover:border-gray-300';
-                else if (isCorrect) cls += 'border-green-500 bg-green-50';
-                else if (isSelected) cls += 'border-red-400 bg-red-50';
-                else cls += 'border-gray-100 opacity-60';
-                return (
-                  <div key={opt} className={cls} onClick={() => handleAnswer(opt)}>
-                    <div className={`w-6 h-6 rounded-full border flex items-center justify-center text-xs font-medium flex-shrink-0 ${answered && isCorrect ? 'bg-green-600 border-green-600 text-white' : answered && isSelected ? 'bg-red-400 border-red-400 text-white' : 'border-gray-300 text-gray-500'}`}>
-                      {letter}
+            {format === '○×' ? (
+              <div className="grid grid-cols-2 gap-4">
+                {q.options.map(opt => {
+                  const symbol = opt.charAt(0);
+                  const isCorrect = symbol === q.answer;
+                  const isSelected = selected?.charAt(0) === symbol;
+                  let cls = 'flex flex-col items-center justify-center py-8 rounded-xl border-2 cursor-pointer transition-all text-4xl font-bold ';
+                  if (!answered) cls += 'border-gray-200 hover:border-gray-300';
+                  else if (isCorrect) cls += 'border-green-500 bg-green-50';
+                  else if (isSelected) cls += 'border-red-400 bg-red-50';
+                  else cls += 'border-gray-100 opacity-40';
+                  return (
+                    <div key={opt} className={cls} onClick={() => handleAnswer(opt)}>
+                      <span className={symbol === '○' ? 'text-green-600' : 'text-red-500'}>{symbol}</span>
+                      <span className="text-xs font-normal text-gray-500 mt-2">{opt.slice(3)}</span>
                     </div>
-                    <span className="text-sm text-gray-700">{opt.slice(3)}</span>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {q.options.map(opt => {
+                  const letter = opt.charAt(0);
+                  const isCorrect = letter === q.answer;
+                  const isSelected = selected?.charAt(0) === letter;
+                  let cls = 'flex items-center gap-3 p-4 rounded-xl border cursor-pointer transition-all ';
+                  if (!answered) cls += 'border-gray-200 hover:border-gray-300';
+                  else if (isCorrect) cls += 'border-green-500 bg-green-50';
+                  else if (isSelected) cls += 'border-red-400 bg-red-50';
+                  else cls += 'border-gray-100 opacity-60';
+                  return (
+                    <div key={opt} className={cls} onClick={() => handleAnswer(opt)}>
+                      <div className={`w-6 h-6 rounded-full border flex items-center justify-center text-xs font-medium flex-shrink-0 ${answered && isCorrect ? 'bg-green-600 border-green-600 text-white' : answered && isSelected ? 'bg-red-400 border-red-400 text-white' : 'border-gray-300 text-gray-500'}`}>
+                        {letter}
+                      </div>
+                      <span className="text-sm text-gray-700">{opt.slice(3)}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
             {answered && (
               <div className="mt-6 p-4 bg-gray-50 rounded-xl border-l-4 border-green-500">
                 <p className="text-xs font-medium text-green-600 mb-2">💡 解説</p>
@@ -572,6 +595,18 @@ export default function GeneratePage() {
             {selectedIds.length > 0 && (
               <p className="text-xs text-green-600 mt-2 font-medium">{selectedIds.length}件選択中</p>
             )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">出題形式</label>
+            <div className="flex gap-3">
+              {(['4択', '○×'] as const).map(f => (
+                <button key={f} onClick={() => setFormat(f)}
+                  className={`flex-1 py-2.5 rounded-xl border text-sm font-medium transition-colors ${format === f ? 'bg-green-600 text-white border-green-600' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}>
+                  {f === '4択' ? '4択問題' : '○×問題'}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div>
