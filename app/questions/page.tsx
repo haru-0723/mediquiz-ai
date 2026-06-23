@@ -55,11 +55,12 @@ export default function QuestionsPage() {
   const [bulkTargetFolderId, setBulkTargetFolderId] = useState<string>('none');
   const [bulkMoving, setBulkMoving] = useState(false);
 
-  // PDF
+  // Export (PDF / Excel)
   const [exporting, setExporting] = useState(false);
   const [showPlanError, setShowPlanError] = useState(false);
   const [pdfMode, setPdfMode] = useState(false);
   const [pdfSelectedIds, setPdfSelectedIds] = useState<Set<string>>(new Set<string>());
+  const [exportType, setExportType] = useState<'pdf' | 'excel'>('pdf');
 
   useEffect(() => { loadData(); }, []);
 
@@ -172,10 +173,21 @@ export default function QuestionsPage() {
     if (plan === 'free') { setShowPlanError(true); return; }
     if (filteredQuestions.length === 0) { alert('エクスポートする問題がありません'); return; }
     setShowPlanError(false);
-    // すべて選択した状態でPDF選択モードに入る
     const all = new Set<string>();
     filteredQuestions.forEach(q => all.add(q.id));
     setPdfSelectedIds(all);
+    setExportType('pdf');
+    setPdfMode(true);
+  }
+
+  function handleExportExcel() {
+    if (plan === 'free') { setShowPlanError(true); return; }
+    if (filteredQuestions.length === 0) { alert('エクスポートする問題がありません'); return; }
+    setShowPlanError(false);
+    const all = new Set<string>();
+    filteredQuestions.forEach(q => all.add(q.id));
+    setPdfSelectedIds(all);
+    setExportType('excel');
     setPdfMode(true);
   }
 
@@ -306,6 +318,45 @@ export default function QuestionsPage() {
     } catch (e) {
       console.error(e);
       alert('PDFの生成に失敗しました。もう一度お試しください。');
+    } finally {
+      setExporting(false);
+    }
+  }
+
+  async function generateSelectedExcel() {
+    const toExport = filteredQuestions.filter(q => pdfSelectedIds.has(q.id));
+    if (toExport.length === 0) { alert('Excel出力する問題を選択してください'); return; }
+
+    setExporting(true);
+    try {
+      const XLSX = await import('xlsx');
+
+      const rows = toExport.map((q, i) => ({
+        '番号': i + 1,
+        '問題文': q.question,
+        '選択肢A': q.option_a,
+        '選択肢B': q.option_b,
+        '選択肢C': q.option_c,
+        '選択肢D': q.option_d,
+        '正解': q.answer,
+        '解説': q.explanation ?? '',
+        '科目': q.subject ?? '',
+        '難易度': DIFF_LABEL[q.difficulty] ?? q.difficulty,
+      }));
+
+      const ws = XLSX.utils.json_to_sheet(rows);
+      ws['!cols'] = [
+        { wch: 6 }, { wch: 50 }, { wch: 20 }, { wch: 20 },
+        { wch: 20 }, { wch: 20 }, { wch: 6 }, { wch: 50 }, { wch: 12 }, { wch: 8 },
+      ];
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, currentFolderName.slice(0, 31));
+      XLSX.writeFile(wb, `MediQuiz_${currentFolderName}.xlsx`);
+      setPdfSelectedIds(new Set<string>());
+    } catch (e) {
+      console.error(e);
+      alert('Excelの生成に失敗しました。もう一度お試しください。');
     } finally {
       setExporting(false);
     }
@@ -472,10 +523,16 @@ export default function QuestionsPage() {
                     </button>
                   )}
                   <div className="flex flex-col items-end gap-1">
-                    <button onClick={handleExportPDF}
-                      className="flex items-center gap-1.5 text-xs bg-white border border-gray-200 text-gray-600 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors">
-                      📄 PDFで出力
-                    </button>
+                    <div className="flex items-center gap-1.5">
+                      <button onClick={handleExportPDF}
+                        className="flex items-center gap-1.5 text-xs bg-white border border-gray-200 text-gray-600 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors">
+                        📄 PDF
+                      </button>
+                      <button onClick={handleExportExcel}
+                        className="flex items-center gap-1.5 text-xs bg-white border border-gray-200 text-gray-600 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors">
+                        📊 Excel
+                      </button>
+                    </div>
                     {showPlanError && (
                       <p className="text-xs text-orange-600">
                         スタンダードプランの機能です。
@@ -487,10 +544,13 @@ export default function QuestionsPage() {
               )}
             </div>
 
-            {/* PDF選択モードバナー */}
+            {/* エクスポート選択モードバナー */}
             {pdfMode && (
               <div className="bg-orange-50 border border-orange-200 rounded-xl p-3 mb-4">
-                <p className="text-sm font-medium text-orange-700 mb-2">📄 PDFに含める問題を選んでください（{pdfSelectedIds.size}問選択中）</p>
+                <p className="text-sm font-medium text-orange-700 mb-2">
+                  {exportType === 'pdf' ? '📄 PDFに含める問題を選んでください' : '📊 Excelに含める問題を選んでください'}
+                  （{pdfSelectedIds.size}問選択中）
+                </p>
                 <div className="flex flex-wrap items-center gap-2">
                   <button onClick={() => {
                     const all = new Set<string>();
@@ -503,11 +563,15 @@ export default function QuestionsPage() {
                     className="text-xs border border-orange-300 rounded-lg px-3 py-1.5 text-orange-600 hover:bg-orange-100 transition-colors">
                     全解除
                   </button>
-                  <button onClick={generateSelectedPDF} disabled={pdfSelectedIds.size === 0 || exporting}
+                  <button
+                    onClick={exportType === 'pdf' ? generateSelectedPDF : generateSelectedExcel}
+                    disabled={pdfSelectedIds.size === 0 || exporting}
                     className="text-xs bg-orange-500 text-white rounded-lg px-4 py-1.5 hover:bg-orange-600 disabled:opacity-60 font-medium transition-colors flex items-center gap-1.5">
                     {exporting ? (
                       <><svg className="animate-spin w-3 h-3" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/></svg>生成中...</>
-                    ) : `選択した${pdfSelectedIds.size}問をPDF出力`}
+                    ) : exportType === 'pdf'
+                        ? `選択した${pdfSelectedIds.size}問をPDF出力`
+                        : `選択した${pdfSelectedIds.size}問をExcel出力`}
                   </button>
                   <button onClick={() => { setPdfMode(false); setPdfSelectedIds(new Set<string>()); }}
                     className="text-xs text-gray-400 hover:text-gray-600 px-2 py-1.5 transition-colors">
