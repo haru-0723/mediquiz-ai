@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { getSubjectInstruction } from '@/lib/departmentUtils';
+import { getSubjectInstruction, getDepartmentType, getSourceInstruction } from '@/lib/departmentUtils';
 
 if (!process.env.ANTHROPIC_API_KEY) {
   throw new Error('ANTHROPIC_API_KEY is not set');
@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
     // プランを確認
     const { data: profile } = await supabase
       .from('profiles')
-      .select('plan, department')
+      .select('plan, department, target_exam')
       .eq('id', user.id)
       .single();
 
@@ -85,6 +85,9 @@ export async function POST(request: NextRequest) {
     const base64Image = Buffer.from(arrayBuffer).toString('base64');
     const mediaType = (material.file_type || 'image/jpeg') as 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp';
 
+    const examType = getDepartmentType(profile?.department, profile?.target_exam);
+    const sourceInstruction = getSourceInstruction(examType === 'other' ? null : examType);
+
     const response = await anthropic.messages.create({
       model: 'claude-sonnet-4-5',
       max_tokens: 4096,
@@ -119,6 +122,7 @@ Rules:
 - 画像に写っている内容から問題を作成する
 - 正解はA・B・C・Dが均等になるように分散させてください
 - 画像に手書き文字やメモ書きが含まれている場合、周囲の文脈から補完してください
+${sourceInstruction}
 ${supplementText ? `- 【出題の指示】以下の指示を最優先で守って問題を作成してください：${supplementText}` : ''}
 ${getSubjectInstruction(profile?.department)}`
               : format === '○×'
@@ -139,6 +143,7 @@ Rules:
 - 画像に写っている内容から問題を作成する
 - ○と×が均等になるように分散させてください
 - 画像に手書き文字やメモ書きが含まれている場合、周囲の文脈から補完してください
+${sourceInstruction}
 ${supplementText ? `- 【出題の指示】以下の指示を最優先で守って問題を作成してください：${supplementText}` : ''}
 ${getSubjectInstruction(profile?.department)}`
               : `この画像は医療系大学生の教材です。画像の内容をもとに4択問題を${count}問作成してください。
@@ -160,6 +165,7 @@ Rules:
 - 正解はA・B・C・Dが均等になるように分散させてください
 - 選択肢A〜Dの文章の長さ・文体・詳しさを必ず揃えること。正解の選択肢だけ長くしたり、詳しく書いたりしないこと。全ての選択肢が同じくらいの文字数・同じ文体になるようにすること
 - 画像に手書き文字やメモ書きが含まれている場合、周囲の文脈・文章・図表から内容を推測して補完してください。完全に読み取れない部分があっても、前後の文脈から意味を推測して問題作成に活用してください。また、画像の認識が難しかった部分については解説文に反映させてください。
+${sourceInstruction}
 ${supplementText ? `- 【出題の指示】以下の指示を最優先で守って問題を作成してください：${supplementText}` : ''}
 ${getSubjectInstruction(profile?.department)}`
           }

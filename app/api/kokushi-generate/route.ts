@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { getSourceInstruction } from '@/lib/departmentUtils';
 
 if (!process.env.ANTHROPIC_API_KEY) {
   throw new Error('ANTHROPIC_API_KEY is not set');
@@ -198,6 +199,7 @@ Rules:
 - answer must be: A, B, C, or D (letter only)
 - 問題文・選択肢・解説はすべて日本語で書く
 - 本番の国家試験に近い難易度・形式で問題を作成する
+${getSourceInstruction(dept === 'unset' ? null : dept)}
 - 選択肢A〜Dの文章の長さをできるだけ揃える（正解だけ長くならないように）
 - 選択肢は全て同じくらいの文字数・文体にする
 - 正解はA・B・C・Dが均等になるように分散させてください
