@@ -12,12 +12,15 @@ export default function PushNotification() {
   useEffect(() => {
     if (typeof window === 'undefined') return;
     if (!('Notification' in window)) return;
-    if (localStorage.getItem(STORAGE_KEY)) return;
 
+    // 許可済みなら毎回トークンを更新（トークンは変わることがある）
     if (Notification.permission === 'granted') {
       registerToken();
       return;
     }
+
+    // 拒否済み or 既に聞いた場合はバナーを出さない
+    if (localStorage.getItem(STORAGE_KEY)) return;
     if (Notification.permission === 'denied') {
       localStorage.setItem(STORAGE_KEY, '1');
       return;
