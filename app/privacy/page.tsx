@@ -81,8 +81,9 @@ export default function PrivacyPage() {
           </section>
         </div>
 
-        <div className="mt-12 pt-8 border-t">
-          <Link href="/terms" className="text-sm text-green-600 hover:underline mr-6">利用規約</Link>
+        <div className="mt-12 pt-8 border-t flex flex-wrap gap-4">
+          <Link href="/terms" className="text-sm text-green-600 hover:underline">利用規約</Link>
+          <Link href="/accuracy" className="text-sm text-green-600 hover:underline">AIの正確性・免責について</Link>
           <Link href="/" className="text-sm text-gray-500 hover:underline">トップページへ戻る</Link>
         </div>
       </div>
