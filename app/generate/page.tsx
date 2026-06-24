@@ -184,7 +184,7 @@ export default function GeneratePage() {
         }
       }
 
-      await supabase.from('questions').insert(
+      const { error: insertError } = await supabase.from('questions').insert(
         questions.map(q => ({
           user_id: user.id,
           subject: selectedMaterials[0]?.subject ?? null,
@@ -199,9 +199,11 @@ export default function GeneratePage() {
           folder_id: folderId,
         }))
       );
+      if (insertError) throw new Error(insertError.message);
       setSaved(true);
     } catch (e) {
       console.error(e);
+      setError(e instanceof Error ? e.message : '保存に失敗しました');
     } finally {
       setSaving(false);
     }
