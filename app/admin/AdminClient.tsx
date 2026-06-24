@@ -60,7 +60,7 @@ export default function AdminClient({ reports: initialReports, usageStats }: { r
     setEditingId(q.id);
   }
 
-  async function handleSaveEdit(questionId: string) {
+  async function handleSaveEdit(questionId: string, reportId: string) {
     setSavingEdit(true);
     const res = await fetch('/api/admin/update-question', {
       method: 'POST',
@@ -72,11 +72,9 @@ export default function AdminClient({ reports: initialReports, usageStats }: { r
       setSavingEdit(false);
       return;
     }
-    setReports(reports.map(r =>
-      r.question_id === questionId
-        ? { ...r, questions: { ...r.questions!, ...editForm } as Question }
-        : r
-    ));
+    // 修正保存後、レポートを解決済みとして削除（報告者の問題はDB更新済み）
+    await supabase.from('question_reports').delete().eq('id', reportId);
+    setReports(reports.filter(r => r.id !== reportId));
     setEditingId(null);
     setSavingEdit(false);
   }
@@ -286,9 +284,9 @@ export default function AdminClient({ reports: initialReports, usageStats }: { r
                         className="text-xs text-gray-400 hover:text-gray-600 border border-gray-200 px-3 py-1.5 rounded-lg">
                         キャンセル
                       </button>
-                      <button onClick={() => handleSaveEdit(report.question_id)} disabled={savingEdit}
+                      <button onClick={() => handleSaveEdit(report.question_id, report.id)} disabled={savingEdit}
                         className="text-xs bg-green-600 text-white px-3 py-1.5 rounded-lg hover:bg-green-700 disabled:opacity-60">
-                        {savingEdit ? '保存中...' : '保存する'}
+                        {savingEdit ? '保存中...' : '保存して解決済みにする'}
                       </button>
                     </div>
                   </div>
