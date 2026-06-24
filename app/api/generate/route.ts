@@ -45,16 +45,18 @@ export async function POST(request: NextRequest) {
         }, { status: 403 });
       }
 
-      const { count: questionCount } = await supabase
-        .from('questions')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id);
+      if (isFree) {
+        const { count: questionCount } = await supabase
+          .from('questions')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id);
 
-      if ((questionCount ?? 0) >= 30) {
-        return NextResponse.json({
-          error: '無料プランの保存上限（30問）に達しました。スタンダードプランにアップグレードしてください。',
-          upgrade: true
-        }, { status: 403 });
+        if ((questionCount ?? 0) >= 30) {
+          return NextResponse.json({
+            error: '無料プランの保存上限（30問）に達しました。スタンダードプランにアップグレードしてください。',
+            upgrade: true
+          }, { status: 403 });
+        }
       }
     }
 

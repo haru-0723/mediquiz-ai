@@ -181,9 +181,10 @@ export default function AdminClient({ reports: initialReports, usageStats }: { r
                         </td>
                         <td className="py-2.5 pr-3">
                           <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                            u.plan === 'premium' ? 'bg-purple-100 text-purple-700' :
                             u.plan === 'standard' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
                           }`}>
-                            {u.plan === 'standard' ? '有料' : '無料'}
+                            {u.plan === 'premium' ? 'プレミアム' : u.plan === 'standard' ? 'スタンダード' : '無料'}
                           </span>
                         </td>
                         <td className="py-2.5 text-right text-gray-700">{u.generate}</td>

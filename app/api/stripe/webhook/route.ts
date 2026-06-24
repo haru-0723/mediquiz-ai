@@ -28,11 +28,22 @@ export async function POST(request: NextRequest) {
     // 購入したpriceIDでプランを判定
     const lineItems = await stripe.checkout.sessions.listLineItems(session.id);
     const priceId = lineItems.data[0]?.price?.id;
-    const plan = priceId === process.env.STRIPE_PREMIUM_PRICE_ID ? 'premium' : 'standard';
+    const premiumPriceId = process.env.STRIPE_PREMIUM_PRICE_ID;
+    const plan = (priceId && premiumPriceId && priceId === premiumPriceId) ? 'premium' : 'standard';
 
     if (email) {
-      const { data: users } = await supabase.auth.admin.listUsers();
-      const user = users?.users.find(
+      // 全ユーザーをページネーションで取得（デフォルトの1000件制限を回避）
+      let allUsers: { id: string; email?: string; email_confirmed_at?: string | null }[] = [];
+      let page = 1;
+      const perPage = 1000;
+      while (true) {
+        const { data: batch } = await supabase.auth.admin.listUsers({ page, perPage });
+        if (!batch?.users?.length) break;
+        allUsers = allUsers.concat(batch.users);
+        if (batch.users.length < perPage) break;
+        page++;
+      }
+      const user = allUsers.find(
         u => u.email === email && u.email_confirmed_at !== null
       );
       if (user) {
