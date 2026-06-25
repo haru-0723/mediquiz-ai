@@ -358,9 +358,19 @@ export default function QuestionsPage() {
         ? [{ wch: 6 }, { wch: 50 }, { wch: 20 }, { wch: 20 }, { wch: 6 }, { wch: 50 }, { wch: 12 }, { wch: 8 }]
         : [{ wch: 6 }, { wch: 50 }, { wch: 20 }, { wch: 20 }, { wch: 20 }, { wch: 20 }, { wch: 6 }, { wch: 50 }, { wch: 12 }, { wch: 8 }];
 
+      // 全セルに折り返し・上揃えを設定
+      const range = XLSX.utils.decode_range(ws['!ref']!);
+      for (let R = range.s.r; R <= range.e.r; R++) {
+        for (let C = range.s.c; C <= range.e.c; C++) {
+          const addr = XLSX.utils.encode_cell({ r: R, c: C });
+          if (!ws[addr]) continue;
+          ws[addr].s = { alignment: { wrapText: true, vertical: 'top' } };
+        }
+      }
+
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, currentFolderName.slice(0, 31));
-      XLSX.writeFile(wb, `MediQuiz_${currentFolderName}.xlsx`);
+      XLSX.writeFile(wb, `MediQuiz_${currentFolderName}.xlsx`, { cellStyles: true });
       setPdfSelectedIds(new Set<string>());
     } catch (e) {
       console.error(e);
