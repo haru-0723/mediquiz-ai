@@ -35,12 +35,12 @@ export async function POST(request: NextRequest) {
         .gte('created_at', startOfDay.toISOString());
 
       const isFree = !profile || profile.plan === 'free';
-      const limit = isFree ? 2 : 15;
+      const limit = isFree ? 2 : 10;
       if ((generateCount ?? 0) >= limit) {
         return NextResponse.json({
           error: isFree
             ? '無料プランのAI問題生成は1日2回までです。スタンダードプランにアップグレードしてください。'
-            : 'スタンダードプランのAI問題生成は1日15回までです。プレミアムプランにアップグレードしてください。',
+            : 'スタンダードプランのAI問題生成は1日10回までです。プレミアムプランにアップグレードしてください。',
           upgrade: true
         }, { status: 403 });
       }
