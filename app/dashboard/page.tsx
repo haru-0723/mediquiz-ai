@@ -55,7 +55,7 @@ export default async function DashboardPage() {
     supabase.from('exams').select('*').eq('user_id', user.id).order('exam_date'),
     supabase.from('quiz_sessions').select('*').eq('user_id', user.id).order('completed_at', { ascending: false }).limit(50),
     supabase.from('quiz_sessions').select('correct_count, total_questions').eq('user_id', user.id).gte('completed_at', weekStart),
-    supabase.from('quiz_sessions').select('subject, correct_count, total_questions, mode').eq('user_id', user.id).limit(500),
+    supabase.from('quiz_sessions').select('subject, correct_count, total_questions, mode').eq('user_id', user.id).order('completed_at', { ascending: false }).limit(200),
     supabase.from('materials').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
   ]);
 

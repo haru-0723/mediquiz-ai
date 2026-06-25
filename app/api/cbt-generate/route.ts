@@ -3,73 +3,12 @@ import Anthropic from '@anthropic-ai/sdk';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getDepartmentType, getCBTSubjectInstruction, getSourceInstruction } from '@/lib/departmentUtils';
+import { extractQuestions, type RawQuestion } from '@/lib/questionUtils';
 
 if (!process.env.ANTHROPIC_API_KEY) {
   throw new Error('ANTHROPIC_API_KEY is not set');
 }
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-
-type RawQuestion = {
-  question: string;
-  option_a: string;
-  option_b: string;
-  option_c: string;
-  option_d: string;
-  answer: string;
-  explanation: string;
-  subject: string;
-  difficulty: string;
-};
-
-// テキストから questions 配列を抽出。途中で切れた JSON にも対応
-function extractQuestions(text: string): RawQuestion[] {
-  const jsonMatch = text.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) return [];
-
-  // まず正規のパースを試みる
-  try {
-    const parsed = JSON.parse(jsonMatch[0]);
-    if (Array.isArray(parsed.questions)) return parsed.questions;
-  } catch {
-    // 以下で部分抽出にフォールバック
-  }
-
-  // "questions": [ の開始位置を探す
-  const arrayStart = jsonMatch[0].search(/"questions"\s*:\s*\[/);
-  if (arrayStart === -1) return [];
-  const bracketPos = jsonMatch[0].indexOf('[', arrayStart) + 1;
-  const content = jsonMatch[0].slice(bracketPos);
-
-  // 深さ追跡で完全な {} ブロックを1つずつ切り出す
-  const questions: RawQuestion[] = [];
-  let depth = 0;
-  let start = -1;
-  let inString = false;
-  let escaped = false;
-
-  for (let i = 0; i < content.length; i++) {
-    const c = content[i];
-    if (escaped) { escaped = false; continue; }
-    if (c === '\\' && inString) { escaped = true; continue; }
-    if (c === '"') { inString = !inString; continue; }
-    if (inString) continue;
-    if (c === '{') {
-      if (depth === 0) start = i;
-      depth++;
-    } else if (c === '}') {
-      depth--;
-      if (depth === 0 && start !== -1) {
-        try {
-          const obj = JSON.parse(content.slice(start, i + 1));
-          if (obj.question && obj.answer) questions.push(obj);
-        } catch { /* 不完全なオブジェクトはスキップ */ }
-        start = -1;
-      }
-    }
-  }
-
-  return questions;
-}
 
 // batchCount 問を1回のAPI呼び出しで生成
 async function generateBatch(

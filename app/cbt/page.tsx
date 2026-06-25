@@ -93,15 +93,12 @@ export default function CBTPage() {
   const [timeLeft, setTimeLeft] = useState(0);
   const [showResult, setShowResult] = useState(false);
   const [error, setError] = useState('');
-  const [showReportForm, setShowReportForm] = useState(false);
-  const [reportReason, setReportReason] = useState('内容が間違っている');
+  const [report, setReport] = useState({ show: false, reason: '内容が間違っている', submitting: false });
   const [reportedSet, setReportedSet] = useState<Set<number>>(new Set<number>());
-  const [submittingReport, setSubmittingReport] = useState(false);
   const [department, setDepartment] = useState('');
   const [targetExam, setTargetExam] = useState<string | null>(null);
   const [useManualSubjectList, setUseManualSubjectList] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [progressMessage, setProgressMessage] = useState('');
+  const [genProgress, setGenProgress] = useState({ value: 0, message: '' });
 
   useEffect(() => {
     async function load() {
@@ -186,8 +183,7 @@ async function handleStart() {
   }
 
   setGenerating(true);
-  setProgress(0);
-  setProgressMessage('問題を準備しています...');
+  setGenProgress({ value: 0, message: '問題を準備しています...' });
 
   const cbtMessages = [
     '問題を準備しています...',
@@ -200,8 +196,7 @@ async function handleStart() {
   let msgIndex = 0;
   const msgInterval = setInterval(() => {
     msgIndex = (msgIndex + 1) % cbtMessages.length;
-    setProgressMessage(cbtMessages[msgIndex]);
-    setProgress(prev => Math.min(prev + 15, 90));
+    setGenProgress(prev => ({ value: Math.min(prev.value + 15, 90), message: cbtMessages[msgIndex] }));
   }, 2000);
 
   try {
@@ -240,7 +235,7 @@ async function handleStart() {
       return [...prev, ...fresh];
     });
 
-    setProgress(100);
+    setGenProgress({ value: 100, message: '' });
     setQuestions(finalQuestions);
     setAnswers([]);
     setCurrent(0);
@@ -257,18 +252,18 @@ async function handleStart() {
 }
 
   async function handleReport() {
-    setSubmittingReport(true);
+    setReport(r => ({ ...r, submitting: true }));
     try {
       const q = questions[current];
       await fetch('/api/report', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question_id: q.id, reason: reportReason }),
+        body: JSON.stringify({ question_id: q.id, reason: report.reason }),
       });
       setReportedSet(prev => { const next = new Set<number>(prev); next.add(current); return next; });
-      setShowReportForm(false);
+      setReport(r => ({ ...r, show: false }));
     } finally {
-      setSubmittingReport(false);
+      setReport(r => ({ ...r, submitting: false }));
     }
   }
 
@@ -281,7 +276,7 @@ async function handleStart() {
     const isCorrect = selected === q.answer;
     const newAnswers = [...answers, { questionId: q.id, selected, isCorrect }];
     setAnswers(newAnswers);
-    setShowReportForm(false);
+    setReport(r => ({ ...r, show: false }));
     if (current + 1 < questions.length) {
       setCurrent(current + 1);
       setSelected(null);
@@ -367,9 +362,9 @@ async function handleStart() {
         <div className="text-center max-w-sm w-full px-8">
           <div style={{ width: 48, height: 48, border: '3px solid #2563EB', borderTopColor: 'transparent', borderRadius: '50%', margin: '0 auto 24px', animation: 'spin 0.8s linear infinite' }} />
           <p className="text-gray-900 font-semibold text-lg mb-2">問題を生成中...</p>
-          <p className="text-blue-600 text-sm font-medium mb-6 min-h-[20px]">{progressMessage}</p>
+          <p className="text-blue-600 text-sm font-medium mb-6 min-h-[20px]">{genProgress.message}</p>
           <div className="h-2 bg-gray-200 rounded-full overflow-hidden mb-2">
-            <div className="h-full bg-blue-600 rounded-full transition-all duration-500" style={{ width: `${progress}%` }} />
+            <div className="h-full bg-blue-600 rounded-full transition-all duration-500" style={{ width: `${genProgress.value}%` }} />
           </div>
           <p className="text-xs text-yellow-600 mb-2">⏳ CBTレベルの正確な問題を生成しています。1〜2分ほどお待ちください。</p>
           <p className="text-xs text-gray-400">AIが{questionCount}問を準備しています</p>
@@ -495,7 +490,7 @@ async function handleStart() {
       <div className="min-h-screen bg-gray-50">
         <Navbar />
         <div className="bg-white border-b px-4 sm:px-8 py-2 flex items-center justify-end gap-3">
-          <span className={`text-sm font-semibold px-3 py-1 rounded-full ${isUrgent ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'}`}>
+          <span aria-live="polite" aria-label={`残り時間 ${formatTime(timeLeft)}`} className={`text-sm font-semibold px-3 py-1 rounded-full ${isUrgent ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'}`}>
             ⏱ {formatTime(timeLeft)}
           </span>
           <button onClick={() => handleFinish(answers, questions)}
@@ -524,7 +519,7 @@ async function handleStart() {
               </span>
             </div>
             <p className="text-base font-medium text-gray-900 leading-relaxed mb-6">{q.question}</p>
-            <div className="space-y-3">
+            <div className="space-y-3" role="radiogroup" aria-label="選択肢">
               {options.map(({ label, text }) => {
                 const isSelected = selected === label;
                 const isCorrect = label === q.answer;
@@ -537,7 +532,7 @@ async function handleStart() {
                   else cls += 'border-gray-100 opacity-60';
                 }
                 return (
-                  <div key={label} className={cls} onClick={() => !showResult && handleAnswer(label)}>
+                  <div key={label} role="radio" aria-checked={isSelected} aria-label={`選択肢${label}: ${text}`} className={cls} onClick={() => !showResult && handleAnswer(label)}>
                     <div className={`w-6 h-6 rounded-full border flex items-center justify-center text-xs font-medium flex-shrink-0
                       ${showResult && isCorrect ? 'bg-green-600 border-green-600 text-white' :
                         showResult && isSelected ? 'bg-red-400 border-red-400 text-white' :
@@ -564,26 +559,26 @@ async function handleStart() {
           <div className="flex items-center mb-3">
             {reportedSet.has(current) ? (
               <span className="text-xs text-green-600">✅ 報告しました</span>
-            ) : showReportForm ? (
+            ) : report.show ? (
               <div className="flex items-center gap-2 flex-wrap">
-                <select value={reportReason} onChange={e => setReportReason(e.target.value)}
+                <select value={report.reason} onChange={e => setReport(r => ({ ...r, reason: e.target.value }))}
                   className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 text-gray-600 focus:outline-none">
                   <option>内容が間違っている</option>
                   <option>問題文がおかしい</option>
                   <option>解説が不正確</option>
                   <option>その他</option>
                 </select>
-                <button onClick={handleReport} disabled={submittingReport}
+                <button onClick={handleReport} disabled={report.submitting}
                   className="text-xs bg-red-500 text-white px-3 py-1.5 rounded-lg hover:bg-red-600 disabled:opacity-60">
-                  {submittingReport ? '送信中...' : '送信'}
+                  {report.submitting ? '送信中...' : '送信'}
                 </button>
-                <button onClick={() => setShowReportForm(false)}
+                <button onClick={() => setReport(r => ({ ...r, show: false }))}
                   className="text-xs text-gray-400 hover:text-gray-600">
                   キャンセル
                 </button>
               </div>
             ) : (
-              <button onClick={() => setShowReportForm(true)}
+              <button onClick={() => setReport(r => ({ ...r, show: true }))}
                 className="text-xs text-gray-400 hover:text-red-500 transition-colors">
                 🚩 問題を報告する
               </button>
