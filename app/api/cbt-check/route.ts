@@ -19,9 +19,8 @@ export async function POST(request: NextRequest) {
     }
 
     const admin = createAdminClient();
-    const startOfMonth = new Date();
-    startOfMonth.setDate(1);
-    startOfMonth.setHours(0, 0, 0, 0);
+    const jstNow = new Date(Date.now() + 9 * 60 * 60 * 1000);
+    const startOfMonth = new Date(Date.UTC(jstNow.getUTCFullYear(), jstNow.getUTCMonth(), 1, -9, 0, 0, 0));
 
     const { count } = await admin
       .from('cbt_logs')

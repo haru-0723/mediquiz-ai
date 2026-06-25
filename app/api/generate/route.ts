@@ -60,7 +60,8 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const { materialId, count = 5, supplementText = '', format = '4択' } = await request.json();
+    const { materialId, count = 5, supplementText: rawSupplementText = '', format = '4択' } = await request.json();
+    const supplementText = String(rawSupplementText).slice(0, 200).replace(/[`${}\\]/g, '');
 
     const { data: material } = await supabase
       .from('materials')

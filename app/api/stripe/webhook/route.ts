@@ -32,24 +32,15 @@ export async function POST(request: NextRequest) {
     const plan = (priceId && premiumPriceId && priceId === premiumPriceId) ? 'premium' : 'standard';
 
     if (email) {
-      // 全ユーザーをページネーションで取得（デフォルトの1000件制限を回避）
-      let allUsers: { id: string; email?: string; email_confirmed_at?: string | null }[] = [];
-      let page = 1;
-      const perPage = 1000;
-      while (true) {
-        const { data: batch } = await supabase.auth.admin.listUsers({ page, perPage });
-        if (!batch?.users?.length) break;
-        allUsers = allUsers.concat(batch.users);
-        if (batch.users.length < perPage) break;
-        page++;
-      }
-      const user = allUsers.find(
-        u => u.email === email && u.email_confirmed_at !== null
-      );
-      if (user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('email', email)
+        .single();
+      if (profile) {
         await supabase.from('profiles').upsert({
-          id: user.id,
-          email: user.email,
+          id: profile.id,
+          email,
           plan,
           stripe_customer_id: customerId,
           stripe_subscription_id: subscriptionId,
