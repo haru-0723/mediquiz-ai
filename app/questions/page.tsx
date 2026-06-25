@@ -331,24 +331,30 @@ export default function QuestionsPage() {
     try {
       const XLSX = await import('xlsx');
 
-      const rows = toExport.map((q, i) => ({
-        '番号': i + 1,
-        '問題文': q.question,
-        '選択肢A': q.option_a,
-        '選択肢B': q.option_b,
-        '選択肢C': q.option_c,
-        '選択肢D': q.option_d,
-        '正解': q.answer,
-        '解説': q.explanation ?? '',
-        '科目': q.subject ?? '',
-        '難易度': DIFF_LABEL[q.difficulty] ?? q.difficulty,
-      }));
+      const isMaruBatsu = toExport.every(q => q.answer === '○' || q.answer === '×');
+
+      const rows = toExport.map((q, i) => {
+        const base: Record<string, string | number> = {
+          '番号': i + 1,
+          '問題文': q.question,
+          '選択肢A（○）': q.option_a,
+          '選択肢B（×）': q.option_b,
+        };
+        if (!isMaruBatsu) {
+          base['選択肢C'] = q.option_c;
+          base['選択肢D'] = q.option_d;
+        }
+        base['正解'] = q.answer;
+        base['解説'] = q.explanation ?? '';
+        base['科目'] = q.subject ?? '';
+        base['難易度'] = DIFF_LABEL[q.difficulty] ?? q.difficulty;
+        return base;
+      });
 
       const ws = XLSX.utils.json_to_sheet(rows);
-      ws['!cols'] = [
-        { wch: 6 }, { wch: 50 }, { wch: 20 }, { wch: 20 },
-        { wch: 20 }, { wch: 20 }, { wch: 6 }, { wch: 50 }, { wch: 12 }, { wch: 8 },
-      ];
+      ws['!cols'] = isMaruBatsu
+        ? [{ wch: 6 }, { wch: 50 }, { wch: 20 }, { wch: 20 }, { wch: 6 }, { wch: 50 }, { wch: 12 }, { wch: 8 }]
+        : [{ wch: 6 }, { wch: 50 }, { wch: 20 }, { wch: 20 }, { wch: 20 }, { wch: 20 }, { wch: 6 }, { wch: 50 }, { wch: 12 }, { wch: 8 }];
 
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, currentFolderName.slice(0, 31));
