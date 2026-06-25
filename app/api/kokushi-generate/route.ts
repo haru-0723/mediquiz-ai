@@ -238,6 +238,26 @@ export async function POST(request: NextRequest) {
       }, { status: 403 });
     }
 
+    if (profile?.plan === 'standard') {
+      const admin = createAdminClient();
+      const startOfMonth = new Date();
+      startOfMonth.setDate(1);
+      startOfMonth.setHours(0, 0, 0, 0);
+
+      const { count: kokushiCount } = await admin
+        .from('kokushi_logs')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .gte('created_at', startOfMonth.toISOString());
+
+      if ((kokushiCount ?? 0) >= 15) {
+        return NextResponse.json({
+          error: 'スタンダードプランの国試モードは月15回までです。プレミアムプランにアップグレードしてください。',
+          upgrade: true,
+        }, { status: 403 });
+      }
+    }
+
     const { subject, count } = await request.json();
     const dept = getKokushiDept(profile?.department, profile?.target_exam);
     const kokushiType = dept === 'unset' ? 'other' : dept;
