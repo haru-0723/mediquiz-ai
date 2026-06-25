@@ -329,7 +329,7 @@ export default function QuestionsPage() {
 
     setExporting(true);
     try {
-      const XLSX = await import('xlsx');
+      const XLSX = await import('xlsx-js-style');
 
       const isMaruBatsu = toExport.every(q => q.answer === '○' || q.answer === '×');
 
