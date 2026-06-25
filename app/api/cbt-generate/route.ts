@@ -62,7 +62,8 @@ export async function POST(request: NextRequest) {
       .eq('id', user.id)
       .single();
 
-    const { subject, count } = await request.json();
+    const { subject, count: rawCount } = await request.json();
+    const count = Math.min(Math.max(Math.floor(Number(rawCount) || 10), 1), 30);
 
     // 10問ずつバッチに分割して順番に生成
     const BATCH_SIZE = 10;

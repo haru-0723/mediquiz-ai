@@ -60,6 +60,7 @@ export default function HomePage() {
         <div className="flex gap-6">
           <Link href="/terms" className="hover:text-gray-600">利用規約</Link>
           <Link href="/privacy" className="hover:text-gray-600">プライバシーポリシー</Link>
+          <Link href="/tokushoho" className="hover:text-gray-600">特定商取引法</Link>
         </div>
       </footer>
     </div>

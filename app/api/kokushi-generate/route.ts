@@ -196,7 +196,8 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const { subject, count } = await request.json();
+    const { subject, count: rawCount } = await request.json();
+    const count = Math.min(Math.max(Math.floor(Number(rawCount) || 10), 1), 30);
     const dept = getKokushiDept(profile?.department, profile?.target_exam);
     const kokushiType = dept === 'unset' ? 'other' : dept;
     const isKokushi = dept !== 'unset';

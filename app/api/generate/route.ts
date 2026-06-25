@@ -60,7 +60,8 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const { materialId, count = 5, supplementText: rawSupplementText = '', format = '4択' } = await request.json();
+    const { materialId, count: rawCount = 5, supplementText: rawSupplementText = '', format = '4択' } = await request.json();
+    const count = Math.min(Math.max(Math.floor(Number(rawCount) || 5), 1), 10);
     const supplementText = String(rawSupplementText).slice(0, 200).replace(/[`${}\\]/g, '');
 
     const { data: material } = await supabase

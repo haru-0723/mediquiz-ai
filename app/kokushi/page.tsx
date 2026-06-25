@@ -526,7 +526,7 @@ export default function KokushiPage() {
       { label: 'B', text: q.option_b },
       { label: 'C', text: q.option_c },
       { label: 'D', text: q.option_d },
-    ];
+    ].filter(o => o.text);
     const isUrgent = timeLeft <= 60;
 
     return (

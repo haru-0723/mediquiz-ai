@@ -230,7 +230,7 @@ export default function QuizPage() {
     { label: 'B', text: q.option_b },
     { label: 'C', text: q.option_c },
     { label: 'D', text: q.option_d },
-  ];
+  ].filter(o => o.text);
 
   return (
     <div className="min-h-screen bg-gray-50">
