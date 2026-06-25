@@ -337,14 +337,16 @@ export default function QuestionsPage() {
         const base: Record<string, string | number> = {
           '番号': i + 1,
           '問題文': q.question,
-          '選択肢A（○）': q.option_a,
-          '選択肢B（×）': q.option_b,
+          '選択肢A': isMaruBatsu ? `○ ${q.option_a}` : q.option_a,
+          '選択肢B': isMaruBatsu ? `× ${q.option_b}` : q.option_b,
         };
         if (!isMaruBatsu) {
           base['選択肢C'] = q.option_c;
           base['選択肢D'] = q.option_d;
         }
-        base['正解'] = q.answer;
+        base['正解'] = isMaruBatsu
+          ? (q.answer === '○' ? `○ ${q.option_a}` : `× ${q.option_b}`)
+          : q.answer;
         base['解説'] = q.explanation ?? '';
         base['科目'] = q.subject ?? '';
         base['難易度'] = DIFF_LABEL[q.difficulty] ?? q.difficulty;
