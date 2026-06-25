@@ -317,8 +317,8 @@ export default async function DashboardPage() {
         </div>
 
         <p className="text-center text-xs text-gray-400 mt-8">
-          お問い合わせはこちらまでSMSをお送りください：
-          <a href="sms:090-5889-8610" className="underline hover:text-gray-600">090-5889-8610</a>
+          お問い合わせはこちらまでメールをお送りください：
+          <a href="mailto:harumaru0723@yahoo.co.jp" className="underline hover:text-gray-600">harumaru0723@yahoo.co.jp</a>
         </p>
       </div>
     </div>
