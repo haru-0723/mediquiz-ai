@@ -92,6 +92,7 @@ export default function TermsPage() {
           <section>
             <h2 className="text-lg font-semibold text-gray-900 mb-3">第10条（運営者情報）</h2>
             <p>本サービスの運営者：春（個人開発者）<br />お問い合わせ：harumaru0723@yahoo.co.jp</p>
+            <p className="mt-3">運営者の氏名・住所・電話番号については、プロバイダ責任制限法に基づく開示請求があった場合に限り開示します。</p>
           </section>
 
           <section>
