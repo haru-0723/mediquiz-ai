@@ -118,7 +118,7 @@ export default async function DashboardPage() {
       const d = new Date(new Date(iso).getTime() + 9 * 60 * 60 * 1000);
       return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
     };
-    const dates = [...new Set(sessions.map(s => toJSTDate(s.completed_at as string)))].sort().reverse();
+    const dates = Array.from(new Set(sessions.map(s => toJSTDate(s.completed_at as string)))).sort().reverse();
     const todayJST = toJSTDate(new Date().toISOString());
     const todayDone = dates[0] === todayJST;
     let current = 0;
