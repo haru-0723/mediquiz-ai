@@ -169,6 +169,9 @@ export default function PricingPage() {
         <p className="text-center text-xs text-gray-400 mt-8">
           クレジットカードで安全に決済。いつでもキャンセル可能です。
         </p>
+        <p className="text-center text-xs text-gray-400 mt-2">
+          ご購入前に <Link href="/tokushoho" className="underline hover:text-gray-600">特定商取引法に基づく表記</Link> をご確認ください。
+        </p>
       </div>
     </div>
   );

@@ -25,8 +25,8 @@ export async function POST(request: NextRequest) {
 
     // プラン別制限チェック
     if (!profile || profile.plan === 'free' || profile.plan === 'standard') {
-      const startOfDay = new Date();
-      startOfDay.setHours(0, 0, 0, 0);
+      const jstNow = new Date(Date.now() + 9 * 60 * 60 * 1000);
+      const startOfDay = new Date(Date.UTC(jstNow.getUTCFullYear(), jstNow.getUTCMonth(), jstNow.getUTCDate(), -9, 0, 0, 0));
 
       const { count: generateCount } = await supabase
         .from('generate_logs')
