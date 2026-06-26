@@ -8,7 +8,6 @@ import HelpModal from '@/components/HelpModal';
 import { dashboardHelp } from '@/lib/helpContent';
 import GuideBanner from './GuideBanner';
 import WeakAnalysisCard from './WeakAnalysisCard';
-import StreakCard from './StreakCard';
 import AddToHomeScreen from '@/components/AddToHomeScreen';
 import PushNotification from '@/components/PushNotification';
 
@@ -56,7 +55,7 @@ export default async function DashboardPage() {
     supabase.from('exams').select('*').eq('user_id', user.id).order('exam_date'),
     supabase.from('quiz_sessions').select('*').eq('user_id', user.id).order('completed_at', { ascending: false }).limit(50),
     supabase.from('quiz_sessions').select('correct_count, total_questions').eq('user_id', user.id).gte('completed_at', weekStart),
-    supabase.from('quiz_sessions').select('subject, correct_count, total_questions, mode, completed_at').eq('user_id', user.id).order('completed_at', { ascending: false }).limit(200),
+    supabase.from('quiz_sessions').select('subject, correct_count, total_questions, mode').eq('user_id', user.id).order('completed_at', { ascending: false }).limit(200),
     supabase.from('materials').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
   ]);
 
@@ -111,37 +110,6 @@ export default async function DashboardPage() {
   const cbtStats = buildSubjectStats(allSessions, ['cbt']);
   const kokushiStats = buildSubjectStats(allSessions, ['kokushi']);
 
-  // ストリーク計算（JST基準）
-  function calcStreak(sessions: typeof allSessions) {
-    if (!sessions || sessions.length === 0) return { current: 0, longest: 0, todayDone: false, totalDays: 0 };
-    const toJSTDate = (iso: string) => {
-      const d = new Date(new Date(iso).getTime() + 9 * 60 * 60 * 1000);
-      return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
-    };
-    const dates = [...new Set(sessions.map(s => toJSTDate(s.completed_at as string)))].sort().reverse();
-    const todayJST = toJSTDate(new Date().toISOString());
-    const todayDone = dates[0] === todayJST;
-    let current = 0;
-    let longest = 0;
-    let streak = 0;
-    for (let i = 0; i < dates.length; i++) {
-      if (i === 0) {
-        if (dates[0] !== todayJST) {
-          const diff = (new Date(todayJST).getTime() - new Date(dates[0]).getTime()) / 86400000;
-          if (diff > 1) { current = 0; streak = 0; continue; }
-        }
-        streak = 1;
-      } else {
-        const diff = (new Date(dates[i - 1]).getTime() - new Date(dates[i]).getTime()) / 86400000;
-        if (diff === 1) streak++;
-        else { longest = Math.max(longest, streak); streak = 1; }
-      }
-      if (i === 0) current = streak;
-    }
-    longest = Math.max(longest, streak);
-    return { current, longest, todayDone, totalDays: dates.length };
-  }
-  const streak = calcStreak(allSessions);
   const profileSummary = [
     profile?.university,
     profile?.department,
@@ -201,17 +169,6 @@ export default async function DashboardPage() {
         <PushNotification />
         <AddToHomeScreen inline />
 
-        {/* ストリーク */}
-        <div className="mb-6 sm:mb-8">
-          <StreakCard
-            current={streak.current}
-            longest={streak.longest}
-            todayDone={streak.todayDone}
-            totalDays={streak.totalDays}
-            weekAccuracy={weekAccuracy}
-            totalQuestions={(allSessions ?? []).reduce((s, r) => s + (r.total_questions as number), 0)}
-          />
-        </div>
 
         {/* 国試未設定バナー */}
         {(!profile?.target_exam || profile.target_exam === 'other') && (
