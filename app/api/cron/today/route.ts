@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { getAdminMessaging } from '@/lib/firebase-admin';
+import { sendPushNotification, type PushSubscription } from '@/lib/webpush';
 import { getTodayPrompt } from '@/lib/todayPrompt';
 
 if (!process.env.ANTHROPIC_API_KEY) throw new Error('ANTHROPIC_API_KEY is not set');
@@ -27,7 +27,6 @@ export async function GET(request: NextRequest) {
 
   for (const deptType of DEPT_TYPES) {
     try {
-      // 既に生成済みならスキップ
       const { data: existing } = await admin
         .from('today_questions')
         .select('id')
@@ -35,10 +34,7 @@ export async function GET(request: NextRequest) {
         .eq('date', dateStr)
         .single();
 
-      if (existing) {
-        results[deptType] = 'skipped (already exists)';
-        continue;
-      }
+      if (existing) { results[deptType] = 'skipped (already exists)'; continue; }
 
       const response = await anthropic.messages.create({
         model: 'claude-sonnet-4-5',
@@ -58,12 +54,7 @@ export async function GET(request: NextRequest) {
         ...q,
       }));
 
-      await admin.from('today_questions').insert({
-        department_type: deptType,
-        date: dateStr,
-        questions,
-      });
-
+      await admin.from('today_questions').insert({ department_type: deptType, date: dateStr, questions });
       results[deptType] = `generated (${questions.length} questions)`;
     } catch (e) {
       results[deptType] = `error: ${e instanceof Error ? e.message : String(e)}`;
@@ -71,61 +62,35 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  // FCMプッシュ通知を全ユーザーに送信
+  // Web Pushで通知送信
   let notificationResult = 'skipped';
   try {
-    const { data: tokenRows } = await admin
+    const { data: rows } = await admin
       .from('profiles')
-      .select('fcm_token')
-      .not('fcm_token', 'is', null);
+      .select('id, push_subscription')
+      .not('push_subscription', 'is', null);
 
-    const tokens = (tokenRows ?? [])
-      .map(r => r.fcm_token as string)
-      .filter(Boolean);
-
-    if (tokens.length > 0) {
-      const messaging = getAdminMessaging();
-      const BATCH = 500;
+    const subscribers = (rows ?? []).filter(r => r.push_subscription);
+    if (subscribers.length === 0) { notificationResult = 'no subscribers'; }
+    else {
       let successCount = 0;
-      const invalidTokens: string[] = [];
+      const invalidIds: string[] = [];
 
-      for (let i = 0; i < tokens.length; i += BATCH) {
-        const batch = tokens.slice(i, i + BATCH);
-        const response = await messaging.sendEachForMulticast({
-          tokens: batch,
-          notification: {
-            title: '📅 今日の問題が届きました！',
-            body: 'MediQuiz AIで今日の5問に挑戦しよう！',
-          },
-          webpush: {
-            notification: { icon: '/icon-192.png', badge: '/icon-192.png' },
-            fcmOptions: { link: '/today' },
-          },
-        });
+      await Promise.all(subscribers.map(async (row) => {
+        const result = await sendPushNotification(
+          row.push_subscription as PushSubscription,
+          { title: '📅 今日の問題が届きました！', body: 'MediQuiz AIで今日の5問に挑戦しよう！', url: '/today' },
+        ).catch(() => 'invalid' as const);
 
-        response.responses.forEach((r, idx) => {
-          if (r.success) {
-            successCount++;
-          } else if (
-            r.error?.code === 'messaging/invalid-registration-token' ||
-            r.error?.code === 'messaging/registration-token-not-registered'
-          ) {
-            invalidTokens.push(batch[idx]);
-          }
-        });
+        if (result === 'ok') successCount++;
+        else invalidIds.push(row.id);
+      }));
+
+      if (invalidIds.length > 0) {
+        await admin.from('profiles').update({ push_subscription: null }).in('id', invalidIds);
       }
 
-      // 無効トークンを削除
-      if (invalidTokens.length > 0) {
-        await admin
-          .from('profiles')
-          .update({ fcm_token: null })
-          .in('fcm_token', invalidTokens);
-      }
-
-      notificationResult = `sent to ${successCount}/${tokens.length} users`;
-    } else {
-      notificationResult = 'no tokens registered';
+      notificationResult = `sent to ${successCount}/${subscribers.length} users`;
     }
   } catch (e) {
     console.error('[cron/today] 通知送信エラー:', e);
