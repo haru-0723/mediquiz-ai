@@ -144,6 +144,24 @@ export default async function DashboardPage() {
   }
   const streak = calcStreak(allSessions);
   const totalQuestions = (allSessions ?? []).reduce((s, r) => s + (r.total_questions as number), 0);
+
+  // 今週（月〜日）の日別問題数
+  const weekDailyQuestions: number[] = Array(7).fill(0);
+  const toJSTDate = (iso: string) => {
+    const d = new Date(new Date(iso).getTime() + 9 * 60 * 60 * 1000);
+    return d;
+  };
+  const todayJST = toJSTDate(new Date().toISOString());
+  const mondayJST = new Date(todayJST);
+  mondayJST.setDate(todayJST.getDate() - (todayJST.getDay() === 0 ? 6 : todayJST.getDay() - 1));
+  mondayJST.setHours(0, 0, 0, 0);
+  for (const s of allSessions ?? []) {
+    const d = toJSTDate(s.completed_at as string);
+    const diffDays = Math.floor((d.getTime() - mondayJST.getTime()) / 86400000);
+    if (diffDays >= 0 && diffDays < 7) {
+      weekDailyQuestions[diffDays] += s.total_questions as number;
+    }
+  }
   const titleInfo = getTitleInfo(totalQuestions);
 
   const profileSummary = [
@@ -260,6 +278,7 @@ export default async function DashboardPage() {
             todayDone={streak.todayDone}
             weekAccuracy={weekAccuracy}
             totalQuestions={totalQuestions}
+            weekDailyQuestions={weekDailyQuestions}
           />
         </div>
 
