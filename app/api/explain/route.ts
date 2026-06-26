@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 if (!process.env.ANTHROPIC_API_KEY) {
   throw new Error('ANTHROPIC_API_KEY is not set');
@@ -44,6 +45,10 @@ export async function POST(request: NextRequest) {
     });
 
     const text = response.content[0].type === 'text' ? response.content[0].text.trim() : '';
+
+    const admin = createAdminClient();
+    await admin.from('explain_logs').insert({ user_id: user.id }).catch(() => {});
+
     return NextResponse.json({ explanation: text });
 
   } catch (e) {
