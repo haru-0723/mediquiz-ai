@@ -10,7 +10,7 @@ export default function TestPushButton() {
     const res = await fetch('/api/push/test', { method: 'POST' });
     const data = await res.json();
     if (data.result === 'ok') setStatus('通知を送信しました！');
-    else setStatus(`エラー: ${JSON.stringify(data)}`);
+    else setStatus(`失敗: ${JSON.stringify(data)}`);
   }
 
   return (
