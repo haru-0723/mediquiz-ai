@@ -192,6 +192,9 @@ export default function SettingsPage() {
             <div className="space-y-3">
               {stripeCustomerId ? (
                 <>
+                  <div className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 text-xs text-blue-700">
+                    💡 解約しても<span className="font-medium">当月末日まで</span>すべての機能をご利用いただけます
+                  </div>
                   <button onClick={handlePortal} disabled={portalLoading}
                     className="w-full border border-gray-200 rounded-xl py-3 text-sm text-gray-600 hover:border-gray-300 transition-colors disabled:opacity-60">
                     {portalLoading ? '処理中...' : '🔧 サブスクリプションを管理する'}

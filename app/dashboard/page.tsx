@@ -318,7 +318,11 @@ export default async function DashboardPage() {
           )}
         </div>
 
-        <p className="text-center text-xs text-gray-400 mt-8">
+        <div className="mt-8 bg-yellow-50 border border-yellow-100 rounded-xl px-4 py-3 text-xs text-yellow-700">
+          ⚠️ 本サービスのAI生成問題は学習補助を目的としており、内容の正確性を保証するものではありません。医療行為の判断には必ず公式テキスト・医療専門家の指示に従ってください。
+        </div>
+
+        <p className="text-center text-xs text-gray-400 mt-4">
           お問い合わせはこちらまでメールをお送りください：
           <a href="mailto:harumaru0723@yahoo.co.jp" className="underline hover:text-gray-600">harumaru0723@yahoo.co.jp</a>
         </p>

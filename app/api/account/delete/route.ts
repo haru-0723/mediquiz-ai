@@ -35,6 +35,7 @@ export async function POST() {
     await adminSupabase.from('quiz_sessions').delete().eq('user_id', user.id);
     await adminSupabase.from('generate_logs').delete().eq('user_id', user.id);
     await adminSupabase.from('cbt_logs').delete().eq('user_id', user.id);
+    await adminSupabase.from('kokushi_logs').delete().eq('user_id', user.id);
     await adminSupabase.from('questions').delete().eq('user_id', user.id);
     await adminSupabase.from('folders').delete().eq('user_id', user.id);
     await adminSupabase.from('exams').delete().eq('user_id', user.id);
