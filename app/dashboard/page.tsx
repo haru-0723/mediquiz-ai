@@ -11,6 +11,7 @@ import WeakAnalysisCard from './WeakAnalysisCard';
 import StreakCard from './StreakCard';
 import AddToHomeScreen from '@/components/AddToHomeScreen';
 import PushNotification from '@/components/PushNotification';
+import { getTitleInfo } from '@/lib/titleUtils';
 
 const FEATURE_CARDS = [
   { href: '/today',    icon: '📅', title: '今日の問題',    desc: '毎日5問で実力アップ' },
@@ -143,6 +144,7 @@ export default async function DashboardPage() {
   }
   const streak = calcStreak(allSessions);
   const totalQuestions = (allSessions ?? []).reduce((s, r) => s + (r.total_questions as number), 0);
+  const titleInfo = getTitleInfo(totalQuestions);
 
   const profileSummary = [
     profile?.university,
@@ -194,6 +196,18 @@ export default async function DashboardPage() {
                 <p className="text-gray-500 mt-1 text-sm leading-relaxed">
                   {profileSummary || '今日も一緒に頑張りましょう。プロフィールを設定しましょう →'}
                 </p>
+                <div className="mt-3 flex items-center gap-2">
+                  <span className="text-xs bg-green-100 text-green-700 font-medium px-2.5 py-1 rounded-full">
+                    {titleInfo.name} Lv.{titleInfo.level}
+                  </span>
+                  <span className="text-xs text-gray-400">累計 {totalQuestions}問</span>
+                </div>
+                <div className="mt-2 w-full max-w-xs">
+                  <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                    <div className="h-full bg-green-500 rounded-full transition-all" style={{ width: `${titleInfo.progress}%` }} />
+                  </div>
+                  <p className="text-xs text-gray-400 mt-1">次のレベルまであと {titleInfo.nextLevelAt - totalQuestions}問</p>
+                </div>
               </div>
               <span className="flex-shrink-0 text-xs text-gray-400 group-hover:text-green-600 flex items-center gap-1 transition-colors self-start sm:self-auto">
                 プロフィール編集 <span aria-hidden="true">→</span>
