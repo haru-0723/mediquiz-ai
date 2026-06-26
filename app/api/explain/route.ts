@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
     const text = response.content[0].type === 'text' ? response.content[0].text.trim() : '';
 
     const admin = createAdminClient();
-    await admin.from('explain_logs').insert({ user_id: user.id }).catch(() => {});
+    try { await admin.from('explain_logs').insert({ user_id: user.id }); } catch { /* ログ失敗は無視 */ }
 
     return NextResponse.json({ explanation: text });
 
