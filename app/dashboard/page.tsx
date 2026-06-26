@@ -202,7 +202,7 @@ export default async function DashboardPage() {
                   </span>
                   <span className="text-xs text-gray-400">累計 {totalQuestions}問</span>
                 </div>
-                <div className="mt-2 w-full max-w-xs">
+                <div className="mt-2 w-full sm:max-w-xs">
                   <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
                     <div className="h-full bg-green-500 rounded-full transition-all" style={{ width: `${titleInfo.progress}%` }} />
                   </div>
