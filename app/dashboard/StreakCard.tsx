@@ -8,26 +8,8 @@ type Props = {
   totalQuestions: number;
 };
 
-type Badge = {
-  icon: string;
-  label: string;
-  earned: boolean;
-  next?: string;
-};
-
-function getBadges(current: number, longest: number, totalQuestions: number, weekAccuracy: number | null): Badge[] {
-  return [
-    { icon: '🔥', label: '7日連続', earned: longest >= 7, next: current < 7 ? `あと${7 - current}日` : undefined },
-    { icon: '🏆', label: '100問達成', earned: totalQuestions >= 100, next: totalQuestions < 100 ? `あと${100 - totalQuestions}問` : undefined },
-    { icon: '⭐', label: '正答率70%超', earned: (weekAccuracy ?? 0) >= 70 },
-    { icon: '🔥', label: '30日連続', earned: longest >= 30, next: current < 30 ? `あと${30 - current}日` : undefined },
-    { icon: '🏆', label: '500問達成', earned: totalQuestions >= 500, next: totalQuestions < 500 ? `あと${500 - totalQuestions}問` : undefined },
-    { icon: '⭐', label: '正答率80%超', earned: (weekAccuracy ?? 0) >= 80 },
-  ];
-}
 
 export default function StreakCard({ current, longest, todayDone, weekAccuracy, totalQuestions }: Props) {
-  const badges = getBadges(current, longest, totalQuestions, weekAccuracy);
 
   const today = new Date();
   const dow = today.getDay();
@@ -86,26 +68,6 @@ export default function StreakCard({ current, longest, todayDone, weekAccuracy, 
         })}
       </div>
 
-      {/* 実績バッジ */}
-      <div className="mt-4 pt-4 border-t">
-        <p className="text-xs text-gray-400 mb-2">実績バッジ</p>
-        <div className="flex flex-wrap gap-2">
-          {badges.map((b, i) => (
-            <span
-              key={i}
-              className={`inline-flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg ${
-                b.earned
-                  ? 'bg-green-50 text-green-700'
-                  : b.next
-                  ? 'bg-orange-50 text-orange-600'
-                  : 'bg-gray-50 text-gray-400'
-              }`}
-            >
-              {b.icon} {b.earned ? b.label : b.next ? `${b.label} ${b.next}` : `🔒 ${b.label}`}
-            </span>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }
