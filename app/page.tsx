@@ -24,7 +24,7 @@ export default function HomePage() {
           <span className="text-green-600">AIが問題を自動生成</span>
         </h1>
         <p className="text-lg text-gray-600 mb-10">
-          看護・医学・薬学・リハビリ系の大学生向け。
+          看護・医学・薬学・福祉系の大学生向け。
         </p>
        <Link href="/auth/signup" className="inline-block bg-green-600 text-white px-8 py-3 rounded-xl font-medium">
           無料で始める
