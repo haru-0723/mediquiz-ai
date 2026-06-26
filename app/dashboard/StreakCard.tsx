@@ -4,7 +4,6 @@ type Props = {
   current: number;
   longest: number;
   todayDone: boolean;
-  totalDays: number;
   weekAccuracy: number | null;
   totalQuestions: number;
 };
@@ -27,7 +26,7 @@ function getBadges(current: number, longest: number, totalQuestions: number, wee
   ];
 }
 
-export default function StreakCard({ current, longest, todayDone, totalDays, weekAccuracy, totalQuestions }: Props) {
+export default function StreakCard({ current, longest, todayDone, weekAccuracy, totalQuestions }: Props) {
   const badges = getBadges(current, longest, totalQuestions, weekAccuracy);
 
   const today = new Date();

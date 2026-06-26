@@ -76,6 +76,11 @@ export async function POST(request: NextRequest) {
     const urlParts = material.file_url.split('/storage/v1/object/public/materials/');
     const filePath = urlParts[1];
 
+    // パストラバーサル対策
+    if (!filePath || filePath.includes('..') || filePath.startsWith('/')) {
+      return NextResponse.json({ error: '不正なファイルパスです' }, { status: 400 });
+    }
+
     const { data: fileData, error: downloadError } = await supabase
       .storage
       .from('materials')

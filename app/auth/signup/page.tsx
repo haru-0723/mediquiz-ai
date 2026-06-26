@@ -35,9 +35,14 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [done, setDone] = useState(false);
+  const [ageConfirmed, setAgeConfirmed] = useState(false);
 
   async function handleSignup(e: React.FormEvent) {
     e.preventDefault();
+    if (!ageConfirmed) {
+      setError('13歳以上であることを確認してください');
+      return;
+    }
     setLoading(true);
     setError('');
     const { error } = await supabase.auth.signUp({
@@ -160,8 +165,18 @@ export default function SignupPage() {
                 />
               </div>
 
+              <label className="flex items-start gap-2.5 cursor-pointer">
+                <input
+                  type="checkbox" checked={ageConfirmed} onChange={e => setAgeConfirmed(e.target.checked)}
+                  className="mt-0.5 w-4 h-4 rounded border-gray-300 text-green-600 focus:ring-green-500 flex-shrink-0"
+                />
+                <span className="text-xs text-gray-500 leading-relaxed">
+                  私は13歳以上です
+                </span>
+              </label>
+
               <button
-                type="submit" disabled={loading}
+                type="submit" disabled={loading || !ageConfirmed}
                 className="w-full bg-green-600 text-white py-3 rounded-xl text-sm font-semibold hover:bg-green-700 active:bg-green-800 disabled:opacity-60 transition-colors mt-2"
               >
                 {loading ? '処理中...' : '無料で始める →'}

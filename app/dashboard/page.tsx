@@ -8,6 +8,7 @@ import HelpModal from '@/components/HelpModal';
 import { dashboardHelp } from '@/lib/helpContent';
 import GuideBanner from './GuideBanner';
 import WeakAnalysisCard from './WeakAnalysisCard';
+import StreakCard from './StreakCard';
 import AddToHomeScreen from '@/components/AddToHomeScreen';
 import PushNotification from '@/components/PushNotification';
 
@@ -55,7 +56,7 @@ export default async function DashboardPage() {
     supabase.from('exams').select('*').eq('user_id', user.id).order('exam_date'),
     supabase.from('quiz_sessions').select('*').eq('user_id', user.id).order('completed_at', { ascending: false }).limit(50),
     supabase.from('quiz_sessions').select('correct_count, total_questions').eq('user_id', user.id).gte('completed_at', weekStart),
-    supabase.from('quiz_sessions').select('subject, correct_count, total_questions, mode').eq('user_id', user.id).order('completed_at', { ascending: false }).limit(200),
+    supabase.from('quiz_sessions').select('subject, correct_count, total_questions, mode, completed_at').eq('user_id', user.id).order('completed_at', { ascending: false }).limit(200),
     supabase.from('materials').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
   ]);
 
@@ -110,11 +111,46 @@ export default async function DashboardPage() {
   const cbtStats = buildSubjectStats(allSessions, ['cbt']);
   const kokushiStats = buildSubjectStats(allSessions, ['kokushi']);
 
+  // ストリーク計算（JST基準）
+  function calcStreak(sessions: typeof allSessions) {
+    if (!sessions || sessions.length === 0) return { current: 0, longest: 0, todayDone: false };
+    const toJSTDate = (iso: string) => {
+      const d = new Date(new Date(iso).getTime() + 9 * 60 * 60 * 1000);
+      return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
+    };
+    const dates = [...new Set(sessions.map(s => toJSTDate(s.completed_at as string)))].sort().reverse();
+    const todayJST = toJSTDate(new Date().toISOString());
+    const todayDone = dates[0] === todayJST;
+    let current = 0;
+    let longest = 0;
+    let streak = 0;
+    for (let i = 0; i < dates.length; i++) {
+      if (i === 0) {
+        const diff = (new Date(todayJST).getTime() - new Date(dates[0]).getTime()) / 86400000;
+        if (diff > 1) { longest = Math.max(longest, streak); streak = 1; current = 0; }
+        else streak = 1;
+      } else {
+        const diff = (new Date(dates[i - 1]).getTime() - new Date(dates[i]).getTime()) / 86400000;
+        if (diff === 1) streak++;
+        else { longest = Math.max(longest, streak); streak = 1; }
+      }
+      if (i === 0 && todayDone) current = streak;
+      else if (i === 0) current = 0;
+    }
+    longest = Math.max(longest, streak);
+    if (todayDone) current = streak;
+    return { current, longest, todayDone };
+  }
+  const streak = calcStreak(allSessions);
+  const totalQuestions = (allSessions ?? []).reduce((s, r) => s + (r.total_questions as number), 0);
+
   const profileSummary = [
     profile?.university,
     profile?.department,
     profile?.grade ? `${profile.grade}年生` : null,
   ].filter(Boolean).join(' ・ ');
+
+  const isFirstTime = !profileSummary && (sessions?.length ?? 0) === 0;
 
   return (
     <>
@@ -168,6 +204,50 @@ export default async function DashboardPage() {
 
         <PushNotification />
         <AddToHomeScreen inline />
+
+        {/* 初回ユーザー向けオンボーディング */}
+        {isFirstTime && (
+          <div className="mb-6 sm:mb-8 bg-green-50 border border-green-200 rounded-2xl p-5">
+            <h2 className="font-semibold text-green-900 mb-3">👋 MediQuiz AIへようこそ！</h2>
+            <p className="text-sm text-green-800 mb-4">まずは以下の手順で始めてみましょう。</p>
+            <ol className="space-y-3">
+              <li className="flex items-start gap-3">
+                <span className="w-6 h-6 rounded-full bg-green-600 text-white text-xs flex items-center justify-center flex-shrink-0 mt-0.5 font-medium">1</span>
+                <div>
+                  <p className="text-sm font-medium text-green-900">プロフィールを設定する</p>
+                  <p className="text-xs text-green-700 mt-0.5">学部・目標国試を設定すると、AIが最適な問題を出してくれます</p>
+                  <Link href="/settings" className="text-xs text-green-600 font-medium hover:underline mt-1 inline-block">設定する →</Link>
+                </div>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="w-6 h-6 rounded-full bg-green-600 text-white text-xs flex items-center justify-center flex-shrink-0 mt-0.5 font-medium">2</span>
+                <div>
+                  <p className="text-sm font-medium text-green-900">教材をアップロードする</p>
+                  <p className="text-xs text-green-700 mt-0.5">授業スライドや教科書の写真からAIが問題を自動生成します</p>
+                  <Link href="/upload" className="text-xs text-green-600 font-medium hover:underline mt-1 inline-block">アップロードする →</Link>
+                </div>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="w-6 h-6 rounded-full bg-green-600 text-white text-xs flex items-center justify-center flex-shrink-0 mt-0.5 font-medium">3</span>
+                <div>
+                  <p className="text-sm font-medium text-green-900">今日の問題に挑戦する</p>
+                  <p className="text-xs text-green-700 mt-0.5">毎日5問、AIが厳選した問題で実力を積み上げましょう</p>
+                  <Link href="/today" className="text-xs text-green-600 font-medium hover:underline mt-1 inline-block">挑戦する →</Link>
+                </div>
+              </li>
+            </ol>
+          </div>
+        )}
+
+        <div className="mb-6 sm:mb-8">
+          <StreakCard
+            current={streak.current}
+            longest={streak.longest}
+            todayDone={streak.todayDone}
+            weekAccuracy={weekAccuracy}
+            totalQuestions={totalQuestions}
+          />
+        </div>
 
 
         {/* 国試未設定バナー */}

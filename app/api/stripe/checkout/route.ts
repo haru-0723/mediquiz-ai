@@ -11,6 +11,9 @@ export async function POST(request: NextRequest) {
     if (!user) return NextResponse.json({ error: 'ログインが必要です' }, { status: 401 });
 
     const { plan } = await request.json().catch(() => ({ plan: 'standard' }));
+    if (plan !== 'standard' && plan !== 'premium') {
+      return NextResponse.json({ error: '不正なプランです' }, { status: 400 });
+    }
     const priceId = plan === 'premium'
       ? process.env.STRIPE_PREMIUM_PRICE_ID!
       : process.env.STRIPE_STANDARD_PRICE_ID!;
