@@ -12,6 +12,7 @@ import StreakCard from './StreakCard';
 import AddToHomeScreen from '@/components/AddToHomeScreen';
 import PushNotification from '@/components/PushNotification';
 import { getTitleInfo } from '@/lib/titleUtils';
+import TestPushButton from './TestPushButton';
 
 const FEATURE_CARDS = [
   { href: '/today',    icon: '📅', title: '今日の問題',    desc: '毎日5問で実力アップ' },
@@ -236,6 +237,7 @@ export default async function DashboardPage() {
 
         <PushNotification />
         <AddToHomeScreen inline />
+        {isAdmin && <TestPushButton />}
 
         {/* 初回ユーザー向けオンボーディング */}
         {isFirstTime && (
