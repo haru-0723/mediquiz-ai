@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import ExplainButton from '@/components/ExplainButton';
-import PushNotification from '@/components/PushNotification';
 import type { TodayQuestion } from '@/app/api/today-generate/route';
 
 type Phase = 'loading' | 'quiz' | 'result' | 'already-done' | 'error';
@@ -183,8 +182,6 @@ export default function TodayPage() {
     <div className="min-h-screen bg-gray-50">
       <Navbar />
       <div className="max-w-2xl mx-auto p-4 sm:p-8">
-        <PushNotification />
-
         {/* ヘッダー */}
         <div className="flex items-center justify-between mb-6 mt-2">
           <div className="flex items-center gap-2">

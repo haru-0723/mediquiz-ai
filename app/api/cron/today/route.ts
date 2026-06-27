@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { sendPushNotification, type PushSubscription } from '@/lib/webpush';
 import { getTodayPrompt } from '@/lib/todayPrompt';
 
 if (!process.env.ANTHROPIC_API_KEY) throw new Error('ANTHROPIC_API_KEY is not set');
@@ -62,40 +61,5 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  // Web Pushで通知送信
-  let notificationResult = 'skipped';
-  try {
-    const { data: rows } = await admin
-      .from('profiles')
-      .select('id, push_subscription')
-      .not('push_subscription', 'is', null);
-
-    const subscribers = (rows ?? []).filter(r => r.push_subscription);
-    if (subscribers.length === 0) { notificationResult = 'no subscribers'; }
-    else {
-      let successCount = 0;
-      const invalidIds: string[] = [];
-
-      await Promise.all(subscribers.map(async (row) => {
-        const result = await sendPushNotification(
-          row.push_subscription as PushSubscription,
-          { title: '📅 今日の問題が届きました！', body: 'MediQuiz AIで今日の5問に挑戦しよう！', url: '/today' },
-        ).catch(() => 'invalid' as const);
-
-        if (result === 'ok') successCount++;
-        else invalidIds.push(row.id);
-      }));
-
-      if (invalidIds.length > 0) {
-        await admin.from('profiles').update({ push_subscription: null }).in('id', invalidIds);
-      }
-
-      notificationResult = `sent to ${successCount}/${subscribers.length} users`;
-    }
-  } catch (e) {
-    console.error('[cron/today] 通知送信エラー:', e);
-    notificationResult = `error: ${e instanceof Error ? e.message : String(e)}`;
-  }
-
-  return NextResponse.json({ date: dateStr, results, notification: notificationResult });
+  return NextResponse.json({ date: dateStr, results });
 }
