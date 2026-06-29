@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
       if (existing) { results[deptType] = 'skipped (already exists)'; continue; }
 
       const response = await anthropic.messages.create({
-        model: 'claude-sonnet-4-5',
+        model: 'claude-haiku-4-5',
         max_tokens: 4096,
         messages: [{ role: 'user', content: getTodayPrompt(deptType) }],
       });

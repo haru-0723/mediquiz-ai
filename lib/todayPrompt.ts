@@ -7,19 +7,37 @@ const DEPT_LABELS: Record<string, string> = {
 
 export function getTodayPrompt(deptType: string): string {
   const label = DEPT_LABELS[deptType] ?? DEPT_LABELS.other;
-  return `あなたは医療系大学生の学習支援AIです。${label}向けの「今日の問題」として、異なる分野からバランスよく5問の4択問題を作成してください。
+  return `あなたは${label}向けの国家試験問題を作成する専門家です。以下のルールに厳密に従って5問の4択問題を作成してください。
 
-IMPORTANT: Return ONLY a JSON object. No explanation, no markdown, no code blocks. Just raw JSON.
+## 難易度の定義（必ず守ること）
+- easy: 教科書の基本事項を直接問う。知識の単純再現で解ける。（1問）
+- medium: 機序・原理の理解が必要。「なぜ」を理解していないと解けない。（2問）
+- hard: 臨床場面での判断を要する。患者事例や鑑別が必要。（2問）
 
-Required format:
+## 問題形式（5問でバリエーションを持たせること）
+- 単純知識型（例：「〜はどれか」）: 最大2問まで
+- 機序・理由型（例：「〜の理由として正しいのはどれか」）: 1問以上
+- 患者事例型（例：「〜の患者に対して適切な対応はどれか」）: 1問以上
+- 組み合わせ・否定型（例：「誤っているのはどれか」）: 0〜1問
+
+## 選択肢の品質基準
+- 正解以外の選択肢も「もっともらしい誤り」にすること（明らかな間違いを混ぜない）
+- 選択肢の文章量・文体を統一する（正解だけ説明が長くならないよう）
+- 正解がA〜Dに偏らないよう分散させる
+
+## 解説の基準
+- 正解の根拠を1〜2文で説明する
+- 誤りの選択肢のうち最も紛らわしいものを1つ取り上げ、なぜ誤りかを説明する
+- 合計3〜5文程度（短すぎず長すぎず）
+
+## 出力形式
+IMPORTANT: Return ONLY raw JSON. No explanation, no markdown, no code blocks.
+
 {"questions":[{"question":"問題文","option_a":"選択肢1","option_b":"選択肢2","option_c":"選択肢3","option_d":"選択肢4","answer":"A","explanation":"解説文","subject":"科目名","difficulty":"medium"}]}
 
-Rules:
-- difficulty must be: easy, medium, or hard（3種類をバランスよく使う）
-- answer must be: A, B, C, or D（A〜Dが均等になるよう分散させる）
-- 問題文・選択肢・解説はすべて日本語
-- 国家試験・CBTレベルを意識した実践的な問題
+## その他のルール
 - 5問は必ず異なる科目・分野から出題する
-- 選択肢A〜Dの文章の長さ・文体を揃える（正解だけ長くしない）
-- 解説は簡潔かつ正確に（なぜその答えが正しいか・他の選択肢が誤りかを説明）`;
+- 問題文・選択肢・解説はすべて日本語
+- ${label}の国家試験・CBT出題範囲に沿った内容のみ扱う
+- 数値（用量・基準値など）は一般的に広く知られた値のみ使用し、不確かな数値は避ける`;
 }
