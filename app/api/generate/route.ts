@@ -73,6 +73,10 @@ export async function POST(request: NextRequest) {
 
     if (!material) return NextResponse.json({ error: '教材が見つかりません' }, { status: 404 });
 
+    if (material.file_type === 'application/pdf') {
+      return NextResponse.json({ error: 'PDFは現在対応していません。写真またはJPG・PNG形式でアップロードしてください。' }, { status: 400 });
+    }
+
     const urlParts = material.file_url.split('/storage/v1/object/public/materials/');
     const filePath = urlParts[1];
 
