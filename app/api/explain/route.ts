@@ -29,6 +29,16 @@ export async function POST(request: NextRequest) {
 
     const { question, answer, explanation, subject } = await request.json();
 
+    const admin = createAdminClient();
+
+    // キャッシュキー（問題文+正解のハッシュ）
+    const cacheKey = Buffer.from(`${question}||${answer}`).toString('base64').slice(0, 64);
+    const { data: cached } = await admin.from('explain_cache').select('explanation').eq('question_hash', cacheKey).single();
+    if (cached) {
+      try { await admin.from('explain_logs').insert({ user_id: user.id }); } catch { /* ignore */ }
+      return NextResponse.json({ explanation: cached.explanation });
+    }
+
     const prompt = `以下の医療系国家試験の問題について、医学生・看護学生・薬学生が理解しやすいよう詳しく解説してください。なぜその答えが正解なのか、他の選択肢がなぜ間違いなのか、臨床的な背景も含めて説明してください。不正確な情報は絶対に書かないで。必要であれば、論文など、学術的に信頼のある所から情報を調べるようにして。解説は簡潔にまとめて、800文字以内で完結させてください。途中で切れないように必ず最後まで書いてください。
 
 科目：${subject ?? '不明'}
@@ -46,8 +56,9 @@ export async function POST(request: NextRequest) {
 
     const text = response.content[0].type === 'text' ? response.content[0].text.trim() : '';
 
-    const admin = createAdminClient();
-    try { await admin.from('explain_logs').insert({ user_id: user.id }); } catch { /* ログ失敗は無視 */ }
+    // キャッシュに保存
+    try { await admin.from('explain_cache').insert({ question_hash: cacheKey, explanation: text }); } catch { /* ignore */ }
+    try { await admin.from('explain_logs').insert({ user_id: user.id }); } catch { /* ignore */ }
 
     return NextResponse.json({ explanation: text });
 
