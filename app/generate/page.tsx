@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import Navbar from '@/components/Navbar';
 import ErrorBanner from '@/components/ErrorBanner';
+import ExplainButton from '@/components/ExplainButton';
 
 type Folder = { id: string; name: string; };
 type Material = { id: string; title: string; subject: string | null; folder_id: string | null; };
@@ -485,6 +486,13 @@ export default function GeneratePage() {
               <div className="mt-6 p-4 bg-gray-50 rounded-xl border-l-4 border-green-500">
                 <p className="text-xs font-medium text-green-600 mb-2">💡 解説</p>
                 <p className="text-sm text-gray-600 leading-relaxed">{q.explanation}</p>
+                <ExplainButton
+                  question={q.question}
+                  answer={q.answer}
+                  explanation={q.explanation}
+                  subject={selectedMaterials[0]?.subject ?? null}
+                  accentColor="green"
+                />
               </div>
             )}
           </div>
