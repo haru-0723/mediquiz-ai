@@ -83,7 +83,8 @@ export default function CBTPage() {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
-  const [phase, setPhase] = useState<'select' | 'quiz' | 'result'>('select');
+  const [phase, setPhase] = useState<'select' | 'quiz' | 'result' | 'review'>('select');
+  const [reviewIndex, setReviewIndex] = useState(0);
   const [questionCount, setQuestionCount] = useState(10);
   const [timeLimit, setTimeLimit] = useState(10);
   const [selectedSubject, setSelectedSubject] = useState('すべて');
@@ -462,6 +463,12 @@ async function handleStart() {
             </div>
           </div>
 
+          <div className="flex gap-3 mb-3">
+            <button onClick={() => { setReviewIndex(0); setPhase('review'); }}
+              className="flex-1 border border-blue-300 text-blue-600 rounded-xl py-3 text-sm font-medium hover:bg-blue-50">
+              📖 一問ずつ振り返る
+            </button>
+          </div>
           <div className="flex gap-3">
             <Link href="/dashboard" className="flex-1 border border-gray-200 rounded-xl py-3 text-sm text-gray-600 text-center">
               ダッシュボードへ
@@ -470,6 +477,92 @@ async function handleStart() {
               className="flex-1 bg-blue-600 text-white rounded-xl py-3 text-sm font-medium hover:bg-blue-700">
               もう一度挑戦
             </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (phase === 'review') {
+    const q = questions[reviewIndex];
+    const answer = answers[reviewIndex];
+    const options = [
+      { label: 'A', text: q.option_a },
+      { label: 'B', text: q.option_b },
+      { label: 'C', text: q.option_c },
+      { label: 'D', text: q.option_d },
+    ].filter(o => o.text);
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Navbar />
+        <div className="max-w-2xl mx-auto p-4 sm:p-8">
+          <div className="flex items-center justify-between mb-6">
+            <button onClick={() => setPhase('result')} className="text-sm text-gray-500 hover:text-gray-700">
+              ← 結果に戻る
+            </button>
+            <span className="text-sm text-gray-500">{reviewIndex + 1} / {questions.length}問</span>
+          </div>
+          <div className="h-1.5 bg-gray-200 rounded-full mb-6 overflow-hidden">
+            <div className="h-full bg-blue-500 rounded-full transition-all"
+              style={{ width: `${((reviewIndex + 1) / questions.length) * 100}%` }} />
+          </div>
+          <div className="bg-white rounded-2xl border p-6 mb-4">
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-xl">{answer?.isCorrect ? '✅' : '❌'}</span>
+              {q.subject && <span className="bg-blue-50 text-blue-700 text-xs px-3 py-1 rounded-full font-medium">{q.subject}</span>}
+            </div>
+            <p className="text-base font-medium text-gray-900 leading-relaxed mb-6">{q.question}</p>
+            <div className="space-y-3 mb-6">
+              {options.map(({ label, text }) => {
+                const isCorrect = label === q.answer;
+                const isSelected = label === answer?.selected;
+                let cls = 'flex items-center gap-3 p-4 rounded-xl border ';
+                if (isCorrect) cls += 'border-green-500 bg-green-50';
+                else if (isSelected) cls += 'border-red-400 bg-red-50';
+                else cls += 'border-gray-100 opacity-60';
+                return (
+                  <div key={label} className={cls}>
+                    <div className={`w-6 h-6 rounded-full border flex items-center justify-center text-xs font-medium flex-shrink-0
+                      ${isCorrect ? 'bg-green-600 border-green-600 text-white' :
+                        isSelected ? 'bg-red-400 border-red-400 text-white' :
+                        'border-gray-300 text-gray-400'}`}>
+                      {label}
+                    </div>
+                    <span className="text-sm text-gray-700">{text}</span>
+                    {isCorrect && <span className="ml-auto text-xs text-green-600 font-medium flex-shrink-0">正解</span>}
+                    {isSelected && !isCorrect && <span className="ml-auto text-xs text-red-500 font-medium flex-shrink-0">あなたの回答</span>}
+                  </div>
+                );
+              })}
+            </div>
+            {q.explanation && (
+              <div className="p-4 bg-gray-50 rounded-xl border-l-4 border-blue-500">
+                <p className="text-xs font-medium text-blue-600 mb-2">💡 解説</p>
+                <p className="text-sm text-gray-600 leading-relaxed">{q.explanation}</p>
+              </div>
+            )}
+            <ExplainButton key={q.id} question={q.question} answer={q.answer} explanation={q.explanation} subject={q.subject} accentColor="blue" />
+          </div>
+          <div className="flex gap-3">
+            <button
+              onClick={() => setReviewIndex(i => i - 1)}
+              disabled={reviewIndex === 0}
+              className="flex-1 border border-gray-200 rounded-xl py-3 text-sm text-gray-600 hover:bg-gray-50 disabled:opacity-40">
+              ← 前の問題
+            </button>
+            {reviewIndex + 1 < questions.length ? (
+              <button
+                onClick={() => setReviewIndex(i => i + 1)}
+                className="flex-1 bg-blue-600 text-white rounded-xl py-3 text-sm font-medium hover:bg-blue-700">
+                次の問題 →
+              </button>
+            ) : (
+              <button
+                onClick={() => setPhase('result')}
+                className="flex-1 bg-blue-600 text-white rounded-xl py-3 text-sm font-medium hover:bg-blue-700">
+                結果に戻る
+              </button>
+            )}
           </div>
         </div>
       </div>
