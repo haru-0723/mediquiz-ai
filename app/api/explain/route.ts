@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { getEffectivePlan } from '@/lib/planUtils';
 
 if (!process.env.ANTHROPIC_API_KEY) {
   throw new Error('ANTHROPIC_API_KEY is not set');
@@ -16,11 +17,13 @@ export async function POST(request: NextRequest) {
 
     const { data: profile } = await supabase
       .from('profiles')
-      .select('plan')
+      .select('plan, trial_ends_at')
       .eq('id', user.id)
       .single();
 
-    if (profile?.plan !== 'standard' && profile?.plan !== 'premium') {
+    const effectivePlan = getEffectivePlan(profile);
+
+    if (effectivePlan !== 'standard' && effectivePlan !== 'premium') {
       return NextResponse.json(
         { error: 'AI解説の深掘りはスタンダードプラン以上の機能です。', upgrade: true },
         { status: 403 },

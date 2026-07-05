@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getSourceInstruction } from '@/lib/departmentUtils';
 import { extractQuestions, type RawQuestion } from '@/lib/questionUtils';
+import { getEffectivePlan } from '@/lib/planUtils';
 
 if (!process.env.ANTHROPIC_API_KEY) {
   throw new Error('ANTHROPIC_API_KEY is not set');
@@ -166,18 +167,20 @@ export async function POST(request: NextRequest) {
 
     const { data: profile } = await supabase
       .from('profiles')
-      .select('plan, department, target_exam')
+      .select('plan, trial_ends_at, department, target_exam')
       .eq('id', user.id)
       .single();
 
-    if (profile?.plan !== 'standard' && profile?.plan !== 'premium') {
+    const effectivePlan = getEffectivePlan(profile);
+
+    if (effectivePlan !== 'standard' && effectivePlan !== 'premium') {
       return NextResponse.json({
         error: '国試モードはスタンダードプラン以上の機能です。',
         upgrade: true,
       }, { status: 403 });
     }
 
-    if (profile?.plan === 'standard') {
+    if (effectivePlan === 'standard') {
       const admin = createAdminClient();
       const jstNow = new Date(Date.now() + 9 * 60 * 60 * 1000);
       const startOfMonth = new Date(Date.UTC(jstNow.getUTCFullYear(), jstNow.getUTCMonth(), 1, -9, 0, 0, 0));

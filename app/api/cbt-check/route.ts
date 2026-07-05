@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { getEffectivePlan } from '@/lib/planUtils';
 
 export async function POST(request: NextRequest) {
   try {
@@ -10,11 +11,13 @@ export async function POST(request: NextRequest) {
 
     const { data: profile } = await supabase
       .from('profiles')
-      .select('plan')
+      .select('plan, trial_ends_at')
       .eq('id', user.id)
       .single();
 
-    if (profile?.plan === 'premium') {
+    const effectivePlan = getEffectivePlan(profile);
+
+    if (effectivePlan === 'premium') {
       return NextResponse.json({ allowed: true });
     }
 
@@ -28,7 +31,7 @@ export async function POST(request: NextRequest) {
       .eq('user_id', user.id)
       .gte('created_at', startOfMonth.toISOString());
 
-    const isStandard = profile?.plan === 'standard';
+    const isStandard = effectivePlan === 'standard';
     const limit = isStandard ? 15 : 2;
     if ((count ?? 0) >= limit) {
       return NextResponse.json({

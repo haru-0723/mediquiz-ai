@@ -3,6 +3,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getSubjectInstruction, getDepartmentType, getSourceInstruction } from '@/lib/departmentUtils';
+import { getEffectivePlan } from '@/lib/planUtils';
 
 if (!process.env.ANTHROPIC_API_KEY) {
   throw new Error('ANTHROPIC_API_KEY is not set');
@@ -19,12 +20,14 @@ export async function POST(request: NextRequest) {
     // プランを確認
     const { data: profile } = await supabase
       .from('profiles')
-      .select('plan, department, target_exam')
+      .select('plan, trial_ends_at, department, target_exam')
       .eq('id', user.id)
       .single();
 
+    const effectivePlan = getEffectivePlan(profile);
+
     // プラン別制限チェック
-    if (!profile || profile.plan === 'free' || profile.plan === 'standard') {
+    if (effectivePlan === 'free' || effectivePlan === 'standard') {
       const jstNow = new Date(Date.now() + 9 * 60 * 60 * 1000);
       const startOfDay = new Date(Date.UTC(jstNow.getUTCFullYear(), jstNow.getUTCMonth(), jstNow.getUTCDate(), -9, 0, 0, 0));
 
@@ -34,7 +37,7 @@ export async function POST(request: NextRequest) {
         .eq('user_id', user.id)
         .gte('created_at', startOfDay.toISOString());
 
-      const isFree = !profile || profile.plan === 'free';
+      const isFree = effectivePlan === 'free';
       const limit = isFree ? 2 : 10;
       if ((generateCount ?? 0) >= limit) {
         return NextResponse.json({

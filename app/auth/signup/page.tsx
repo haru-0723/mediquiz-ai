@@ -36,6 +36,8 @@ export default function SignupPage() {
   const [error, setError] = useState('');
   const [done, setDone] = useState(false);
   const [ageConfirmed, setAgeConfirmed] = useState(false);
+  const [partnerCode, setPartnerCode] = useState('');
+  const [trialApplied, setTrialApplied] = useState(false);
 
   async function handleSignup(e: React.FormEvent) {
     e.preventDefault();
@@ -45,7 +47,7 @@ export default function SignupPage() {
     }
     setLoading(true);
     setError('');
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: { data: { name } },
@@ -53,9 +55,31 @@ export default function SignupPage() {
     if (error) {
       setError(error.message);
       setLoading(false);
-    } else {
-      setDone(true);
+      return;
     }
+
+    if (partnerCode.trim() && data.user) {
+      try {
+        const res = await fetch('/api/auth/apply-partner-trial', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: data.user.id, code: partnerCode.trim() }),
+        });
+        if (res.ok) setTrialApplied(true);
+        else {
+          const json = await res.json();
+          setError(json.error ?? 'パートナーコードが無効です');
+          setLoading(false);
+          return;
+        }
+      } catch {
+        setError('パートナーコードの確認中にエラーが発生しました');
+        setLoading(false);
+        return;
+      }
+    }
+
+    setDone(true);
   }
 
   if (done) {
@@ -70,6 +94,11 @@ export default function SignupPage() {
             {email} に確認メールを送りました。<br />
             メール内のリンクをクリックしてアカウントを有効化してください。
           </p>
+          {trialApplied && (
+            <div className="mt-4 bg-green-50 border border-green-200 rounded-xl px-4 py-3 text-sm text-green-700">
+              パートナーコードが適用されました。アカウント有効化後、1ヶ月間スタンダードプランが無料でお使いいただけます。
+            </div>
+          )}
         </div>
       </div>
     );
@@ -162,6 +191,17 @@ export default function SignupPage() {
                   type="password" value={password} onChange={e => setPassword(e.target.value)} required minLength={6}
                   className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
                   placeholder="6文字以上"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  パートナーコード <span className="text-gray-400 font-normal">（任意）</span>
+                </label>
+                <input
+                  type="text" value={partnerCode} onChange={e => setPartnerCode(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition uppercase placeholder:normal-case"
+                  placeholder="塾や学校から配布されたコード"
                 />
               </div>
 
