@@ -49,6 +49,24 @@ export async function POST(request: NextRequest) {
     }
   }
 
+  if (event.type === 'customer.subscription.updated') {
+    const sub = event.data.object as Stripe.Subscription;
+    const customerId = sub.customer as string;
+
+    // ポータルでの解約予約(期末解約)は、まだ期間中なのでプランを維持する
+    if (sub.cancel_at_period_end) {
+      // 何もしない：期末に customer.subscription.deleted が届いた時点で free に戻す
+    } else if (sub.status === 'active' || sub.status === 'trialing') {
+      // プラン変更(スタンダード⇄プレミアム)を price ID から判定して反映
+      const priceId = sub.items.data[0]?.price?.id;
+      const premiumPriceId = process.env.STRIPE_PREMIUM_PRICE_ID;
+      const plan = (priceId && premiumPriceId && priceId === premiumPriceId) ? 'premium' : 'standard';
+      await supabase.from('profiles')
+        .update({ plan, stripe_subscription_id: sub.id })
+        .eq('stripe_customer_id', customerId);
+    }
+  }
+
   if (event.type === 'customer.subscription.deleted') {
     const sub = event.data.object as Stripe.Subscription;
     const customerId = sub.customer as string;
