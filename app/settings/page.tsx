@@ -3,11 +3,13 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
+import { getEffectivePlan } from '@/lib/planUtils';
 import Navbar from '@/components/Navbar';
 
 export default function SettingsPage() {
   const supabase = createClient();
   const [plan, setPlan] = useState('free');
+  const [isTrial, setIsTrial] = useState(false);
   const [stripeCustomerId, setStripeCustomerId] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -28,7 +30,8 @@ export default function SettingsPage() {
       setName(user.user_metadata?.name ?? '');
       const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
       if (profile) {
-        setPlan(profile.plan);
+        setPlan(getEffectivePlan(profile));
+        setIsTrial(!!profile.trial_ends_at && new Date(profile.trial_ends_at) > new Date());
         setStripeCustomerId(profile.stripe_customer_id ?? null);
         setUniversity(profile.university ?? '');
         setDepartment(profile.department ?? '');
@@ -183,12 +186,17 @@ export default function SettingsPage() {
           <div className={`p-4 rounded-xl mb-4 ${plan === 'premium' ? 'bg-purple-50 border border-purple-200' : plan === 'standard' ? 'bg-green-50 border border-green-200' : 'bg-gray-50'}`}>
             <p className="text-sm font-semibold text-gray-900">
               {plan === 'premium' ? '👑 プレミアムプラン' : plan === 'standard' ? '⭐ スタンダードプラン' : '無料プラン'}
+              {isTrial && <span className="ml-2 text-xs font-medium text-green-600">無料トライアル中</span>}
             </p>
             <p className="text-xs text-gray-500 mt-1">
-              {plan === 'premium' ? '¥3,480/月 · 全機能無制限' : plan === 'standard' ? '¥1,980/月 · 全機能使い放題' : '一部機能に制限あり'}
+              {isTrial ? '1ヶ月間スタンダードプランを無料でご利用中です' : plan === 'premium' ? '¥3,480/月 · 全機能無制限' : plan === 'standard' ? '¥1,980/月 · 全機能使い放題' : '一部機能に制限あり'}
             </p>
           </div>
-          {plan === 'standard' || plan === 'premium' ? (
+          {isTrial ? (
+            <div className="bg-green-50 border border-green-100 rounded-xl px-4 py-3 text-xs text-green-700">
+              🎁 トライアル終了後は自動的に無料プランに戻ります（自動課金はされません）。引き続きご利用の場合はプランにご登録ください。
+            </div>
+          ) : plan === 'standard' || plan === 'premium' ? (
             <div className="space-y-3">
               {stripeCustomerId ? (
                 <>
