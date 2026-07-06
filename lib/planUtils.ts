@@ -9,8 +9,12 @@ type Profile = {
  */
 export function getEffectivePlan(profile: Profile | null | undefined): string {
   if (!profile) return 'free';
-  if (profile.trial_ends_at && new Date(profile.trial_ends_at) > new Date()) {
-    return 'standard';
+  const basePlan = profile.plan ?? 'free';
+  const trialActive = !!profile.trial_ends_at && new Date(profile.trial_ends_at) > new Date();
+  // トライアル中はstandardに引き上げる。ただし既にstandard以上ならそのまま維持（premiumをダウングレードしない）
+  if (trialActive) {
+    const rank: Record<string, number> = { free: 0, standard: 1, premium: 2 };
+    return (rank[basePlan] ?? 0) >= rank.standard ? basePlan : 'standard';
   }
-  return profile.plan ?? 'free';
+  return basePlan;
 }
