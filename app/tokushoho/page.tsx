@@ -45,8 +45,8 @@ export default function TokushohoPage() {
             <tr className="border-t border-gray-200">
               <td className="py-4 pr-6 font-medium text-gray-700 align-top">販売価格</td>
               <td className="py-4 text-gray-600">
-                スタンダードプラン：¥980／月（税込）<br />
-                プレミアムプラン：¥1,980／月（税込）<br />
+                スタンダードプラン：¥1,980／月（税込）<br />
+                プレミアムプラン：¥3,480／月（税込）<br />
                 ※価格は予告なく変更する場合があります。変更前に本サービス上でお知らせします。
               </td>
             </tr>

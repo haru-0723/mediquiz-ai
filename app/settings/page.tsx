@@ -185,7 +185,7 @@ export default function SettingsPage() {
               {plan === 'premium' ? '👑 プレミアムプラン' : plan === 'standard' ? '⭐ スタンダードプラン' : '無料プラン'}
             </p>
             <p className="text-xs text-gray-500 mt-1">
-              {plan === 'premium' ? '¥1,480/月 · 全機能無制限' : plan === 'standard' ? '¥980/月 · 全機能使い放題' : '一部機能に制限あり'}
+              {plan === 'premium' ? '¥3,480/月 · 全機能無制限' : plan === 'standard' ? '¥1,980/月 · 全機能使い放題' : '一部機能に制限あり'}
             </p>
           </div>
           {plan === 'standard' || plan === 'premium' ? (

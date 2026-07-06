@@ -124,7 +124,7 @@ export default function PricingPage() {
             <div className="mb-6">
               <h2 className="text-lg font-semibold text-gray-900 mb-1">スタンダード</h2>
               <div className="text-3xl font-bold text-gray-900 mb-1">
-                ¥980 <span className="text-base font-normal text-gray-400">/ 月</span>
+                ¥1,980 <span className="text-base font-normal text-gray-400">/ 月</span>
               </div>
               <p className="text-sm text-gray-400">本格的に対策したい方に</p>
             </div>
@@ -147,7 +147,7 @@ export default function PricingPage() {
             <div className="mb-6">
               <h2 className="text-lg font-semibold text-gray-900 mb-1">プレミアム</h2>
               <div className="text-3xl font-bold text-gray-900 mb-1">
-                ¥1,480 <span className="text-base font-normal text-gray-400">/ 月</span>
+                ¥3,480 <span className="text-base font-normal text-gray-400">/ 月</span>
               </div>
               <p className="text-sm text-gray-400">国試直前の追い込みに</p>
             </div>
