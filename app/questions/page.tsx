@@ -45,6 +45,9 @@ export default function QuestionsPage() {
   const [newFolderName, setNewFolderName] = useState('');
   const [creatingFolder, setCreatingFolder] = useState(false);
   const [deletingFolderId, setDeletingFolderId] = useState<string | null>(null);
+  const [renamingFolderId, setRenamingFolderId] = useState<string | null>(null);
+  const [renameFolderName, setRenameFolderName] = useState('');
+  const [savingRename, setSavingRename] = useState(false);
 
   // Question ops
   const [deleting, setDeleting] = useState<string | null>(null);
@@ -112,6 +115,31 @@ export default function QuestionsPage() {
     setNewFolderName('');
     setShowNewFolder(false);
     setCreatingFolder(false);
+  }
+
+  function startRenameFolder(folder: Folder) {
+    setRenamingFolderId(folder.id);
+    setRenameFolderName(folder.name);
+  }
+
+  function cancelRenameFolder() {
+    setRenamingFolderId(null);
+    setRenameFolderName('');
+  }
+
+  async function handleRenameFolder(folderId: string) {
+    const name = renameFolderName.trim();
+    if (!name || savingRename) return;
+    setSavingRename(true);
+    const { data, error } = await supabase.from('folders').update({ name }).eq('id', folderId).select().single();
+    if (!error && data) {
+      setFolders(prev => prev.map(f => f.id === folderId ? { ...f, name } : f));
+      cancelRenameFolder();
+    } else {
+      console.error(error);
+      alert('フォルダ名の変更に失敗しました');
+    }
+    setSavingRename(false);
   }
 
   async function handleDeleteFolder(folderId: string) {
@@ -430,6 +458,48 @@ export default function QuestionsPage() {
           </button>
         </div>
 
+        {/* スマホ：選択中フォルダの名前変更 */}
+        {typeof selectedFolder === 'string' && !['all', 'none'].includes(selectedFolder) && renamingFolderId !== selectedFolder && (
+          <div className="sm:hidden flex justify-end mb-3">
+            <button
+              onClick={() => {
+                const f = folders.find(fo => fo.id === selectedFolder);
+                if (f) startRenameFolder(f);
+              }}
+              className="text-xs text-gray-500 border border-gray-200 rounded-lg px-3 py-1.5 hover:bg-gray-50"
+            >
+              ✎ フォルダ名を変更
+            </button>
+          </div>
+        )}
+
+        {/* スマホ：フォルダ名変更 */}
+        {renamingFolderId && (
+          <div className="sm:hidden bg-white border rounded-xl p-3 mb-4">
+            <input
+              value={renameFolderName}
+              onChange={e => setRenameFolderName(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter') handleRenameFolder(renamingFolderId);
+                if (e.key === 'Escape') cancelRenameFolder();
+              }}
+              placeholder="フォルダ名を入力"
+              className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 mb-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+              autoFocus
+            />
+            <div className="flex gap-2">
+              <button onClick={() => handleRenameFolder(renamingFolderId)} disabled={savingRename || !renameFolderName.trim()}
+                className="flex-1 bg-green-600 text-white text-sm py-2 rounded-lg disabled:opacity-60">
+                {savingRename ? '保存中...' : '保存'}
+              </button>
+              <button onClick={cancelRenameFolder}
+                className="flex-1 border text-sm py-2 rounded-lg text-gray-500">
+                キャンセル
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* スマホ：新規フォルダ作成 */}
         {showNewFolder && (
           <div className="sm:hidden bg-white border rounded-xl p-3 mb-4">
@@ -476,21 +546,54 @@ export default function QuestionsPage() {
 
               {/* ユーザーフォルダ */}
               {folders.map(f => (
-                <div key={f.id} className="group flex items-center gap-1 mb-0.5">
-                  <button onClick={() => setSelectedFolder(f.id)}
-                    className={`flex-1 flex items-center justify-between px-3 py-2 rounded-xl text-sm transition-colors ${selectedFolder === f.id ? 'bg-green-50 text-green-700 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}>
-                    <span className="truncate">{f.name}</span>
-                    <span className="text-xs text-gray-400 flex-shrink-0 ml-1">{folderCounts[f.id] ?? 0}</span>
-                  </button>
-                  <button
-                    onClick={() => handleDeleteFolder(f.id)}
-                    disabled={deletingFolderId === f.id}
-                    className="p-1.5 text-gray-300 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-50 flex-shrink-0"
-                    title="フォルダを削除"
-                  >
-                    ×
-                  </button>
-                </div>
+                renamingFolderId === f.id ? (
+                  <div key={f.id} className="mb-0.5">
+                    <input
+                      value={renameFolderName}
+                      onChange={e => setRenameFolderName(e.target.value)}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter') handleRenameFolder(f.id);
+                        if (e.key === 'Escape') cancelRenameFolder();
+                      }}
+                      placeholder="フォルダ名"
+                      className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 mb-1.5 focus:outline-none focus:ring-2 focus:ring-green-500"
+                      autoFocus
+                    />
+                    <div className="flex gap-1">
+                      <button onClick={() => handleRenameFolder(f.id)} disabled={savingRename || !renameFolderName.trim()}
+                        className="flex-1 bg-green-600 text-white text-xs py-1.5 rounded-lg disabled:opacity-60">
+                        {savingRename ? '保存中...' : '保存'}
+                      </button>
+                      <button onClick={cancelRenameFolder}
+                        className="flex-1 border text-xs py-1.5 rounded-lg text-gray-500">
+                        ×
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div key={f.id} className="group flex items-center gap-1 mb-0.5">
+                    <button onClick={() => setSelectedFolder(f.id)}
+                      className={`flex-1 flex items-center justify-between px-3 py-2 rounded-xl text-sm transition-colors min-w-0 ${selectedFolder === f.id ? 'bg-green-50 text-green-700 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}>
+                      <span className="truncate">{f.name}</span>
+                      <span className="text-xs text-gray-400 flex-shrink-0 ml-1">{folderCounts[f.id] ?? 0}</span>
+                    </button>
+                    <button
+                      onClick={() => startRenameFolder(f)}
+                      className="p-1.5 text-gray-300 hover:text-green-500 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+                      title="フォルダ名を変更"
+                    >
+                      ✎
+                    </button>
+                    <button
+                      onClick={() => handleDeleteFolder(f.id)}
+                      disabled={deletingFolderId === f.id}
+                      className="p-1.5 text-gray-300 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-50 flex-shrink-0"
+                      title="フォルダを削除"
+                    >
+                      ×
+                    </button>
+                  </div>
+                )
               ))}
 
               {/* フォルダ作成 */}
