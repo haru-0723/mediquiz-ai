@@ -14,11 +14,52 @@ type Material = {
   created_at: string;
 };
 
+// 非公開バケットのfile_urlから保存パスを取り出す
+function getStoragePath(fileUrl: string): string | null {
+  const marker = '/storage/v1/object/public/materials/';
+  const idx = fileUrl.indexOf(marker);
+  if (idx === -1) return null;
+  return decodeURIComponent(fileUrl.slice(idx + marker.length));
+}
+
 export default function MaterialsPage() {
   const supabase = createClient();
   const [materials, setMaterials] = useState<Material[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [previewMaterial, setPreviewMaterial] = useState<Material | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewLoading, setPreviewLoading] = useState<string | null>(null);
+  const [previewError, setPreviewError] = useState('');
+
+  async function handleShow(material: Material) {
+    setPreviewLoading(material.id);
+    setPreviewError('');
+    try {
+      const path = getStoragePath(material.file_url);
+      if (!path) throw new Error('ファイルパスを特定できませんでした');
+      const { data, error } = await supabase.storage.from('materials').createSignedUrl(path, 60 * 60);
+      if (error || !data?.signedUrl) throw error ?? new Error('URLの取得に失敗しました');
+      const isPdf = material.file_type?.includes('pdf');
+      if (isPdf) {
+        // PDFは新しいタブで開く
+        window.open(data.signedUrl, '_blank', 'noopener,noreferrer');
+      } else {
+        setPreviewMaterial(material);
+        setPreviewUrl(data.signedUrl);
+      }
+    } catch (e) {
+      console.error(e);
+      setPreviewError(e instanceof Error ? e.message : '教材の表示に失敗しました');
+    } finally {
+      setPreviewLoading(null);
+    }
+  }
+
+  function closePreview() {
+    setPreviewMaterial(null);
+    setPreviewUrl(null);
+  }
 
   useEffect(() => {
     async function load() {
@@ -92,10 +133,10 @@ export default function MaterialsPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
-                  <a href={material.file_url} target="_blank" rel="noopener noreferrer"
-                    className="text-xs text-blue-400 hover:text-blue-600 border border-blue-200 hover:border-blue-400 px-3 py-1 rounded-lg transition-colors">
-                    表示
-                  </a>
+                  <button onClick={() => handleShow(material)} disabled={previewLoading === material.id}
+                    className="text-xs text-blue-400 hover:text-blue-600 border border-blue-200 hover:border-blue-400 px-3 py-1 rounded-lg transition-colors disabled:opacity-60">
+                    {previewLoading === material.id ? '読込中...' : '表示'}
+                  </button>
                   <button onClick={() => handleDelete(material)} disabled={deleting === material.id}
                     className="text-xs text-red-400 hover:text-red-600 border border-red-200 hover:border-red-400 px-3 py-1 rounded-lg transition-colors disabled:opacity-60">
                     {deleting === material.id ? '削除中...' : '削除'}
@@ -112,7 +153,34 @@ export default function MaterialsPage() {
             </Link>
           </div>
         )}
+
+        {previewError && (
+          <p className="text-sm text-red-500 mt-4 text-center">{previewError}</p>
+        )}
       </div>
+
+      {previewMaterial && previewUrl && (
+        <div
+          onClick={closePreview}
+          className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4"
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            className="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] flex flex-col overflow-hidden"
+          >
+            <div className="flex items-center justify-between px-5 py-3 border-b">
+              <p className="text-sm font-medium text-gray-900 truncate">{previewMaterial.title}</p>
+              <button onClick={closePreview} className="text-gray-400 hover:text-gray-700 text-2xl leading-none px-1">
+                ×
+              </button>
+            </div>
+            <div className="overflow-auto p-4 bg-gray-50 flex items-center justify-center">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={previewUrl} alt={previewMaterial.title} className="max-w-full h-auto rounded-lg" />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
