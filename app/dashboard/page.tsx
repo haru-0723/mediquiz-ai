@@ -11,7 +11,7 @@ import WeakAnalysisCard from './WeakAnalysisCard';
 import StreakCard from './StreakCard';
 import AddToHomeScreen from '@/components/AddToHomeScreen';
 import { getTitleInfo } from '@/lib/titleUtils';
-import { getEffectivePlan } from '@/lib/planUtils';
+import { getEffectivePlan, getPlanExpiry } from '@/lib/planUtils';
 
 const FEATURE_CARDS = [
   { href: '/today',    icon: '📅', title: '今日の問題',    desc: '毎日5問で実力アップ' },
@@ -32,12 +32,29 @@ export default async function DashboardPage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('plan, trial_ends_at, plan_expires_at, university, department, grade, target_exam')
+    .select('plan, trial_ends_at, plan_expires_at, generate_credits, university, department, grade, target_exam')
     .eq('id', user.id)
     .single();
 
   const plan = getEffectivePlan(profile);
   const isAdmin = user.email === ADMIN_EMAIL;
+
+  // プラン残量（残り教材数・残り日数）の算出
+  const dbPlan = profile?.plan ?? 'free';
+  const planExpiry = getPlanExpiry(profile); // 買い切りパックの有効期限（ISO or null）
+  const trialEndsAt = profile?.trial_ends_at && new Date(profile.trial_ends_at) > new Date()
+    ? profile.trial_ends_at : null;
+  const credits = typeof profile?.generate_credits === 'number' ? profile.generate_credits : null;
+  // premium / 手動付与standard（期限なし）は無制限
+  const isUnlimited = dbPlan === 'premium' || (dbPlan === 'standard' && !planExpiry);
+  // 残り日数のカウント元（パック優先、なければトライアル）
+  const expirySource = planExpiry ?? trialEndsAt;
+  const remainingDays = expirySource
+    ? Math.max(0, Math.ceil((new Date(expirySource).getTime() - Date.now()) / 86400000))
+    : null;
+  const expiryDateLabel = expirySource
+    ? new Date(expirySource).toLocaleDateString('ja-JP')
+    : null;
 
   // 今週の月曜日 00:00:00 を算出
   const now = new Date();
@@ -233,6 +250,57 @@ export default async function DashboardPage() {
             </div>
           </Link>
         </div>
+
+        {/* プラン残量（残り教材数・残り日数） */}
+        {isUnlimited ? (
+          <div className="mb-6 sm:mb-8 flex items-center gap-3 bg-white rounded-2xl border p-4 sm:p-5">
+            <span className="text-2xl flex-shrink-0">♾️</span>
+            <div>
+              <p className="text-sm font-semibold text-gray-900">AI問題生成は無制限でご利用いただけます</p>
+              <p className="text-xs text-gray-400 mt-0.5">
+                {dbPlan === 'premium' ? 'プレミアムプラン' : '有料プラン'}特典
+              </p>
+            </div>
+          </div>
+        ) : (planExpiry || trialEndsAt) ? (
+          <div className="mb-6 sm:mb-8 grid grid-cols-2 gap-3 sm:gap-4">
+            <div className="bg-white rounded-2xl border p-4 sm:p-6">
+              <p className="text-xs sm:text-sm text-gray-400 mb-1">残り教材生成数</p>
+              {planExpiry ? (
+                <>
+                  <p className={`text-2xl sm:text-3xl font-semibold ${(credits ?? 0) <= 3 ? 'text-orange-500' : 'text-gray-900'}`}>
+                    {credits ?? 0}<span className="text-base font-normal text-gray-400 ml-1">件</span>
+                  </p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    {(credits ?? 0) > 0 ? 'AI問題生成に使えます' : '料金ページで買い足せます'}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="text-2xl sm:text-3xl font-semibold text-gray-900">1日10回</p>
+                  <p className="text-xs text-gray-400 mt-1">トライアル中の生成上限</p>
+                </>
+              )}
+            </div>
+            <div className="bg-white rounded-2xl border p-4 sm:p-6">
+              <p className="text-xs sm:text-sm text-gray-400 mb-1">プラン残り日数</p>
+              <p className={`text-2xl sm:text-3xl font-semibold ${(remainingDays ?? 0) <= 3 ? 'text-orange-500' : 'text-gray-900'}`}>
+                {remainingDays ?? 0}<span className="text-base font-normal text-gray-400 ml-1">日</span>
+              </p>
+              <p className="text-xs text-gray-400 mt-1">{expiryDateLabel} まで</p>
+            </div>
+          </div>
+        ) : (
+          <div className="mb-6 sm:mb-8 flex items-start sm:items-center gap-3 bg-orange-50 border border-orange-200 rounded-2xl px-4 py-3">
+            <span className="text-lg flex-shrink-0">🔓</span>
+            <p className="text-sm text-orange-800 flex-1">
+              無料プランはAI問題生成が<span className="font-medium">1日2回</span>まで・保存は<span className="font-medium">30問</span>までです
+            </p>
+            <Link href="/pricing" className="text-xs text-orange-700 font-medium hover:underline whitespace-nowrap flex-shrink-0">
+              アップグレード →
+            </Link>
+          </div>
+        )}
 
         <AddToHomeScreen inline />
 
