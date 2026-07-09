@@ -19,23 +19,22 @@ export default function TokushohoPage() {
         <table className="w-full border-collapse text-sm">
           <tbody>
             <tr className="border-t border-gray-200">
-              <td className="py-4 pr-6 font-medium text-gray-700 align-top w-40">販売業者</td>
+              <td className="py-4 pr-6 font-medium text-gray-700 align-top w-40">販売業者（運営責任者）</td>
               <td className="py-4 text-gray-600">
-                MediQuiz AI 運営者<br />
-                ※プロバイダ責任制限法に基づく開示請求があった場合のみ、本名を開示します。
+                箕脇 晴大（屋号：MediQuiz AI）
               </td>
             </tr>
             <tr className="border-t border-gray-200">
               <td className="py-4 pr-6 font-medium text-gray-700 align-top">所在地</td>
               <td className="py-4 text-gray-600">
-                開示請求があった場合のみ開示します。
+                請求があれば遅滞なく開示します。ご希望の場合は下記メールアドレスまでご連絡ください。
               </td>
             </tr>
             <tr className="border-t border-gray-200">
               <td className="py-4 pr-6 font-medium text-gray-700 align-top">連絡先</td>
               <td className="py-4 text-gray-600">
                 メールアドレス：<a href="mailto:harumaru0723@yahoo.co.jp" className="text-blue-600 underline">harumaru0723@yahoo.co.jp</a><br />
-                ※メールにてお問い合わせください。電話番号は開示請求があった場合のみ開示します。
+                ※お問い合わせはメールにて承ります。電話番号は請求があれば遅滞なく開示します。
               </td>
             </tr>
             <tr className="border-t border-gray-200">
