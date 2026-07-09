@@ -22,6 +22,7 @@ export default function GeneratePage() {
   const [generating, setGenerating] = useState(false);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [error, setError] = useState('');
+  const [limitedNotice, setLimitedNotice] = useState('');
   const [current, setCurrent] = useState(0);
   const [selected, setSelected] = useState<string | null>(null);
   const [answered, setAnswered] = useState(false);
@@ -140,17 +141,27 @@ export default function GeneratePage() {
         )
       );
 
-      for (const data of results) {
-        if (data.upgrade) {
-          setError(data.error);
-          setGenerating(false);
-          return;
-        }
-        if (data.error) throw new Error(data.error);
+      // 成功したもの・上限に達したもの・その他エラーを分ける（並列生成で一部だけ上限に当たる場合に、
+      // 成功ぶんを捨ててクレジットを無駄にしないため）
+      const succeeded = results.filter(d => Array.isArray(d.questions) && d.questions.length > 0);
+      const limited = results.filter(d => d.upgrade);
+      const hardError = results.find(d => d.error && !d.upgrade && !(Array.isArray(d.questions) && d.questions.length > 0));
+      if (hardError) throw new Error(hardError.error);
+
+      if (succeeded.length === 0) {
+        // 全部が上限だった場合のみエラー表示
+        setError(limited[0]?.error ?? '問題を生成できませんでした');
+        setGenerating(false);
+        return;
       }
 
+      // 一部が上限で生成できなかった場合は、成功ぶんで進めつつ知らせる
+      setLimitedNotice(limited.length > 0
+        ? `${limited.length}件の教材は生成上限（クレジット不足）のため生成できませんでした。`
+        : '');
+
       setProgress(100);
-      const allQuestions: Question[] = results.flatMap(data => data.questions);
+      const allQuestions: Question[] = succeeded.flatMap(data => data.questions);
       setQuestions(allQuestions);
       setCurrent(0);
       setResults([]);
@@ -440,6 +451,14 @@ export default function GeneratePage() {
             <div className="h-full bg-green-600 rounded-full transition-all" style={{ width: `${(current / questions.length) * 100}%` }} />
           </div>
           <p className="text-xs text-gray-400 mb-3">⚠️ AI生成問題のため、内容の正確性を保証しません</p>
+          {limitedNotice && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-xl px-4 py-3 mb-3 flex items-center justify-between gap-3">
+              <p className="text-xs text-yellow-800">{limitedNotice}</p>
+              <Link href="/pricing" className="text-xs font-medium text-green-600 hover:underline flex-shrink-0">
+                教材を追加 →
+              </Link>
+            </div>
+          )}
           <div className="bg-white rounded-2xl border p-6 mb-4">
             <div className="flex gap-2 mb-4">
               <span className="bg-green-50 text-green-700 text-xs px-3 py-1 rounded-full font-medium">AI生成問題</span>
@@ -651,6 +670,12 @@ export default function GeneratePage() {
             className="w-full bg-green-600 text-white py-3 rounded-xl text-sm font-medium hover:bg-green-700 disabled:opacity-60">
             ✨ {selectedIds.length > 0 ? `${selectedIds.length}件の教材から問題を生成する` : '教材を選択してください'}
           </button>
+
+          <p className="text-center text-xs text-gray-400">
+            生成できる教材数が足りないときは{' '}
+            <Link href="/pricing" className="text-green-600 hover:underline font-medium">教材クレジットを追加購入</Link>
+            {' '}できます
+          </p>
         </div>
       </div>
     </div>

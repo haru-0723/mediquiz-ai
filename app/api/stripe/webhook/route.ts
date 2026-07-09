@@ -63,11 +63,12 @@ export async function POST(request: NextRequest) {
         })
         .eq('id', userId);
 
-      // 有効期間中なら加算、切れていた/新規なら上書き（残った古いクレジットを持ち越さない）
+      // クレジットは常に加算（購入済みクレジットが消えないように）。
+      // stillActive は期間延長の計算にのみ使用。
       await supabase.rpc('add_generate_credits', {
         p_user_id: userId,
         p_amount: credits,
-        p_reset: !stillActive,
+        p_reset: false,
       });
     }
   }

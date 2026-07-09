@@ -24,6 +24,19 @@ export async function POST(request: NextRequest) {
       amount = p.amount;
       metadata = { userId: user.id, type: 'pack', item, credits: String(p.credits), days: String(p.days) };
     } else if (isAddonKey(item)) {
+      // 追加クレジットは、有効期限内の買い切りプラン利用中のみ購入可能
+      const { data: prof } = await supabase
+        .from('profiles')
+        .select('plan, plan_expires_at')
+        .eq('id', user.id)
+        .single();
+      const active = prof?.plan === 'standard'
+        && !!prof?.plan_expires_at && new Date(prof.plan_expires_at) > new Date();
+      if (!active) {
+        return NextResponse.json({
+          error: '追加教材クレジットは、有料プラン（買い切り）をご利用中の方のみ購入できます。まずはプランをご購入ください。',
+        }, { status: 400 });
+      }
       const a = ADDONS[item];
       productName = `MediQuiz AI ${a.label}`;
       amount = a.amount;
