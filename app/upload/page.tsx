@@ -76,7 +76,7 @@ export default function UploadPage() {
           const { error: uploadError } = await supabase.storage.from('materials').upload(path, file);
           if (uploadError) throw uploadError;
           const { data: { publicUrl } } = supabase.storage.from('materials').getPublicUrl(path);
-          await supabase.from('materials').insert({
+          const { error: insertError } = await supabase.from('materials').insert({
             user_id: user.id,
             title: (titles[i] || '').trim() || file.name.replace(/\.[^/.]+$/, ''),
             file_url: publicUrl,
@@ -84,6 +84,12 @@ export default function UploadPage() {
             subject: subject || null,
             folder_id: selectedFolder || null,
           });
+          if (insertError) {
+            if (insertError.message.includes('FREE_MATERIAL_LIMIT')) {
+              throw new Error('無料プランの教材アップロード上限（3件）に達しました。有料プランにアップグレードしてください。');
+            }
+            throw insertError;
+          }
         })
       );
       setDone(true);
