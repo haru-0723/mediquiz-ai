@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
-import { PACKS, isPackKey } from '@/lib/plans';
+import { PACKS, ADDONS, isPackKey, isAddonKey } from '@/lib/plans';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
@@ -20,34 +20,56 @@ export async function POST(request: NextRequest) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
-  // 買い切りパックをユーザーに付与する（残り期間があれば延長）
+  // 購入内容をユーザーに付与する（基本パック=期間+クレジット / 追加=クレジットのみ）
   async function grantPack(session: Stripe.Checkout.Session) {
     const userId = session.metadata?.userId || session.client_reference_id || undefined;
-    const packKey = session.metadata?.pack;
+    const type = session.metadata?.type;
+    const item = session.metadata?.item;
     const customerId = (session.customer as string) || null;
-    if (!userId || !isPackKey(packKey)) return;
+    if (!userId) return;
 
-    const { plan, days } = PACKS[packKey];
+    // 追加教材クレジット：期間・プランは変えず、クレジットだけ加算
+    if (type === 'addon' && isAddonKey(item)) {
+      await supabase.rpc('add_generate_credits', {
+        p_user_id: userId,
+        p_amount: ADDONS[item].credits,
+        p_reset: false,
+      });
+      return;
+    }
 
-    // 既に残り期間があれば、その終端から延長する（なければ今から）
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('plan_expires_at')
-      .eq('id', userId)
-      .single();
+    // 基本パック：プラン付与＋期間延長＋クレジット付与
+    if (type === 'pack' && isPackKey(item)) {
+      const { plan, days, credits } = PACKS[item];
 
-    const now = Date.now();
-    const currentExpiry = profile?.plan_expires_at ? new Date(profile.plan_expires_at).getTime() : 0;
-    const base = Math.max(now, currentExpiry);
-    const newExpiry = new Date(base + days * 24 * 60 * 60 * 1000);
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('plan_expires_at')
+        .eq('id', userId)
+        .single();
 
-    await supabase.from('profiles')
-      .update({
-        plan,
-        plan_expires_at: newExpiry.toISOString(),
-        ...(customerId ? { stripe_customer_id: customerId } : {}),
-      })
-      .eq('id', userId);
+      // 既に有効期間中なら、その終端から延長しクレジットも加算。切れていれば今からセット。
+      const now = Date.now();
+      const currentExpiry = profile?.plan_expires_at ? new Date(profile.plan_expires_at).getTime() : 0;
+      const stillActive = currentExpiry > now;
+      const base = stillActive ? currentExpiry : now;
+      const newExpiry = new Date(base + days * 24 * 60 * 60 * 1000);
+
+      await supabase.from('profiles')
+        .update({
+          plan,
+          plan_expires_at: newExpiry.toISOString(),
+          ...(customerId ? { stripe_customer_id: customerId } : {}),
+        })
+        .eq('id', userId);
+
+      // 有効期間中なら加算、切れていた/新規なら上書き（残った古いクレジットを持ち越さない）
+      await supabase.rpc('add_generate_credits', {
+        p_user_id: userId,
+        p_amount: credits,
+        p_reset: !stillActive,
+      });
+    }
   }
 
   // 買い切り（都度払い）の購入完了。カードは即時 paid、PayPay等の遅延決済は

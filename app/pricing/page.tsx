@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { PACKS, PACK_ORDER, type PackKey } from '@/lib/plans';
+import { PACKS, PACK_ORDER, ADDONS, ADDON_ORDER } from '@/lib/plans';
 
 const FREE_FEATURES = [
   { emoji: '✨', text: 'AI問題生成：1日2回まで' },
@@ -16,7 +16,6 @@ const FREE_FEATURES = [
 ];
 
 const PAID_FEATURES = [
-  { emoji: '✨', text: 'AI問題生成：1日10回' },
   { emoji: '📝', text: '問題保存：無制限' },
   { emoji: '🎯', text: 'CBT模試：月15回' },
   { emoji: '📝', text: '国試モード：月15回' },
@@ -29,15 +28,15 @@ const PAID_FEATURES = [
 ];
 
 export default function PricingPage() {
-  const [loading, setLoading] = useState<PackKey | null>(null);
+  const [loading, setLoading] = useState<string | null>(null);
 
-  async function handleBuy(pack: PackKey) {
-    setLoading(pack);
+  async function handlePurchase(item: string) {
+    setLoading(item);
     try {
       const res = await fetch('/api/stripe/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pack }),
+        body: JSON.stringify({ item }),
       });
       const data = await res.json();
       if (data.error) {
@@ -111,14 +110,14 @@ export default function PricingPage() {
                 const p = PACKS[key];
                 const recommended = key === '1m';
                 return (
-                  <button key={key} onClick={() => handleBuy(key)} disabled={loading !== null}
+                  <button key={key} onClick={() => handlePurchase(key)} disabled={loading !== null}
                     className={`w-full flex items-center justify-between gap-3 rounded-xl border px-4 py-3 text-left transition-colors disabled:opacity-60 ${recommended ? 'border-green-500 bg-green-50 hover:bg-green-100' : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'}`}>
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-semibold text-gray-900">{p.label}</span>
                         {recommended && <span className="text-[10px] bg-green-600 text-white px-1.5 py-0.5 rounded-full">人気</span>}
                       </div>
-                      <p className="text-xs text-gray-400 mt-0.5">{p.perDay}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">AI生成 教材{p.credits}件ぶん・{p.perDay}</p>
                     </div>
                     <div className="text-right flex-shrink-0">
                       <div className="text-lg font-bold text-gray-900">¥{p.amount.toLocaleString()}</div>
@@ -140,8 +139,32 @@ export default function PricingPage() {
           </div>
         </div>
 
+        {/* 追加教材クレジット */}
+        <div className="mt-6 bg-white rounded-2xl border p-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-1">教材クレジットの買い足し</h2>
+          <p className="text-sm text-gray-400 mb-5">有料プラン利用中に、AI生成の教材数が足りなくなったら追加できます（期間は延びません）。</p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {ADDON_ORDER.map(key => {
+              const a = ADDONS[key];
+              return (
+                <button key={key} onClick={() => handlePurchase(key)} disabled={loading !== null}
+                  className="flex items-center justify-between gap-3 rounded-xl border border-gray-200 px-4 py-3 text-left hover:border-gray-300 hover:bg-gray-50 transition-colors disabled:opacity-60">
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900">教材{a.credits}件</p>
+                    <p className="text-xs text-gray-400 mt-0.5">追加ぶん</p>
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <div className="text-base font-bold text-gray-900">¥{a.amount.toLocaleString()}</div>
+                    <div className="text-[11px] text-green-600 font-medium">{loading === key ? '処理中...' : '追加する →'}</div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         <p className="text-center text-xs text-gray-400 mt-8">
-          クレジットカード・PayPayで安全に決済。買い切り制のため自動更新（自動課金）はありません。
+          クレジットカード・PayPay・Apple Payで安全に決済。買い切り制のため自動更新（自動課金）はありません。
         </p>
         <p className="text-center text-xs text-gray-400 mt-2">
           ご購入前に <Link href="/tokushoho" className="underline hover:text-gray-600">特定商取引法に基づく表記</Link> をご確認ください。

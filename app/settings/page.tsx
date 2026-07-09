@@ -11,6 +11,7 @@ export default function SettingsPage() {
   const [plan, setPlan] = useState('free');
   const [isTrial, setIsTrial] = useState(false);
   const [planExpiresAt, setPlanExpiresAt] = useState<string | null>(null);
+  const [planCredits, setPlanCredits] = useState<number | null>(null);
   const [stripeCustomerId, setStripeCustomerId] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -33,6 +34,7 @@ export default function SettingsPage() {
         setPlan(getEffectivePlan(profile));
         setIsTrial(!!profile.trial_ends_at && new Date(profile.trial_ends_at) > new Date());
         setPlanExpiresAt(getPlanExpiry(profile));
+        setPlanCredits(typeof profile.generate_credits === 'number' ? profile.generate_credits : null);
         setStripeCustomerId(profile.stripe_customer_id ?? null);
         setUniversity(profile.university ?? '');
         setDepartment(profile.department ?? '');
@@ -181,6 +183,11 @@ export default function SettingsPage() {
                       : '有料プランをご利用中です')
                   : '一部機能に制限あり'}
             </p>
+            {planExpiresAt && planCredits !== null && (
+              <p className="text-xs text-gray-500 mt-1">
+                AI生成の残り教材クレジット：<span className="font-medium text-gray-700">{planCredits}件</span>
+              </p>
+            )}
           </div>
           {isTrial ? (
             <div className="bg-green-50 border border-green-100 rounded-xl px-4 py-3 text-xs text-green-700">

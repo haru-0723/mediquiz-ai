@@ -13,8 +13,11 @@ const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 export async function POST(request: NextRequest) {
   const admin = createAdminClient();
-  // 生成上限を消費したログのid（生成失敗時に返却するため保持）
+  // 無料/トライアルの日次上限を消費したログのid（生成失敗時の返却用）
   let quotaLogId: string | null = null;
+  // 買い切りパックのクレジットを消費したか＋対象ユーザー（生成失敗時の返却用）
+  let creditConsumed = false;
+  let creditUserId: string | null = null;
   try {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -28,8 +31,14 @@ export async function POST(request: NextRequest) {
       .single();
 
     const effectivePlan = getEffectivePlan(profile);
+    const dbPlan = profile?.plan ?? 'free';
     const isFree = effectivePlan === 'free';
-    const isLimited = effectivePlan === 'free' || effectivePlan === 'standard';
+    // 買い切りパック(有効期限あり)のstandard = クレジット制。
+    // premium / 手動付与standard(期限なし) = 無制限。無料・トライアル = 日次上限。
+    const hasActivePack = dbPlan === 'standard'
+      && !!profile?.plan_expires_at && new Date(profile.plan_expires_at) > new Date();
+    const isUnlimited = dbPlan === 'premium' || (dbPlan === 'standard' && !profile?.plan_expires_at);
+    const isDailyLimited = !isUnlimited && !hasActivePack;
 
     // 無料プランは保存上限(30問)に達していたら生成させない
     if (isFree) {
@@ -87,8 +96,26 @@ export async function POST(request: NextRequest) {
     const examType = getDepartmentType(profile?.department, profile?.target_exam);
     const sourceInstruction = getSourceInstruction(examType === 'other' ? null : examType);
 
-    // 1日の生成上限を原子的に消費（並列リクエストでも超過不可）。実際にAIを呼ぶ直前に予約する。
-    if (isLimited) {
+    // 生成上限を原子的に消費（並列リクエストでも超過不可）。実際にAIを呼ぶ直前に予約する。
+    if (hasActivePack) {
+      // 買い切りパック：教材クレジットを1消費（残高0なら追加購入を促す）
+      const { data: ok, error: creditErr } = await admin.rpc('consume_generate_credit', {
+        p_user_id: user.id,
+      });
+      if (creditErr) {
+        console.error('[generate] credit rpc error:', creditErr);
+        return NextResponse.json({ error: '利用状況の確認に失敗しました' }, { status: 500 });
+      }
+      if (!ok) {
+        return NextResponse.json({
+          error: '教材の生成回数（クレジット）を使い切りました。料金ページから教材クレジットを追加購入できます。',
+          upgrade: true,
+        }, { status: 403 });
+      }
+      creditConsumed = true;
+      creditUserId = user.id;
+    } else if (isDailyLimited) {
+      // 無料 or トライアル：1日の回数上限（無料2 / トライアル10）
       const limit = isFree ? 2 : 10;
       const { data: newLogId, error: quotaError } = await admin.rpc('consume_usage_quota', {
         p_user_id: user.id,
@@ -104,12 +131,13 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({
           error: isFree
             ? '無料プランのAI問題生成は1日2回までです。有料プランにアップグレードしてください。'
-            : '有料プランのAI問題生成は本日の上限（1日10回）に達しました。日付が変わるとリセットされます。',
+            : '無料トライアル中のAI問題生成は1日10回までです。',
           upgrade: true
         }, { status: 403 });
       }
       quotaLogId = newLogId as string;
     }
+    // isUnlimited（premium/手動付与）は制限なし
 
     const response = await anthropic.messages.create({
       model: 'claude-sonnet-4-5',
@@ -212,9 +240,12 @@ ${getSubjectInstruction(profile?.department)}`
     return NextResponse.json({ questions: parsed.questions });
 
   } catch (e) {
-    // 生成が失敗した場合は予約した上限を返却する
+    // 生成が失敗した場合は予約した上限/クレジットを返却する
     if (quotaLogId) {
       try { await admin.rpc('release_usage_quota', { p_table: 'generate_logs', p_log_id: quotaLogId }); } catch { /* best effort */ }
+    }
+    if (creditConsumed && creditUserId) {
+      try { await admin.rpc('refund_generate_credit', { p_user_id: creditUserId }); } catch { /* best effort */ }
     }
     console.error(e);
     return NextResponse.json({ error: e instanceof Error ? e.message : '問題生成に失敗しました' }, { status: 500 });

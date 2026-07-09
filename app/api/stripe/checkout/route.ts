@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { createClient } from '@/lib/supabase/server';
-import { PACKS, isPackKey } from '@/lib/plans';
+import { PACKS, ADDONS, isPackKey, isAddonKey } from '@/lib/plans';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
@@ -11,27 +11,39 @@ export async function POST(request: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: 'ログインが必要です' }, { status: 401 });
 
-    const { pack } = await request.json().catch(() => ({ pack: '1m' }));
-    if (!isPackKey(pack)) {
-      return NextResponse.json({ error: '不正なプランです' }, { status: 400 });
+    // item は基本パック('24h'等) または 追加クレジット('add10'等)
+    const { item } = await request.json().catch(() => ({ item: '1m' }));
+
+    let productName: string;
+    let amount: number;
+    let metadata: Record<string, string>;
+
+    if (isPackKey(item)) {
+      const p = PACKS[item];
+      productName = `MediQuiz AI ${p.label}プラン`;
+      amount = p.amount;
+      metadata = { userId: user.id, type: 'pack', item, credits: String(p.credits), days: String(p.days) };
+    } else if (isAddonKey(item)) {
+      const a = ADDONS[item];
+      productName = `MediQuiz AI ${a.label}`;
+      amount = a.amount;
+      metadata = { userId: user.id, type: 'addon', item, credits: String(a.credits) };
+    } else {
+      return NextResponse.json({ error: '不正な商品です' }, { status: 400 });
     }
-    const { amount, label, plan } = PACKS[pack];
 
     const origin = new URL(request.url).origin;
 
     // 買い切り（都度払い）。PayPayはサブスク非対応のため mode: 'payment' が必須。
-    // 決済手段(カード/PayPay)は payment_method_types を指定せず、Stripeダッシュボードで
-    // 有効化した方法を自動表示させる（automatic payment methods）。PayPayはダッシュボードで要有効化。
+    // 決済手段(カード/PayPay/Apple Pay)は payment_method_types を指定せず、
+    // Stripeダッシュボードで有効化した方法を自動表示させる（automatic payment methods）。
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
       line_items: [{
         price_data: {
           currency: 'jpy',
           unit_amount: amount,
-          product_data: {
-            name: `MediQuiz AI ${label}プラン`,
-            description: `${label}の買い切りプラン（自動更新なし）`,
-          },
+          product_data: { name: productName },
         },
         quantity: 1,
       }],
@@ -40,8 +52,7 @@ export async function POST(request: NextRequest) {
       locale: 'ja',
       customer_email: user.email,
       client_reference_id: user.id,
-      // webhookで付与内容を確定するためのメタデータ（金額・日数はサーバー側PACKSから再計算する）
-      metadata: { userId: user.id, pack, plan },
+      metadata,
     });
 
     return NextResponse.json({ url: session.url });
