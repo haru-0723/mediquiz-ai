@@ -96,7 +96,7 @@ export default function SignupPage() {
           </p>
           {trialApplied && (
             <div className="mt-4 bg-green-50 border border-green-200 rounded-xl px-4 py-3 text-sm text-green-700">
-              パートナーコードが適用されました。アカウント有効化後、1ヶ月間スタンダードプランが無料でお使いいただけます。
+              パートナーコードが適用されました。アカウント有効化後、1ヶ月間、有料プランの機能を無料でお使いいただけます。
             </div>
           )}
         </div>
