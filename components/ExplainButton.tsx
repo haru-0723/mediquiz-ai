@@ -98,7 +98,7 @@ export default function ExplainButton({ question, answer, explanation, subject, 
 
       {status === 'upgrade' && (
         <div className="mt-2">
-          <p className="text-xs text-gray-500">🔒 この機能はスタンダードプランのみ利用できます</p>
+          <p className="text-xs text-gray-500">🔒 この機能は有料プランのみ利用できます</p>
           <Link href="/pricing" className="text-xs text-green-600 hover:underline font-medium">
             アップグレードする →
           </Link>

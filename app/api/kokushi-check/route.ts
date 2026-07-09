@@ -37,8 +37,8 @@ export async function POST(_request: NextRequest) {
       return NextResponse.json({
         allowed: false,
         error: isStandard
-          ? 'スタンダードプランの国試モードは月15回までです。プレミアムプランにアップグレードしてください。'
-          : '無料プランの国試モードは月2回までです。スタンダードプランにアップグレードしてください。',
+          ? '有料プランの国試モードは今月の上限（月15回）に達しました。翌月にリセットされます。'
+          : '無料プランの国試モードは月2回までです。有料プランにアップグレードしてください。',
         upgrade: true,
       });
     }

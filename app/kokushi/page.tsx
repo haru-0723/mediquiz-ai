@@ -387,14 +387,14 @@ export default function KokushiPage() {
           <h1 className="text-2xl font-semibold text-gray-900 mb-2">国試モード</h1>
           <div className="bg-white rounded-2xl border p-10 text-center">
             <div className="text-5xl mb-4">🎓</div>
-            <h2 className="text-lg font-semibold text-gray-900 mb-2">スタンダードプランの機能です</h2>
+            <h2 className="text-lg font-semibold text-gray-900 mb-2">有料プランの機能です</h2>
             <p className="text-sm text-gray-500 mb-6">
               国試モードは有料プランでご利用いただけます。<br />
               薬剤師・医師・看護師・PT・OT・ST国家試験レベルの本格問題で合格を目指しましょう。
             </p>
             <Link href="/pricing"
               className="inline-block bg-purple-600 text-white px-6 py-3 rounded-xl text-sm font-medium hover:bg-purple-700">
-              スタンダードプランにアップグレード →
+              有料プランを見る →
             </Link>
           </div>
         </div>

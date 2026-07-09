@@ -202,7 +202,7 @@ export default async function DashboardPage() {
               href="/pricing"
               className={`text-xs px-2.5 py-1 rounded-full font-medium ${plan === 'premium' ? 'bg-purple-100 text-purple-700' : plan === 'standard' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-600'}`}
             >
-              {plan === 'premium' ? '👑 プレミアム' : plan === 'standard' ? '⭐ スタンダード' : '🔓 無料プラン'}
+              {plan === 'premium' ? '👑 プレミアム' : plan === 'standard' ? '⭐ 有料プラン' : '🔓 無料プラン'}
             </Link>
           </div>
           <Link href="/settings" className="group block bg-white rounded-2xl border p-4 sm:p-6 hover:border-green-300 hover:shadow-sm transition-all">
@@ -339,7 +339,7 @@ export default async function DashboardPage() {
           <div className="bg-white rounded-2xl border p-4 sm:p-6 mb-6 sm:mb-8">
             <h2 className="font-semibold text-gray-900 mb-4">📊 苦手分野分析</h2>
             <div className="text-center py-6">
-              <p className="text-sm text-gray-400 mb-3">スタンダードプランの機能です</p>
+              <p className="text-sm text-gray-400 mb-3">有料プランの機能です</p>
               <Link href="/pricing"
                 className="inline-block text-xs bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors">
                 アップグレードする →

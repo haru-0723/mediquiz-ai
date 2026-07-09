@@ -39,7 +39,7 @@ export default function NewQuestionPage() {
           .select('*', { count: 'exact', head: true })
           .eq('user_id', user.id);
         if ((questionCount ?? 0) >= 30) {
-          throw new Error('無料プランの保存上限（30問）に達しました。スタンダードプランにアップグレードしてください。');
+          throw new Error('無料プランの保存上限（30問）に達しました。有料プランにアップグレードしてください。');
         }
       }
 

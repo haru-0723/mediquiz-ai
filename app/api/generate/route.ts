@@ -42,8 +42,8 @@ export async function POST(request: NextRequest) {
       if ((generateCount ?? 0) >= limit) {
         return NextResponse.json({
           error: isFree
-            ? '無料プランのAI問題生成は1日2回までです。スタンダードプランにアップグレードしてください。'
-            : 'スタンダードプランのAI問題生成は1日10回までです。プレミアムプランにアップグレードしてください。',
+            ? '無料プランのAI問題生成は1日2回までです。有料プランにアップグレードしてください。'
+            : '有料プランのAI問題生成は本日の上限（1日10回）に達しました。日付が変わるとリセットされます。',
           upgrade: true
         }, { status: 403 });
       }
@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
 
         if ((questionCount ?? 0) >= 30) {
           return NextResponse.json({
-            error: '無料プランの保存上限（30問）に達しました。スタンダードプランにアップグレードしてください。',
+            error: '無料プランの保存上限（30問）に達しました。有料プランにアップグレードしてください。',
             upgrade: true
           }, { status: 403 });
         }

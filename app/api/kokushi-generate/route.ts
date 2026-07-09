@@ -175,7 +175,7 @@ export async function POST(request: NextRequest) {
 
     if (effectivePlan !== 'standard' && effectivePlan !== 'premium') {
       return NextResponse.json({
-        error: '国試モードはスタンダードプラン以上の機能です。',
+        error: '国試モードは有料プランの機能です。',
         upgrade: true,
       }, { status: 403 });
     }
@@ -193,7 +193,7 @@ export async function POST(request: NextRequest) {
 
       if ((kokushiCount ?? 0) >= 15) {
         return NextResponse.json({
-          error: 'スタンダードプランの国試モードは月15回までです。プレミアムプランにアップグレードしてください。',
+          error: '有料プランの国試モードは今月の上限（月15回）に達しました。翌月にリセットされます。',
           upgrade: true,
         }, { status: 403 });
       }

@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
 
     if (effectivePlan !== 'standard' && effectivePlan !== 'premium') {
       return NextResponse.json(
-        { error: 'AI解説の深掘りはスタンダードプラン以上の機能です。', upgrade: true },
+        { error: 'AI解説の深掘りは有料プランの機能です。', upgrade: true },
         { status: 403 },
       );
     }

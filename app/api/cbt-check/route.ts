@@ -37,8 +37,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         allowed: false,
         error: isStandard
-          ? 'スタンダードプランのCBT模試は月15回までです。プレミアムプランにアップグレードしてください。'
-          : '無料プランのCBT模試は月2回までです。スタンダードプランにアップグレードしてください。',
+          ? '有料プランのCBT模試は今月の上限（月15回）に達しました。翌月にリセットされます。'
+          : '無料プランのCBT模試は月2回までです。有料プランにアップグレードしてください。',
         upgrade: true
       });
     }

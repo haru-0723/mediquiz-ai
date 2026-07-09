@@ -657,7 +657,7 @@ export default function QuestionsPage() {
                     </div>
                     {showPlanError && (
                       <p className="text-xs text-orange-600">
-                        スタンダードプランの機能です。
+                        有料プランの機能です。
                         <Link href="/pricing" className="underline ml-1">アップグレード →</Link>
                       </p>
                     )}
