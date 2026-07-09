@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
+import { getEffectivePlan } from '@/lib/planUtils';
 import Navbar from '@/components/Navbar';
 
 type Folder = {
@@ -79,11 +80,11 @@ export default function QuestionsPage() {
     setCurrentUserId(user.id);
 
     const [profileRes, foldersRes, questionsRes] = await Promise.all([
-      supabase.from('profiles').select('plan').eq('id', user.id).single(),
+      supabase.from('profiles').select('plan, trial_ends_at, plan_expires_at').eq('id', user.id).single(),
       supabase.from('folders').select('*').eq('user_id', user.id).order('created_at'),
       supabase.from('questions').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
     ]);
-    if (profileRes.data) setPlan(profileRes.data.plan ?? 'free');
+    if (profileRes.data) setPlan(getEffectivePlan(profileRes.data));
     if (foldersRes.data) setFolders(foldersRes.data);
     if (questionsRes.data) setQuestions(questionsRes.data);
     setLoading(false);

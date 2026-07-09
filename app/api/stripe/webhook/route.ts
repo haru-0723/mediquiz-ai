@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
+import { PACKS, isPackKey } from '@/lib/plans';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
@@ -19,54 +20,53 @@ export async function POST(request: NextRequest) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
+  // 買い切りパックをユーザーに付与する（残り期間があれば延長）
+  async function grantPack(session: Stripe.Checkout.Session) {
+    const userId = session.metadata?.userId || session.client_reference_id || undefined;
+    const packKey = session.metadata?.pack;
+    const customerId = (session.customer as string) || null;
+    if (!userId || !isPackKey(packKey)) return;
+
+    const { plan, days } = PACKS[packKey];
+
+    // 既に残り期間があれば、その終端から延長する（なければ今から）
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('plan_expires_at')
+      .eq('id', userId)
+      .single();
+
+    const now = Date.now();
+    const currentExpiry = profile?.plan_expires_at ? new Date(profile.plan_expires_at).getTime() : 0;
+    const base = Math.max(now, currentExpiry);
+    const newExpiry = new Date(base + days * 24 * 60 * 60 * 1000);
+
+    await supabase.from('profiles')
+      .update({
+        plan,
+        plan_expires_at: newExpiry.toISOString(),
+        ...(customerId ? { stripe_customer_id: customerId } : {}),
+      })
+      .eq('id', userId);
+  }
+
+  // 買い切り（都度払い）の購入完了。カードは即時 paid、PayPay等の遅延決済は
+  // async_payment_succeeded で後から確定するため両方を処理する。
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object as Stripe.Checkout.Session;
-    const email = session.customer_email;
-    const customerId = session.customer as string;
-    const subscriptionId = session.subscription as string;
-
-    // 購入したpriceIDでプランを判定
-    const lineItems = await stripe.checkout.sessions.listLineItems(session.id);
-    const priceId = lineItems.data[0]?.price?.id;
-    const premiumPriceId = process.env.STRIPE_PREMIUM_PRICE_ID;
-    const plan = (priceId && premiumPriceId && priceId === premiumPriceId) ? 'premium' : 'standard';
-
-    if (email) {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('email', email)
-        .single();
-      if (profile) {
-        await supabase.from('profiles').upsert({
-          id: profile.id,
-          email,
-          plan,
-          stripe_customer_id: customerId,
-          stripe_subscription_id: subscriptionId,
-        });
-      }
+    if (session.mode === 'payment' && session.payment_status === 'paid') {
+      await grantPack(session);
     }
   }
 
-  if (event.type === 'customer.subscription.updated') {
-    const sub = event.data.object as Stripe.Subscription;
-    const customerId = sub.customer as string;
-
-    // ポータルでの解約予約(期末解約)は、まだ期間中なのでプランを維持する
-    if (sub.cancel_at_period_end) {
-      // 何もしない：期末に customer.subscription.deleted が届いた時点で free に戻す
-    } else if (sub.status === 'active' || sub.status === 'trialing') {
-      // プラン変更(スタンダード⇄プレミアム)を price ID から判定して反映
-      const priceId = sub.items.data[0]?.price?.id;
-      const premiumPriceId = process.env.STRIPE_PREMIUM_PRICE_ID;
-      const plan = (priceId && premiumPriceId && priceId === premiumPriceId) ? 'premium' : 'standard';
-      await supabase.from('profiles')
-        .update({ plan, stripe_subscription_id: sub.id })
-        .eq('stripe_customer_id', customerId);
+  if (event.type === 'checkout.session.async_payment_succeeded') {
+    const session = event.data.object as Stripe.Checkout.Session;
+    if (session.mode === 'payment') {
+      await grantPack(session);
     }
   }
 
+  // 以下はレガシー（旧サブスク）のための後始末。買い切り移行後は新規では発火しない。
   if (event.type === 'customer.subscription.deleted') {
     const sub = event.data.object as Stripe.Subscription;
     const customerId = sub.customer as string;

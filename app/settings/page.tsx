@@ -3,13 +3,14 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
-import { getEffectivePlan } from '@/lib/planUtils';
+import { getEffectivePlan, getPlanExpiry } from '@/lib/planUtils';
 import Navbar from '@/components/Navbar';
 
 export default function SettingsPage() {
   const supabase = createClient();
   const [plan, setPlan] = useState('free');
   const [isTrial, setIsTrial] = useState(false);
+  const [planExpiresAt, setPlanExpiresAt] = useState<string | null>(null);
   const [stripeCustomerId, setStripeCustomerId] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -20,7 +21,6 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [portalLoading, setPortalLoading] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -32,6 +32,7 @@ export default function SettingsPage() {
       if (profile) {
         setPlan(getEffectivePlan(profile));
         setIsTrial(!!profile.trial_ends_at && new Date(profile.trial_ends_at) > new Date());
+        setPlanExpiresAt(getPlanExpiry(profile));
         setStripeCustomerId(profile.stripe_customer_id ?? null);
         setUniversity(profile.university ?? '');
         setDepartment(profile.department ?? '');
@@ -68,23 +69,6 @@ export default function SettingsPage() {
       console.error(e);
     } finally {
       setSaving(false);
-    }
-  }
-
-  async function handlePortal() {
-    setPortalLoading(true);
-    try {
-      const res = await fetch('/api/stripe/portal', { method: 'POST' });
-      const data = await res.json();
-      if (!res.ok || data.error) {
-        alert(data.error ?? 'ポータルへのアクセスに失敗しました。しばらくしてからお試しください。');
-        return;
-      }
-      window.location.href = data.url;
-    } catch {
-      alert('通信エラーが発生しました。インターネット接続を確認してください。');
-    } finally {
-      setPortalLoading(false);
     }
   }
 
@@ -185,38 +169,37 @@ export default function SettingsPage() {
           <h2 className="font-semibold text-gray-900 mb-4">プラン</h2>
           <div className={`p-4 rounded-xl mb-4 ${plan === 'premium' ? 'bg-purple-50 border border-purple-200' : plan === 'standard' ? 'bg-green-50 border border-green-200' : 'bg-gray-50'}`}>
             <p className="text-sm font-semibold text-gray-900">
-              {plan === 'premium' ? '👑 プレミアムプラン' : plan === 'standard' ? '⭐ スタンダードプラン' : '無料プラン'}
+              {plan === 'premium' ? '👑 プレミアムプラン' : plan === 'standard' ? '⭐ 有料プラン' : '無料プラン'}
               {isTrial && <span className="ml-2 text-xs font-medium text-green-600">無料トライアル中</span>}
             </p>
             <p className="text-xs text-gray-500 mt-1">
-              {isTrial ? '1ヶ月間スタンダードプランを無料でご利用中です' : plan === 'premium' ? '¥3,480/月 · 全機能無制限' : plan === 'standard' ? '¥1,980/月 · 全機能使い放題' : '一部機能に制限あり'}
+              {isTrial
+                ? '1ヶ月間、有料プランを無料でご利用中です'
+                : (plan === 'standard' || plan === 'premium')
+                  ? (planExpiresAt
+                      ? `有効期限：${new Date(planExpiresAt).toLocaleDateString('ja-JP')} まで（買い切り・自動更新なし）`
+                      : '有料プランをご利用中です')
+                  : '一部機能に制限あり'}
             </p>
           </div>
           {isTrial ? (
             <div className="bg-green-50 border border-green-100 rounded-xl px-4 py-3 text-xs text-green-700">
-              🎁 トライアル終了後は自動的に無料プランに戻ります（自動課金はされません）。引き続きご利用の場合はプランにご登録ください。
+              🎁 トライアル終了後は自動的に無料プランに戻ります（自動課金はされません）。引き続きご利用の場合はプランをご購入ください。
             </div>
-          ) : plan === 'standard' || plan === 'premium' ? (
+          ) : (plan === 'standard' || plan === 'premium') && planExpiresAt ? (
             <div className="space-y-3">
-              {stripeCustomerId ? (
-                <>
-                  <div className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 text-xs text-blue-700">
-                    💡 解約しても<span className="font-medium">当月末日まで</span>すべての機能をご利用いただけます
-                  </div>
-                  <button onClick={handlePortal} disabled={portalLoading}
-                    className="w-full border border-gray-200 rounded-xl py-3 text-sm text-gray-600 hover:border-gray-300 transition-colors disabled:opacity-60">
-                    {portalLoading ? '処理中...' : '🔧 サブスクリプションを管理する'}
-                  </button>
-                  <p className="text-xs text-gray-400 text-center">解約・プラン変更はこちらから</p>
-                </>
-              ) : (
-                <p className="text-xs text-gray-400 text-center">管理者アカウントのため、管理画面はありません</p>
-              )}
+              <div className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 text-xs text-blue-700">
+                💡 買い切りプランです。<span className="font-medium">自動更新（自動課金）はありません</span>。期限が切れると無料プランに戻ります。期間はいつでも買い足せます。
+              </div>
+              <Link href="/pricing"
+                className="block w-full text-center bg-green-600 text-white rounded-xl py-3 text-sm font-medium hover:bg-green-700 transition-colors">
+                プランを買い足す / 更新する
+              </Link>
             </div>
           ) : (
             <Link href="/pricing"
               className="block w-full text-center bg-green-600 text-white rounded-xl py-3 text-sm font-medium hover:bg-green-700 transition-colors">
-              スタンダードプランにアップグレード
+              有料プランを購入する
             </Link>
           )}
         </div>

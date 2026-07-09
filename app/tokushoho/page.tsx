@@ -14,7 +14,7 @@ export default function TokushohoPage() {
 
       <main className="max-w-3xl mx-auto px-6 py-12">
         <h1 className="text-2xl font-bold text-gray-900 mb-2">特定商取引法に基づく表記</h1>
-        <p className="text-sm text-gray-500 mb-10">最終更新日：2026年6月25日</p>
+        <p className="text-sm text-gray-500 mb-10">最終更新日：2026年7月8日</p>
 
         <table className="w-full border-collapse text-sm">
           <tbody>
@@ -45,22 +45,26 @@ export default function TokushohoPage() {
             <tr className="border-t border-gray-200">
               <td className="py-4 pr-6 font-medium text-gray-700 align-top">販売価格</td>
               <td className="py-4 text-gray-600">
-                スタンダードプラン：¥1,980／月（税込）<br />
-                プレミアムプラン：¥3,480／月（税込）<br />
+                有料プラン（買い切り・税込）<br />
+                ・24時間お試し：¥380<br />
+                ・2週間：¥1,280<br />
+                ・1ヶ月：¥1,980<br />
+                ・3ヶ月：¥4,980<br />
+                ※いずれも買い切り（一回払い）です。自動更新（自動課金）はありません。<br />
                 ※価格は予告なく変更する場合があります。変更前に本サービス上でお知らせします。
               </td>
             </tr>
             <tr className="border-t border-gray-200">
               <td className="py-4 pr-6 font-medium text-gray-700 align-top">支払方法</td>
               <td className="py-4 text-gray-600">
-                クレジットカード（Visa・Mastercard・JCB・American Express 等）<br />
+                クレジットカード（Visa・Mastercard・JCB・American Express 等）／ PayPay<br />
                 ※決済はStripeを通じて処理されます。カード情報は当サービスのサーバーには保存されません。
               </td>
             </tr>
             <tr className="border-t border-gray-200">
               <td className="py-4 pr-6 font-medium text-gray-700 align-top">支払時期</td>
               <td className="py-4 text-gray-600">
-                サブスクリプション登録時に初回課金が発生し、以降は毎月同日に自動更新されます。
+                ご購入手続き時に一回のみ課金されます。買い切り制のため、以降の自動課金・自動更新はありません。
               </td>
             </tr>
             <tr className="border-t border-gray-200">
@@ -73,8 +77,8 @@ export default function TokushohoPage() {
               <td className="py-4 pr-6 font-medium text-gray-700 align-top">返品・キャンセル</td>
               <td className="py-4 text-gray-600">
                 デジタルコンテンツの性質上、原則として返金には応じておりません。<br />
-                解約はアカウント設定ページからいつでも行えます。解約後は当月末日までサービスをご利用いただけます。<br />
-                解約後の日割り返金は行っておりません。
+                買い切り制のため自動更新はなく、購入した期間の満了をもって自動的に無料プランに戻ります（解約手続きは不要です）。<br />
+                期間途中での返金・日割り返金は行っておりません。
               </td>
             </tr>
             <tr className="border-t border-gray-200">

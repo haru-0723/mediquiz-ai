@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
+import { getEffectivePlan } from '@/lib/planUtils';
 import Navbar from '@/components/Navbar';
 import ErrorBanner from '@/components/ErrorBanner';
 import ExplainButton from '@/components/ExplainButton';
@@ -166,10 +167,11 @@ export default function KokushiPage() {
       if (!user) { setLoading(false); return; }
       const { data: profile } = await supabase
         .from('profiles')
-        .select('plan, department, target_exam')
+        .select('plan, trial_ends_at, plan_expires_at, department, target_exam')
         .eq('id', user.id)
         .single();
-      setIsPaid(profile?.plan === 'standard' || profile?.plan === 'premium');
+      const effPlan = getEffectivePlan(profile);
+      setIsPaid(effPlan === 'standard' || effPlan === 'premium');
       const dept = profile?.department ?? '';
       setDepartment(dept);
       const exam = profile?.target_exam ?? null;

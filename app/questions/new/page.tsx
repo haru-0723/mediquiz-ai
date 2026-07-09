@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
+import { getEffectivePlan } from '@/lib/planUtils';
 
 export default function NewQuestionPage() {
   const supabase = createClient();
@@ -31,8 +32,8 @@ export default function NewQuestionPage() {
       if (!user) throw new Error('ログインが必要です');
 
       // 無料プランの保存数チェック
-      const { data: profile } = await supabase.from('profiles').select('plan').eq('id', user.id).single();
-      if (!profile || profile.plan === 'free') {
+      const { data: profile } = await supabase.from('profiles').select('plan, trial_ends_at, plan_expires_at').eq('id', user.id).single();
+      if (getEffectivePlan(profile) === 'free') {
         const { count: questionCount } = await supabase
           .from('questions')
           .select('*', { count: 'exact', head: true })

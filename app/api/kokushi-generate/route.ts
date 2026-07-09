@@ -167,7 +167,7 @@ export async function POST(request: NextRequest) {
 
     const { data: profile } = await supabase
       .from('profiles')
-      .select('plan, trial_ends_at, department, target_exam')
+      .select('plan, trial_ends_at, plan_expires_at, department, target_exam')
       .eq('id', user.id)
       .single();
 

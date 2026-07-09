@@ -11,6 +11,7 @@ import WeakAnalysisCard from './WeakAnalysisCard';
 import StreakCard from './StreakCard';
 import AddToHomeScreen from '@/components/AddToHomeScreen';
 import { getTitleInfo } from '@/lib/titleUtils';
+import { getEffectivePlan } from '@/lib/planUtils';
 
 const FEATURE_CARDS = [
   { href: '/today',    icon: '📅', title: '今日の問題',    desc: '毎日5問で実力アップ' },
@@ -31,11 +32,11 @@ export default async function DashboardPage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('plan, university, department, grade, target_exam')
+    .select('plan, trial_ends_at, plan_expires_at, university, department, grade, target_exam')
     .eq('id', user.id)
     .single();
 
-  const plan = profile?.plan ?? 'free';
+  const plan = getEffectivePlan(profile);
   const isAdmin = user.email === ADMIN_EMAIL;
 
   // 今週の月曜日 00:00:00 を算出
