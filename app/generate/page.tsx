@@ -200,7 +200,12 @@ export default function GeneratePage() {
           folder_id: folderId,
         }))
       );
-      if (insertError) throw new Error(insertError.message);
+      if (insertError) {
+        if (insertError.message.includes('FREE_QUESTION_LIMIT')) {
+          throw new Error('無料プランの保存上限（30問）に達しました。有料プランにアップグレードすると無制限に保存できます。');
+        }
+        throw new Error(insertError.message);
+      }
       setSaved(true);
     } catch (e) {
       console.error(e);

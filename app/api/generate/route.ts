@@ -12,6 +12,9 @@ const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 
 export async function POST(request: NextRequest) {
+  const admin = createAdminClient();
+  // 生成上限を消費したログのid（生成失敗時に返却するため保持）
+  let quotaLogId: string | null = null;
   try {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -25,41 +28,21 @@ export async function POST(request: NextRequest) {
       .single();
 
     const effectivePlan = getEffectivePlan(profile);
+    const isFree = effectivePlan === 'free';
+    const isLimited = effectivePlan === 'free' || effectivePlan === 'standard';
 
-    // プラン別制限チェック
-    if (effectivePlan === 'free' || effectivePlan === 'standard') {
-      const jstNow = new Date(Date.now() + 9 * 60 * 60 * 1000);
-      const startOfDay = new Date(Date.UTC(jstNow.getUTCFullYear(), jstNow.getUTCMonth(), jstNow.getUTCDate(), -9, 0, 0, 0));
-
-      const { count: generateCount } = await supabase
-        .from('generate_logs')
+    // 無料プランは保存上限(30問)に達していたら生成させない
+    if (isFree) {
+      const { count: questionCount } = await supabase
+        .from('questions')
         .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id)
-        .gte('created_at', startOfDay.toISOString());
+        .eq('user_id', user.id);
 
-      const isFree = effectivePlan === 'free';
-      const limit = isFree ? 2 : 10;
-      if ((generateCount ?? 0) >= limit) {
+      if ((questionCount ?? 0) >= 30) {
         return NextResponse.json({
-          error: isFree
-            ? '無料プランのAI問題生成は1日2回までです。有料プランにアップグレードしてください。'
-            : '有料プランのAI問題生成は本日の上限（1日10回）に達しました。日付が変わるとリセットされます。',
+          error: '無料プランの保存上限（30問）に達しました。有料プランにアップグレードしてください。',
           upgrade: true
         }, { status: 403 });
-      }
-
-      if (isFree) {
-        const { count: questionCount } = await supabase
-          .from('questions')
-          .select('*', { count: 'exact', head: true })
-          .eq('user_id', user.id);
-
-        if ((questionCount ?? 0) >= 30) {
-          return NextResponse.json({
-            error: '無料プランの保存上限（30問）に達しました。有料プランにアップグレードしてください。',
-            upgrade: true
-          }, { status: 403 });
-        }
       }
     }
 
@@ -103,6 +86,30 @@ export async function POST(request: NextRequest) {
 
     const examType = getDepartmentType(profile?.department, profile?.target_exam);
     const sourceInstruction = getSourceInstruction(examType === 'other' ? null : examType);
+
+    // 1日の生成上限を原子的に消費（並列リクエストでも超過不可）。実際にAIを呼ぶ直前に予約する。
+    if (isLimited) {
+      const limit = isFree ? 2 : 10;
+      const { data: newLogId, error: quotaError } = await admin.rpc('consume_usage_quota', {
+        p_user_id: user.id,
+        p_table: 'generate_logs',
+        p_period: 'day',
+        p_limit: limit,
+      });
+      if (quotaError) {
+        console.error('[generate] quota rpc error:', quotaError);
+        return NextResponse.json({ error: '利用状況の確認に失敗しました' }, { status: 500 });
+      }
+      if (!newLogId) {
+        return NextResponse.json({
+          error: isFree
+            ? '無料プランのAI問題生成は1日2回までです。有料プランにアップグレードしてください。'
+            : '有料プランのAI問題生成は本日の上限（1日10回）に達しました。日付が変わるとリセットされます。',
+          upgrade: true
+        }, { status: 403 });
+      }
+      quotaLogId = newLogId as string;
+    }
 
     const response = await anthropic.messages.create({
       model: 'claude-sonnet-4-5',
@@ -202,14 +209,13 @@ ${getSubjectInstruction(profile?.department)}`
       throw new Error('問題データが見つかりません');
     }
 
-    // 生成ログを記録（adminクライアントでRLSをバイパス）
-    const admin = createAdminClient();
-    const { error: logError } = await admin.from('generate_logs').insert({ user_id: user.id });
-    if (logError) console.error('[generate] log insert error:', logError);
-
     return NextResponse.json({ questions: parsed.questions });
 
   } catch (e) {
+    // 生成が失敗した場合は予約した上限を返却する
+    if (quotaLogId) {
+      try { await admin.rpc('release_usage_quota', { p_table: 'generate_logs', p_log_id: quotaLogId }); } catch { /* best effort */ }
+    }
     console.error(e);
     return NextResponse.json({ error: e instanceof Error ? e.message : '問題生成に失敗しました' }, { status: 500 });
   }

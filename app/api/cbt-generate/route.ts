@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getDepartmentType, getCBTSubjectInstruction, getSourceInstruction } from '@/lib/departmentUtils';
 import { extractQuestions, type RawQuestion } from '@/lib/questionUtils';
+import { getEffectivePlan } from '@/lib/planUtils';
 
 if (!process.env.ANTHROPIC_API_KEY) {
   throw new Error('ANTHROPIC_API_KEY is not set');
@@ -51,6 +52,8 @@ ${getSourceInstruction(examType)}
 }
 
 export async function POST(request: NextRequest) {
+  const admin = createAdminClient();
+  let quotaLogId: string | null = null;
   try {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -58,12 +61,39 @@ export async function POST(request: NextRequest) {
 
     const { data: profile } = await supabase
       .from('profiles')
-      .select('department, target_exam')
+      .select('plan, trial_ends_at, plan_expires_at, department, target_exam')
       .eq('id', user.id)
       .single();
 
+    const effectivePlan = getEffectivePlan(profile);
+
     const { subject, count: rawCount } = await request.json();
     const count = Math.min(Math.max(Math.floor(Number(rawCount) || 10), 1), 30);
+
+    // 月間のCBT生成上限を原子的に消費（premiumは無制限）
+    if (effectivePlan !== 'premium') {
+      const isFree = effectivePlan === 'free';
+      const limit = isFree ? 2 : 15;
+      const { data: newLogId, error: quotaError } = await admin.rpc('consume_usage_quota', {
+        p_user_id: user.id,
+        p_table: 'cbt_logs',
+        p_period: 'month',
+        p_limit: limit,
+      });
+      if (quotaError) {
+        console.error('[cbt-generate] quota rpc error:', quotaError);
+        return NextResponse.json({ error: '利用状況の確認に失敗しました' }, { status: 500 });
+      }
+      if (!newLogId) {
+        return NextResponse.json({
+          error: isFree
+            ? '無料プランのCBT模試は月2回までです。有料プランにアップグレードしてください。'
+            : '有料プランのCBT模試は今月の上限（月15回）に達しました。翌月にリセットされます。',
+          upgrade: true,
+        }, { status: 403 });
+      }
+      quotaLogId = newLogId as string;
+    }
 
     // 10問ずつバッチに分割して順番に生成
     const BATCH_SIZE = 10;
@@ -106,14 +136,12 @@ export async function POST(request: NextRequest) {
 
     if (saveError) throw saveError;
 
-    // ログを記録（adminクライアントでRLSをバイパス）
-    const admin = createAdminClient();
-    const { error: logError } = await admin.from('cbt_logs').insert({ user_id: user.id });
-    if (logError) console.error('[cbt-generate] log insert error:', logError);
-
     return NextResponse.json({ questions: saved });
 
   } catch (e) {
+    if (quotaLogId) {
+      try { await admin.rpc('release_usage_quota', { p_table: 'cbt_logs', p_log_id: quotaLogId }); } catch { /* best effort */ }
+    }
     console.error(e);
     return NextResponse.json({ error: e instanceof Error ? e.message : '問題生成に失敗しました' }, { status: 500 });
   }

@@ -160,6 +160,8 @@ async function generateBatch(dept: KokushiDept, subject: string, batchCount: num
 }
 
 export async function POST(request: NextRequest) {
+  const admin = createAdminClient();
+  let quotaLogId: string | null = null;
   try {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -180,30 +182,32 @@ export async function POST(request: NextRequest) {
       }, { status: 403 });
     }
 
-    if (effectivePlan === 'standard') {
-      const admin = createAdminClient();
-      const jstNow = new Date(Date.now() + 9 * 60 * 60 * 1000);
-      const startOfMonth = new Date(Date.UTC(jstNow.getUTCFullYear(), jstNow.getUTCMonth(), 1, -9, 0, 0, 0));
-
-      const { count: kokushiCount } = await admin
-        .from('kokushi_logs')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id)
-        .gte('created_at', startOfMonth.toISOString());
-
-      if ((kokushiCount ?? 0) >= 15) {
-        return NextResponse.json({
-          error: '有料プランの国試モードは今月の上限（月15回）に達しました。翌月にリセットされます。',
-          upgrade: true,
-        }, { status: 403 });
-      }
-    }
-
     const { subject, count: rawCount } = await request.json();
     const count = Math.min(Math.max(Math.floor(Number(rawCount) || 10), 1), 30);
     const dept = getKokushiDept(profile?.department, profile?.target_exam);
     const kokushiType = dept === 'unset' ? 'other' : dept;
     const isKokushi = dept !== 'unset';
+
+    // 月間の生成上限を原子的に消費（standardのみ。premiumは無制限）
+    if (effectivePlan === 'standard') {
+      const { data: newLogId, error: quotaError } = await admin.rpc('consume_usage_quota', {
+        p_user_id: user.id,
+        p_table: 'kokushi_logs',
+        p_period: 'month',
+        p_limit: 15,
+      });
+      if (quotaError) {
+        console.error('[kokushi-generate] quota rpc error:', quotaError);
+        return NextResponse.json({ error: '利用状況の確認に失敗しました' }, { status: 500 });
+      }
+      if (!newLogId) {
+        return NextResponse.json({
+          error: '有料プランの国試モードは今月の上限（月15回）に達しました。翌月にリセットされます。',
+          upgrade: true,
+        }, { status: 403 });
+      }
+      quotaLogId = newLogId as string;
+    }
 
     const BATCH_SIZE = 10;
     const allRawQuestions: RawQuestion[] = [];
@@ -242,14 +246,12 @@ export async function POST(request: NextRequest) {
 
     if (saveError) throw saveError;
 
-    // ログを記録（adminクライアントでRLSをバイパス）
-    const admin = createAdminClient();
-    const { error: logError } = await admin.from('kokushi_logs').insert({ user_id: user.id });
-    if (logError) console.error('[kokushi-generate] log insert error:', logError);
-
     return NextResponse.json({ questions: saved });
 
   } catch (e) {
+    if (quotaLogId) {
+      try { await admin.rpc('release_usage_quota', { p_table: 'kokushi_logs', p_log_id: quotaLogId }); } catch { /* best effort */ }
+    }
     console.error(e);
     return NextResponse.json({ error: e instanceof Error ? e.message : '問題生成に失敗しました' }, { status: 500 });
   }
