@@ -33,8 +33,9 @@ export default function TokushohoPage() {
             <tr className="border-t border-gray-200">
               <td className="py-4 pr-6 font-medium text-gray-700 align-top">連絡先</td>
               <td className="py-4 text-gray-600">
+                電話番号：090-5889-8610<br />
                 メールアドレス：<a href="mailto:harumaru0723@yahoo.co.jp" className="text-blue-600 underline">harumaru0723@yahoo.co.jp</a><br />
-                ※お問い合わせはメールにて承ります。電話番号は請求があれば遅滞なく開示します。
+                ※お問い合わせは原則メールにて承ります。
               </td>
             </tr>
             <tr className="border-t border-gray-200">
