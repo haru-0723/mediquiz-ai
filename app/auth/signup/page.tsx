@@ -68,12 +68,12 @@ export default function SignupPage() {
         if (res.ok) setTrialApplied(true);
         else {
           const json = await res.json();
-          setError(json.error ?? 'パートナーコードが無効です');
+          setError(json.error ?? '招待コードが無効です');
           setLoading(false);
           return;
         }
       } catch {
-        setError('パートナーコードの確認中にエラーが発生しました');
+        setError('招待コードの確認中にエラーが発生しました');
         setLoading(false);
         return;
       }
@@ -96,7 +96,7 @@ export default function SignupPage() {
           </p>
           {trialApplied && (
             <div className="mt-4 bg-green-50 border border-green-200 rounded-xl px-4 py-3 text-sm text-green-700">
-              パートナーコードが適用されました。アカウント有効化後、1ヶ月間、有料プランの機能を無料でお使いいただけます。
+              招待コードが適用されました。アカウント有効化後、1ヶ月間、有料プランの機能を無料でお使いいただけます。
             </div>
           )}
         </div>
@@ -196,7 +196,7 @@ export default function SignupPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  パートナーコード <span className="text-gray-400 font-normal">（任意）</span>
+                  招待コード <span className="text-gray-400 font-normal">（任意）</span>
                 </label>
                 <input
                   type="text" value={partnerCode} onChange={e => setPartnerCode(e.target.value)}
