@@ -64,19 +64,30 @@ export default async function DashboardPage() {
   monday.setHours(0, 0, 0, 0);
   const weekStart = monday.toISOString();
 
+  const isFreePlan = plan === 'free';
+
   const [
     { data: exams },
     { data: sessions },
     { data: weekSessions },
     { data: allSessions },
     { data: materials },
+    { count: freeGenerateCount },
   ] = await Promise.all([
     supabase.from('exams').select('*').eq('user_id', user.id).order('exam_date'),
     supabase.from('quiz_sessions').select('*').eq('user_id', user.id).order('completed_at', { ascending: false }).limit(50),
     supabase.from('quiz_sessions').select('correct_count, total_questions').eq('user_id', user.id).gte('completed_at', weekStart),
     supabase.from('quiz_sessions').select('subject, correct_count, total_questions, mode, completed_at').eq('user_id', user.id).order('completed_at', { ascending: false }).limit(200),
     supabase.from('materials').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
+    isFreePlan
+      ? supabase.from('generate_logs').select('*', { count: 'exact', head: true }).eq('user_id', user.id)
+      : Promise.resolve({ count: null }),
   ]);
+
+  const FREE_GENERATE_LIMIT = 5;
+  const freeGenerateRemaining = isFreePlan
+    ? Math.max(0, FREE_GENERATE_LIMIT - (freeGenerateCount ?? 0))
+    : null;
 
   const weekQuestions = weekSessions?.reduce((s, r) => s + r.total_questions, 0) ?? 0;
   const weekCorrect = weekSessions?.reduce((s, r) => s + r.correct_count, 0) ?? 0;
@@ -294,7 +305,7 @@ export default async function DashboardPage() {
           <div className="mb-6 sm:mb-8 flex items-start sm:items-center gap-3 bg-orange-50 border border-orange-200 rounded-2xl px-4 py-3">
             <span className="text-lg flex-shrink-0">🔓</span>
             <p className="text-sm text-orange-800 flex-1">
-              無料プランはAI問題生成が<span className="font-medium">1日2回</span>まで・保存は<span className="font-medium">30問</span>までです
+              無料プランのAI問題生成は残り<span className="font-medium">{freeGenerateRemaining ?? 0}回</span>（通算{FREE_GENERATE_LIMIT}回まで）・保存は<span className="font-medium">30問</span>までです
             </p>
             <Link href="/pricing" className="text-xs text-orange-700 font-medium hover:underline whitespace-nowrap flex-shrink-0">
               アップグレード →

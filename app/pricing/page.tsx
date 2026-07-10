@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { PACKS, PACK_ORDER, ADDONS, ADDON_ORDER } from '@/lib/plans';
 
 const FREE_FEATURES = [
-  { emoji: '✨', text: 'AI問題生成：1日2教材まで' },
+  { emoji: '✨', text: 'AI問題生成：通算5教材まで' },
   { emoji: '📝', text: '問題保存：30問まで' },
   { emoji: '🎯', text: 'CBT模試：月2回まで' },
   { emoji: '📝', text: '国試モード：月2回まで' },

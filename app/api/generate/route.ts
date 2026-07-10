@@ -114,14 +114,13 @@ export async function POST(request: NextRequest) {
       }
       creditConsumed = true;
       creditUserId = user.id;
-    } else if (isDailyLimited) {
-      // 無料 or トライアル：1日の回数上限（無料2 / トライアル10）
-      const limit = isFree ? 2 : 10;
+    } else if (isFree) {
+      // 無料プラン：日次リセットなしの通算上限（5回まで）
       const { data: newLogId, error: quotaError } = await admin.rpc('consume_usage_quota', {
         p_user_id: user.id,
         p_table: 'generate_logs',
-        p_period: 'day',
-        p_limit: limit,
+        p_period: 'all',
+        p_limit: 5,
       });
       if (quotaError) {
         console.error('[generate] quota rpc error:', quotaError);
@@ -129,9 +128,26 @@ export async function POST(request: NextRequest) {
       }
       if (!newLogId) {
         return NextResponse.json({
-          error: isFree
-            ? '無料プランのAI問題生成は1日2回までです。有料プランにアップグレードしてください。'
-            : '無料トライアル中のAI問題生成は1日10回までです。',
+          error: '無料プランのAI問題生成は5回までです。有料プランにアップグレードしてください。',
+          upgrade: true
+        }, { status: 403 });
+      }
+      quotaLogId = newLogId as string;
+    } else if (isDailyLimited) {
+      // トライアル：1日10回まで
+      const { data: newLogId, error: quotaError } = await admin.rpc('consume_usage_quota', {
+        p_user_id: user.id,
+        p_table: 'generate_logs',
+        p_period: 'day',
+        p_limit: 10,
+      });
+      if (quotaError) {
+        console.error('[generate] quota rpc error:', quotaError);
+        return NextResponse.json({ error: '利用状況の確認に失敗しました' }, { status: 500 });
+      }
+      if (!newLogId) {
+        return NextResponse.json({
+          error: '無料トライアル中のAI問題生成は1日10回までです。',
           upgrade: true
         }, { status: 403 });
       }
