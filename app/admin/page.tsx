@@ -19,6 +19,13 @@ export type TopUser = {
   plan: string | null;
 };
 
+export type FunnelStats = {
+  registered: number;
+  generatedAttempt: number; // generate_logs に記録された生成試行者数（無料/トライアルの日次カウントのみ。有料パック/プレミアムはログなしのため不含）
+  saved: number;    // questions テーブルに1件以上保存があるユーザー数
+  quizzed: number;  // quiz_sessions に1件以上あるユーザー数
+};
+
 export type UsageStats = {
   generateTotal: number;
   cbtTotal: number;
@@ -28,6 +35,7 @@ export type UsageStats = {
   kokushiMonth: number;
   totalUsers: number;
   topUsers: TopUser[];
+  funnel: FunnelStats;
 };
 
 export default async function AdminPage() {
@@ -68,6 +76,17 @@ export default async function AdminPage() {
     admin.from('generate_logs').select('user_id').limit(50000),
     admin.from('cbt_logs').select('user_id').limit(50000),
   ]);
+
+  // 活性化ファネル（登録→生成試行→保存→クイズ）用の集計
+  const [
+    { data: questionUserRows, error: questionUserErr },
+    { data: quizUserRows, error: quizUserErr },
+  ] = await Promise.all([
+    admin.from('questions').select('user_id').limit(100000),
+    admin.from('quiz_sessions').select('user_id').limit(100000),
+  ]);
+  if (questionUserErr) console.error('[Admin] questions user_id fetch error:', questionUserErr);
+  if (quizUserErr) console.error('[Admin] quiz_sessions user_id fetch error:', quizUserErr);
 
   if (genTotalErr) console.error('[Admin] generate_logs count error:', genTotalErr);
   if (cbtTotalErr) console.error('[Admin] cbt_logs count error:', cbtTotalErr);
@@ -142,6 +161,16 @@ export default async function AdminPage() {
     cbt: u.cbt,
   })));
 
+  const savedUserIds = new Set((questionUserRows ?? []).map(r => r.user_id));
+  const quizzedUserIds = new Set((quizUserRows ?? []).map(r => r.user_id));
+
+  const funnel: FunnelStats = {
+    registered: allProfiles?.length ?? 0,
+    generatedAttempt: uniqueGenerateUserIds.length,
+    saved: savedUserIds.size,
+    quizzed: quizzedUserIds.size,
+  };
+
   const usageStats: UsageStats = {
     generateTotal: generateTotal ?? 0,
     cbtTotal: cbtTotal ?? 0,
@@ -151,6 +180,7 @@ export default async function AdminPage() {
     kokushiMonth,
     totalUsers: allProfiles?.length ?? 0,
     topUsers,
+    funnel,
   };
 
   return <AdminClient reports={reports ?? []} usageStats={usageStats} />;

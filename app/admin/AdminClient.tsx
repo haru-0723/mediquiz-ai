@@ -127,6 +127,42 @@ export default function AdminClient({ reports: initialReports, usageStats }: { r
             ))}
           </div>
 
+          {/* 活性化ファネル */}
+          <div className="bg-white rounded-2xl border p-6 mb-6">
+            <h3 className="font-semibold text-gray-900 mb-1">🔻 活性化ファネル</h3>
+            <p className="text-xs text-gray-400 mb-4">登録 → 生成試行 → 保存 → クイズ実施（各ステップに到達したユーザーの実人数・累計）</p>
+            {(() => {
+              const { registered, generatedAttempt, saved, quizzed } = usageStats.funnel;
+              const steps = [
+                { label: '登録', icon: '👤', count: registered, base: registered },
+                { label: '生成試行', icon: '✨', count: generatedAttempt, base: registered },
+                { label: '保存(1問以上)', icon: '💾', count: saved, base: registered },
+                { label: 'クイズ実施', icon: '📝', count: quizzed, base: registered },
+              ];
+              return (
+                <div className="space-y-3">
+                  {steps.map((s) => {
+                    const pct = s.base > 0 ? Math.round((s.count / s.base) * 100) : 0;
+                    return (
+                      <div key={s.label}>
+                        <div className="flex items-center justify-between text-sm mb-1">
+                          <span className="text-gray-600">{s.icon} {s.label}</span>
+                          <span className="font-medium text-gray-900">{s.count.toLocaleString()}名 <span className="text-xs text-gray-400">({pct}%)</span></span>
+                        </div>
+                        <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                          <div className="h-full bg-green-500 rounded-full transition-all" style={{ width: `${pct}%` }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                  <p className="text-[11px] text-gray-400 pt-1">
+                    ※「生成試行」は無料/トライアルの日次上限カウント（generate_logs）に基づくため、買い切りパック・プレミアムユーザーの生成試行は含まれません（保存・クイズは全プラン集計済み）。
+                  </p>
+                </div>
+              );
+            })()}
+          </div>
+
           {/* ユーザーランキング */}
           <div className="bg-white rounded-2xl border p-6">
             <div className="flex items-center justify-between mb-4">
