@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 
 const STEPS = [
   {
@@ -45,7 +46,13 @@ export default function GuideBanner() {
       >
         ×
       </button>
-      <p className="text-sm font-semibold text-green-700 mb-4">🎉 MediQuiz AI へようこそ！まずはこの3ステップで始めましょう</p>
+      <p className="text-sm font-semibold text-green-700 mb-1">🎉 MediQuiz AI へようこそ！</p>
+      <p className="text-xs text-green-600 mb-4">教材がなくてもすぐ試せます。まずは1問解いてみましょう。</p>
+      <Link href="/trial"
+        onClick={handleClose}
+        className="flex items-center justify-center gap-2 w-full bg-green-600 text-white rounded-xl py-3 text-sm font-semibold hover:bg-green-700 transition-colors mb-4">
+        🎯 まず1問やってみる（教材アップロード不要）
+      </Link>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {STEPS.map((step, i) => (
           <div key={i} className="bg-white rounded-xl p-4 border border-green-100">

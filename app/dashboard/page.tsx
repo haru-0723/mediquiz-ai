@@ -318,23 +318,28 @@ export default async function DashboardPage() {
         {/* 初回ユーザー向けオンボーディング */}
         {isFirstTime && (
           <div className="mb-6 sm:mb-8 bg-green-50 border border-green-200 rounded-2xl p-5">
-            <h2 className="font-semibold text-green-900 mb-3">👋 MediQuiz AIへようこそ！</h2>
-            <p className="text-sm text-green-800 mb-4">まずは以下の手順で始めてみましょう。</p>
+            <h2 className="font-semibold text-green-900 mb-1">👋 MediQuiz AIへようこそ！</h2>
+            <p className="text-sm text-green-800 mb-4">教材がなくてもすぐ試せます。まずは1問解いてみましょう。</p>
+            <Link href="/trial"
+              className="flex items-center justify-center gap-2 w-full bg-green-600 text-white rounded-xl py-3.5 text-sm font-semibold hover:bg-green-700 transition-colors mb-4">
+              🎯 まず1問やってみる（教材アップロード不要）
+            </Link>
+            <p className="text-xs text-green-700 font-medium mb-2">慣れてきたら、こちらもおすすめです</p>
             <ol className="space-y-3">
               <li className="flex items-start gap-3">
                 <span className="w-6 h-6 rounded-full bg-green-600 text-white text-xs flex items-center justify-center flex-shrink-0 mt-0.5 font-medium">1</span>
                 <div>
-                  <p className="text-sm font-medium text-green-900">プロフィールを設定する</p>
-                  <p className="text-xs text-green-700 mt-0.5">学部・目標国試を設定すると、AIが最適な問題を出してくれます</p>
-                  <Link href="/settings" className="text-xs text-green-600 font-medium hover:underline mt-1 inline-block">設定する →</Link>
+                  <p className="text-sm font-medium text-green-900">教材をアップロードして自分専用の問題を作る</p>
+                  <p className="text-xs text-green-700 mt-0.5">授業スライドや教科書の写真からAIが問題を自動生成します</p>
+                  <Link href="/upload" className="text-xs text-green-600 font-medium hover:underline mt-1 inline-block">アップロードする →</Link>
                 </div>
               </li>
               <li className="flex items-start gap-3">
                 <span className="w-6 h-6 rounded-full bg-green-600 text-white text-xs flex items-center justify-center flex-shrink-0 mt-0.5 font-medium">2</span>
                 <div>
-                  <p className="text-sm font-medium text-green-900">教材をアップロードする</p>
-                  <p className="text-xs text-green-700 mt-0.5">授業スライドや教科書の写真からAIが問題を自動生成します</p>
-                  <Link href="/upload" className="text-xs text-green-600 font-medium hover:underline mt-1 inline-block">アップロードする →</Link>
+                  <p className="text-sm font-medium text-green-900">プロフィールを設定する</p>
+                  <p className="text-xs text-green-700 mt-0.5">学部・目標国試を設定すると、AIが最適な問題を出してくれます</p>
+                  <Link href="/settings" className="text-xs text-green-600 font-medium hover:underline mt-1 inline-block">設定する →</Link>
                 </div>
               </li>
               <li className="flex items-start gap-3">
