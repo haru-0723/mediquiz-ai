@@ -156,7 +156,7 @@ export async function POST(request: NextRequest) {
     // isUnlimited（premium/手動付与）は制限なし
 
     const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-5',
+      model: 'claude-sonnet-4-6',
       max_tokens: 4096,
       messages: [{
         role: 'user',

@@ -150,7 +150,7 @@ async function generateBatch(dept: KokushiDept, subject: string, batchCount: num
   const prompt = getKokushiPrompt(dept, subject, batchCount);
 
   const response = await anthropic.messages.create({
-    model: 'claude-sonnet-4-5',
+    model: 'claude-sonnet-4-6',
     max_tokens: 8192,
     messages: [{ role: 'user', content: prompt }],
   });
