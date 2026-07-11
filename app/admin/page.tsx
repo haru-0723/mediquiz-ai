@@ -95,11 +95,6 @@ export default async function AdminPage() {
   if (cbtLogsErr) console.error('[Admin] cbt_logs fetch error:', cbtLogsErr);
 
   const uniqueGenerateUserIds = Array.from(new Set((generateLogs ?? []).map(l => l.user_id)));
-  const uniqueCbtUserIds = Array.from(new Set((cbtLogs ?? []).map(l => l.user_id)));
-  console.log('[Admin] generate_logs 総件数:', generateLogs?.length ?? 0, '/ ユニークユーザー数:', uniqueGenerateUserIds.length);
-  console.log('[Admin] cbt_logs 総件数:', cbtLogs?.length ?? 0, '/ ユニークユーザー数:', uniqueCbtUserIds.length);
-  console.log('[Admin] profiles 総件数:', allProfiles?.length ?? 0);
-  console.log('[Admin] generate_logs ユーザーID(先頭10件):', uniqueGenerateUserIds.slice(0, 10));
 
   let kokushiTotal = 0, kokushiMonth = 0;
   let kokushiLogs: { user_id: string }[] = [];
@@ -113,7 +108,6 @@ export default async function AdminPage() {
     kokushiMonth = monthRes.count ?? 0;
     kokushiLogs = (logsRes.data ?? []) as { user_id: string }[];
   }
-  console.log('[Admin] kokushi_logs 総件数:', kokushiTotal);
 
   const profileMap = Object.fromEntries(
     (allProfiles ?? []).map(p => [p.id, p])
@@ -152,14 +146,6 @@ export default async function AdminPage() {
     }))
     .sort((a, b) => b.total - a.total)
     .slice(0, 10);
-
-  console.log('[Admin] ランキング上位10名:', topUsers.map(u => ({
-    userId: u.userId.slice(0, 8),
-    name: u.name,
-    total: u.total,
-    generate: u.generate,
-    cbt: u.cbt,
-  })));
 
   const savedUserIds = new Set((questionUserRows ?? []).map(r => r.user_id));
   const quizzedUserIds = new Set((quizUserRows ?? []).map(r => r.user_id));
