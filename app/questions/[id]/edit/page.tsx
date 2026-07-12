@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import { Logo } from '@/components/brand/Logo';
 
 export default function EditQuestionPage({ params }: { params: { id: string } }) {
   const supabase = createClient();
@@ -77,45 +78,42 @@ export default function EditQuestionPage({ params }: { params: { id: string } })
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <p className="text-gray-500">読み込み中...</p>
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <p className="text-slate-500">読み込み中...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white border-b px-8 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 bg-green-600 rounded-lg flex items-center justify-center">
-            <span className="text-white text-xs font-bold">M</span>
-          </div>
-          <span className="font-semibold">MediQuiz AI</span>
-        </div>
-        <Link href="/questions" className="text-sm text-gray-500">問題一覧へ戻る</Link>
-      </nav>
+    <div className="min-h-screen bg-slate-50">
+      <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/80 backdrop-blur">
+        <nav className="mx-auto flex h-14 max-w-xl items-center justify-between px-8">
+          <Logo href="/dashboard" />
+          <Link href="/questions" className="text-sm text-slate-500">問題一覧へ戻る</Link>
+        </nav>
+      </header>
 
       <div className="max-w-xl mx-auto p-8">
-        <h1 className="text-2xl font-semibold text-gray-900 mb-2">問題を編集</h1>
-        <p className="text-gray-500 text-sm mb-8">問題の内容を編集できます。</p>
+        <h1 className="text-2xl font-semibold text-slate-900 mb-2">問題を編集</h1>
+        <p className="text-slate-500 text-sm mb-8">問題の内容を編集できます。</p>
 
-        <div className="bg-white rounded-2xl border p-8 space-y-5">
+        <div className="bg-white rounded-2xl border border-slate-200 p-8 space-y-5">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">科目（任意）</label>
+            <label className="block text-sm font-medium text-slate-700 mb-2">科目（任意）</label>
             <input type="text" value={subject} onChange={e => setSubject(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+              className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
               placeholder="例：循環器系" />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">問題文 *</label>
+            <label className="block text-sm font-medium text-slate-700 mb-2">問題文 *</label>
             <textarea value={question} onChange={e => setQuestion(e.target.value)} rows={3}
-              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
+              className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
               placeholder="問題文を入力してください" />
           </div>
 
           <div className="space-y-3">
-            <label className="block text-sm font-medium text-gray-700">選択肢 *</label>
+            <label className="block text-sm font-medium text-slate-700">選択肢 *</label>
             {[
               { label: 'A', value: optionA, set: setOptionA },
               { label: 'B', value: optionB, set: setOptionB },
@@ -123,22 +121,22 @@ export default function EditQuestionPage({ params }: { params: { id: string } })
               { label: 'D', value: optionD, set: setOptionD },
             ].map(({ label, value, set }) => (
               <div key={label} className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center text-sm font-medium text-gray-600 flex-shrink-0">
+                <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center text-sm font-medium text-slate-600 flex-shrink-0">
                   {label}
                 </div>
                 <input type="text" value={value} onChange={e => set(e.target.value)}
-                  className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                  className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   placeholder={`選択肢${label}`} />
               </div>
             ))}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">正解 *</label>
+            <label className="block text-sm font-medium text-slate-700 mb-2">正解 *</label>
             <div className="grid grid-cols-4 gap-2">
               {['A', 'B', 'C', 'D'].map(l => (
                 <button key={l} onClick={() => setAnswer(l)}
-                  className={`py-2.5 rounded-xl text-sm font-medium border transition-colors ${answer === l ? 'bg-green-600 text-white border-green-600' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}>
+                  className={`py-2.5 rounded-xl text-sm font-medium border transition-colors ${answer === l ? 'bg-emerald-600 text-white border-emerald-600' : 'border-slate-200 text-slate-600 hover:border-slate-300'}`}>
                   {l}
                 </button>
               ))}
@@ -146,11 +144,11 @@ export default function EditQuestionPage({ params }: { params: { id: string } })
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">難易度</label>
+            <label className="block text-sm font-medium text-slate-700 mb-2">難易度</label>
             <div className="grid grid-cols-3 gap-2">
               {[{ value: 'easy', label: '基礎' }, { value: 'medium', label: '標準' }, { value: 'hard', label: '応用' }].map(d => (
                 <button key={d.value} onClick={() => setDifficulty(d.value)}
-                  className={`py-2.5 rounded-xl text-sm border transition-colors ${difficulty === d.value ? 'bg-green-600 text-white border-green-600' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}>
+                  className={`py-2.5 rounded-xl text-sm border transition-colors ${difficulty === d.value ? 'bg-emerald-600 text-white border-emerald-600' : 'border-slate-200 text-slate-600 hover:border-slate-300'}`}>
                   {d.label}
                 </button>
               ))}
@@ -158,20 +156,20 @@ export default function EditQuestionPage({ params }: { params: { id: string } })
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">解説（任意）</label>
+            <label className="block text-sm font-medium text-slate-700 mb-2">解説（任意）</label>
             <textarea value={explanation} onChange={e => setExplanation(e.target.value)} rows={3}
-              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
+              className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
               placeholder="解説を入力してください" />
           </div>
 
-          {error && <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-xl">{error}</div>}
+          {error && <div className="bg-rose-50 text-rose-600 text-sm px-4 py-3 rounded-xl">{error}</div>}
 
           <div className="flex gap-3">
-            <Link href="/questions" className="flex-1 border border-gray-200 rounded-xl py-3 text-sm text-gray-600 text-center hover:border-gray-300">
+            <Link href="/questions" className="flex-1 border border-slate-200 rounded-xl py-3 text-sm text-slate-600 text-center hover:border-slate-300">
               キャンセル
             </Link>
             <button onClick={handleSave} disabled={saving}
-              className="flex-1 bg-green-600 text-white py-3 rounded-xl text-sm font-medium hover:bg-green-700 disabled:opacity-60">
+              className="flex-1 bg-emerald-600 text-white py-3 rounded-xl text-sm font-medium hover:bg-emerald-700 disabled:opacity-60">
               {saving ? '保存中...' : '変更を保存'}
             </button>
           </div>

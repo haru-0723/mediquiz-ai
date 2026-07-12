@@ -38,27 +38,27 @@ export default function GuideBanner() {
   if (!visible) return null;
 
   return (
-    <div className="relative bg-green-50 border border-green-200 rounded-2xl p-5 sm:p-6 mb-6 sm:mb-8">
+    <div className="relative bg-emerald-50 border border-emerald-200 rounded-2xl p-5 sm:p-6 mb-6 sm:mb-8">
       <button
         onClick={handleClose}
-        className="absolute top-3 right-3 text-green-400 hover:text-green-600 text-lg leading-none"
+        className="absolute top-3 right-3 text-emerald-400 hover:text-emerald-600 text-lg leading-none"
         aria-label="閉じる"
       >
         ×
       </button>
-      <p className="text-sm font-semibold text-green-700 mb-1">🎉 MediQuiz AI へようこそ！</p>
-      <p className="text-xs text-green-600 mb-4">教材がなくてもすぐ試せます。まずは1問解いてみましょう。</p>
+      <p className="text-sm font-semibold text-emerald-700 mb-1">🎉 MediQuiz AI へようこそ！</p>
+      <p className="text-xs text-emerald-600 mb-4">教材がなくてもすぐ試せます。まずは1問解いてみましょう。</p>
       <Link href="/trial"
         onClick={handleClose}
-        className="flex items-center justify-center gap-2 w-full bg-green-600 text-white rounded-xl py-3 text-sm font-semibold hover:bg-green-700 transition-colors mb-4">
+        className="flex items-center justify-center gap-2 w-full bg-emerald-600 text-white rounded-xl py-3 text-sm font-semibold hover:bg-emerald-700 transition-colors mb-4">
         🎯 まず1問やってみる（教材アップロード不要）
       </Link>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {STEPS.map((step, i) => (
-          <div key={i} className="bg-white rounded-xl p-4 border border-green-100">
+          <div key={i} className="bg-white rounded-xl p-4 border border-emerald-100">
             <div className="text-2xl mb-2">{step.emoji}</div>
-            <p className="text-sm font-semibold text-gray-900 mb-1">{step.title}</p>
-            <p className="text-xs text-gray-500 leading-relaxed">{step.desc}</p>
+            <p className="text-sm font-semibold text-slate-900 mb-1">{step.title}</p>
+            <p className="text-xs text-slate-500 leading-relaxed">{step.desc}</p>
           </div>
         ))}
       </div>

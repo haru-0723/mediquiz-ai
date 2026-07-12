@@ -94,23 +94,23 @@ export default function MaterialsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <p className="text-gray-500">読み込み中...</p>
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <p className="text-slate-500">読み込み中...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-slate-50">
       <Navbar />
 
       <div className="max-w-3xl mx-auto p-8">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-2xl font-semibold text-gray-900">教材一覧</h1>
-            <p className="text-gray-500 text-sm mt-1">全{materials.length}件</p>
+            <h1 className="text-2xl font-semibold text-slate-900">教材一覧</h1>
+            <p className="text-slate-500 text-sm mt-1">全{materials.length}件</p>
           </div>
-          <Link href="/upload" className="bg-green-600 text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-green-700">
+          <Link href="/upload" className="bg-emerald-600 text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-emerald-700">
             + 教材を追加
           </Link>
         </div>
@@ -118,27 +118,27 @@ export default function MaterialsPage() {
         {materials.length > 0 ? (
           <div className="space-y-3">
             {materials.map(material => (
-              <div key={material.id} className="bg-white rounded-2xl border p-5 flex items-center gap-4">
-                <div className="w-10 h-10 bg-green-50 rounded-xl flex items-center justify-center flex-shrink-0 text-xl">
+              <div key={material.id} className="bg-white rounded-2xl border border-slate-200 p-5 flex items-center gap-4">
+                <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center flex-shrink-0 text-xl">
                   {material.file_type?.includes('pdf') ? '📄' : '🖼️'}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">{material.title}</p>
+                  <p className="text-sm font-medium text-slate-900 truncate">{material.title}</p>
                   <div className="flex items-center gap-2 mt-1">
-                    {material.subject && <span className="text-xs text-gray-400">{material.subject}</span>}
-                    <span className="text-xs text-gray-300">•</span>
-                    <span className="text-xs text-gray-400">
+                    {material.subject && <span className="text-xs text-slate-400">{material.subject}</span>}
+                    <span className="text-xs text-slate-300">•</span>
+                    <span className="text-xs text-slate-400">
                       {new Date(material.created_at).toLocaleDateString('ja-JP')}
                     </span>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
                   <button onClick={() => handleShow(material)} disabled={previewLoading === material.id}
-                    className="text-xs text-blue-400 hover:text-blue-600 border border-blue-200 hover:border-blue-400 px-3 py-1 rounded-lg transition-colors disabled:opacity-60">
+                    className="text-xs text-sky-400 hover:text-sky-600 border border-sky-200 hover:border-sky-400 px-3 py-1 rounded-lg transition-colors disabled:opacity-60">
                     {previewLoading === material.id ? '読込中...' : '表示'}
                   </button>
                   <button onClick={() => handleDelete(material)} disabled={deleting === material.id}
-                    className="text-xs text-red-400 hover:text-red-600 border border-red-200 hover:border-red-400 px-3 py-1 rounded-lg transition-colors disabled:opacity-60">
+                    className="text-xs text-rose-400 hover:text-rose-600 border border-rose-200 hover:border-rose-400 px-3 py-1 rounded-lg transition-colors disabled:opacity-60">
                     {deleting === material.id ? '削除中...' : '削除'}
                   </button>
                 </div>
@@ -146,16 +146,16 @@ export default function MaterialsPage() {
             ))}
           </div>
         ) : (
-          <div className="bg-white rounded-2xl border p-12 text-center">
-            <p className="text-gray-400 mb-4">教材がまだありません</p>
-            <Link href="/upload" className="bg-green-600 text-white px-6 py-3 rounded-xl text-sm font-medium hover:bg-green-700">
+          <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center">
+            <p className="text-slate-400 mb-4">教材がまだありません</p>
+            <Link href="/upload" className="bg-emerald-600 text-white px-6 py-3 rounded-xl text-sm font-medium hover:bg-emerald-700">
               最初の教材をアップロード
             </Link>
           </div>
         )}
 
         {previewError && (
-          <p className="text-sm text-red-500 mt-4 text-center">{previewError}</p>
+          <p className="text-sm text-rose-500 mt-4 text-center">{previewError}</p>
         )}
       </div>
 
@@ -169,12 +169,12 @@ export default function MaterialsPage() {
             className="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] flex flex-col overflow-hidden"
           >
             <div className="flex items-center justify-between px-5 py-3 border-b">
-              <p className="text-sm font-medium text-gray-900 truncate">{previewMaterial.title}</p>
-              <button onClick={closePreview} className="text-gray-400 hover:text-gray-700 text-2xl leading-none px-1">
+              <p className="text-sm font-medium text-slate-900 truncate">{previewMaterial.title}</p>
+              <button onClick={closePreview} className="text-slate-400 hover:text-slate-700 text-2xl leading-none px-1">
                 ×
               </button>
             </div>
-            <div className="overflow-auto p-4 bg-gray-50 flex items-center justify-center">
+            <div className="overflow-auto p-4 bg-slate-50 flex items-center justify-center">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={previewUrl} alt={previewMaterial.title} className="max-w-full h-auto rounded-lg" />
             </div>

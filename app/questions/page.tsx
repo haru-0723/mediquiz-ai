@@ -411,8 +411,8 @@ export default function QuestionsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <p className="text-gray-500">読み込み中...</p>
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <p className="text-slate-500">読み込み中...</p>
       </div>
     );
   }
@@ -423,17 +423,17 @@ export default function QuestionsPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-slate-50">
       <Navbar />
 
       <div className="max-w-5xl mx-auto p-4 sm:p-6">
         {/* ページヘッダー */}
         <div className="flex items-center justify-between mb-4 sm:mb-6">
           <div>
-            <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">マイ問題集</h1>
-            <p className="text-gray-500 text-sm mt-0.5">全{questions.length}問</p>
+            <h1 className="text-xl sm:text-2xl font-semibold text-slate-900">マイ問題集</h1>
+            <p className="text-slate-500 text-sm mt-0.5">全{questions.length}問</p>
           </div>
-          <Link href="/questions/new" className="bg-green-600 text-white px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-green-700">
+          <Link href="/questions/new" className="bg-emerald-600 text-white px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-emerald-700">
             + 問題を追加
           </Link>
         </div>
@@ -446,15 +446,15 @@ export default function QuestionsPage() {
             ...folders.map(f => ({ id: f.id as FolderFilter, label: f.name, count: folderCounts[f.id] ?? 0 })),
           ].map(item => (
             <button key={item.id} onClick={() => setSelectedFolder(item.id)}
-              className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium transition-colors ${selectedFolder === item.id ? 'bg-green-600 text-white' : 'bg-white border border-gray-200 text-gray-600'}`}>
+              className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium transition-colors ${selectedFolder === item.id ? 'bg-emerald-600 text-white' : 'bg-white border border-slate-200 text-slate-600'}`}>
               {item.label}
-              <span className={`text-xs px-1.5 py-0.5 rounded-full ${selectedFolder === item.id ? 'bg-green-500' : 'bg-gray-100 text-gray-400'}`}>
+              <span className={`text-xs px-1.5 py-0.5 rounded-full ${selectedFolder === item.id ? 'bg-emerald-500' : 'bg-slate-100 text-slate-400'}`}>
                 {item.count}
               </span>
             </button>
           ))}
           <button onClick={() => setShowNewFolder(true)}
-            className="flex-shrink-0 px-3 py-2 rounded-xl text-sm text-green-600 border border-dashed border-green-300 hover:bg-green-50">
+            className="flex-shrink-0 px-3 py-2 rounded-xl text-sm text-emerald-600 border border-dashed border-emerald-300 hover:bg-emerald-50">
             + フォルダ
           </button>
         </div>
@@ -467,7 +467,7 @@ export default function QuestionsPage() {
                 const f = folders.find(fo => fo.id === selectedFolder);
                 if (f) startRenameFolder(f);
               }}
-              className="text-xs text-gray-500 border border-gray-200 rounded-lg px-3 py-1.5 hover:bg-gray-50"
+              className="text-xs text-slate-500 border border-slate-200 rounded-lg px-3 py-1.5 hover:bg-slate-50"
             >
               ✎ フォルダ名を変更
             </button>
@@ -476,7 +476,7 @@ export default function QuestionsPage() {
 
         {/* スマホ：フォルダ名変更 */}
         {renamingFolderId && (
-          <div className="sm:hidden bg-white border rounded-xl p-3 mb-4">
+          <div className="sm:hidden bg-white border border-slate-200 rounded-xl p-3 mb-4">
             <input
               value={renameFolderName}
               onChange={e => setRenameFolderName(e.target.value)}
@@ -485,16 +485,16 @@ export default function QuestionsPage() {
                 if (e.key === 'Escape') cancelRenameFolder();
               }}
               placeholder="フォルダ名を入力"
-              className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 mb-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+              className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 mb-2 focus:outline-none focus:ring-2 focus:ring-emerald-500"
               autoFocus
             />
             <div className="flex gap-2">
               <button onClick={() => handleRenameFolder(renamingFolderId)} disabled={savingRename || !renameFolderName.trim()}
-                className="flex-1 bg-green-600 text-white text-sm py-2 rounded-lg disabled:opacity-60">
+                className="flex-1 bg-emerald-600 text-white text-sm py-2 rounded-lg disabled:opacity-60">
                 {savingRename ? '保存中...' : '保存'}
               </button>
               <button onClick={cancelRenameFolder}
-                className="flex-1 border text-sm py-2 rounded-lg text-gray-500">
+                className="flex-1 border border-slate-200 text-sm py-2 rounded-lg text-slate-500">
                 キャンセル
               </button>
             </div>
@@ -503,22 +503,22 @@ export default function QuestionsPage() {
 
         {/* スマホ：新規フォルダ作成 */}
         {showNewFolder && (
-          <div className="sm:hidden bg-white border rounded-xl p-3 mb-4">
+          <div className="sm:hidden bg-white border border-slate-200 rounded-xl p-3 mb-4">
             <input
               value={newFolderName}
               onChange={e => setNewFolderName(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleCreateFolder()}
               placeholder="フォルダ名を入力"
-              className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 mb-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+              className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 mb-2 focus:outline-none focus:ring-2 focus:ring-emerald-500"
               autoFocus
             />
             <div className="flex gap-2">
               <button onClick={handleCreateFolder} disabled={creatingFolder || !newFolderName.trim()}
-                className="flex-1 bg-green-600 text-white text-sm py-2 rounded-lg disabled:opacity-60">
+                className="flex-1 bg-emerald-600 text-white text-sm py-2 rounded-lg disabled:opacity-60">
                 {creatingFolder ? '作成中...' : '作成'}
               </button>
               <button onClick={() => { setShowNewFolder(false); setNewFolderName(''); }}
-                className="flex-1 border text-sm py-2 rounded-lg text-gray-500">
+                className="flex-1 border border-slate-200 text-sm py-2 rounded-lg text-slate-500">
                 キャンセル
               </button>
             </div>
@@ -528,8 +528,8 @@ export default function QuestionsPage() {
         <div className="flex gap-5 items-start">
           {/* PC：左サイドバー */}
           <div className="hidden sm:flex flex-col w-52 shrink-0 gap-3">
-            <div className="bg-white rounded-2xl border p-3">
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-2 mb-2">フォルダ</p>
+            <div className="bg-white rounded-2xl border border-slate-200 p-3">
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide px-2 mb-2">フォルダ</p>
 
               {/* すべて・フォルダなし */}
               {[
@@ -537,13 +537,13 @@ export default function QuestionsPage() {
                 { id: 'none' as FolderFilter, label: 'フォルダなし', count: noFolderCount },
               ].map(item => (
                 <button key={item.id} onClick={() => setSelectedFolder(item.id)}
-                  className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm transition-colors mb-0.5 ${selectedFolder === item.id ? 'bg-green-50 text-green-700 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}>
+                  className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm transition-colors mb-0.5 ${selectedFolder === item.id ? 'bg-emerald-50 text-emerald-700 font-medium' : 'text-slate-600 hover:bg-slate-50'}`}>
                   <span>{item.label}</span>
-                  <span className="text-xs text-gray-400">{item.count}</span>
+                  <span className="text-xs text-slate-400">{item.count}</span>
                 </button>
               ))}
 
-              {folders.length > 0 && <hr className="my-2 border-gray-100" />}
+              {folders.length > 0 && <hr className="my-2 border-slate-100" />}
 
               {/* ユーザーフォルダ */}
               {folders.map(f => (
@@ -557,16 +557,16 @@ export default function QuestionsPage() {
                         if (e.key === 'Escape') cancelRenameFolder();
                       }}
                       placeholder="フォルダ名"
-                      className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 mb-1.5 focus:outline-none focus:ring-2 focus:ring-green-500"
+                      className="w-full text-xs border border-slate-200 rounded-lg px-2 py-1.5 mb-1.5 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                       autoFocus
                     />
                     <div className="flex gap-1">
                       <button onClick={() => handleRenameFolder(f.id)} disabled={savingRename || !renameFolderName.trim()}
-                        className="flex-1 bg-green-600 text-white text-xs py-1.5 rounded-lg disabled:opacity-60">
+                        className="flex-1 bg-emerald-600 text-white text-xs py-1.5 rounded-lg disabled:opacity-60">
                         {savingRename ? '保存中...' : '保存'}
                       </button>
                       <button onClick={cancelRenameFolder}
-                        className="flex-1 border text-xs py-1.5 rounded-lg text-gray-500">
+                        className="flex-1 border border-slate-200 text-xs py-1.5 rounded-lg text-slate-500">
                         ×
                       </button>
                     </div>
@@ -574,13 +574,13 @@ export default function QuestionsPage() {
                 ) : (
                   <div key={f.id} className="group flex items-center gap-1 mb-0.5">
                     <button onClick={() => setSelectedFolder(f.id)}
-                      className={`flex-1 flex items-center justify-between px-3 py-2 rounded-xl text-sm transition-colors min-w-0 ${selectedFolder === f.id ? 'bg-green-50 text-green-700 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}>
+                      className={`flex-1 flex items-center justify-between px-3 py-2 rounded-xl text-sm transition-colors min-w-0 ${selectedFolder === f.id ? 'bg-emerald-50 text-emerald-700 font-medium' : 'text-slate-600 hover:bg-slate-50'}`}>
                       <span className="truncate">{f.name}</span>
-                      <span className="text-xs text-gray-400 flex-shrink-0 ml-1">{folderCounts[f.id] ?? 0}</span>
+                      <span className="text-xs text-slate-400 flex-shrink-0 ml-1">{folderCounts[f.id] ?? 0}</span>
                     </button>
                     <button
                       onClick={() => startRenameFolder(f)}
-                      className="p-1.5 text-gray-300 hover:text-green-500 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+                      className="p-1.5 text-slate-300 hover:text-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
                       title="フォルダ名を変更"
                     >
                       ✎
@@ -588,7 +588,7 @@ export default function QuestionsPage() {
                     <button
                       onClick={() => handleDeleteFolder(f.id)}
                       disabled={deletingFolderId === f.id}
-                      className="p-1.5 text-gray-300 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-50 flex-shrink-0"
+                      className="p-1.5 text-slate-300 hover:text-rose-400 opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-50 flex-shrink-0"
                       title="フォルダを削除"
                     >
                       ×
@@ -605,23 +605,23 @@ export default function QuestionsPage() {
                     onChange={e => setNewFolderName(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && handleCreateFolder()}
                     placeholder="フォルダ名"
-                    className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 mb-1.5 focus:outline-none focus:ring-2 focus:ring-green-500"
+                    className="w-full text-xs border border-slate-200 rounded-lg px-2 py-1.5 mb-1.5 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                     autoFocus
                   />
                   <div className="flex gap-1">
                     <button onClick={handleCreateFolder} disabled={creatingFolder || !newFolderName.trim()}
-                      className="flex-1 bg-green-600 text-white text-xs py-1.5 rounded-lg disabled:opacity-60">
+                      className="flex-1 bg-emerald-600 text-white text-xs py-1.5 rounded-lg disabled:opacity-60">
                       作成
                     </button>
                     <button onClick={() => { setShowNewFolder(false); setNewFolderName(''); }}
-                      className="flex-1 border text-xs py-1.5 rounded-lg text-gray-500">
+                      className="flex-1 border border-slate-200 text-xs py-1.5 rounded-lg text-slate-500">
                       ×
                     </button>
                   </div>
                 </div>
               ) : (
                 <button onClick={() => setShowNewFolder(true)}
-                  className="w-full mt-2 text-xs text-green-600 border border-dashed border-green-200 rounded-xl py-2 hover:bg-green-50 transition-colors">
+                  className="w-full mt-2 text-xs text-emerald-600 border border-dashed border-emerald-200 rounded-xl py-2 hover:bg-emerald-50 transition-colors">
                   + フォルダを作成
                 </button>
               )}
@@ -633,25 +633,25 @@ export default function QuestionsPage() {
             {/* フォルダタイトル + PDF + 一括選択バー */}
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-4">
               <div className="flex items-center gap-2 flex-1 min-w-0">
-                <h2 className="text-base font-semibold text-gray-800 truncate">{currentFolderName}</h2>
-                <span className="text-sm text-gray-400 flex-shrink-0">{filteredQuestions.length}問</span>
+                <h2 className="text-base font-semibold text-slate-800 truncate">{currentFolderName}</h2>
+                <span className="text-sm text-slate-400 flex-shrink-0">{filteredQuestions.length}問</span>
               </div>
               {!pdfMode && (
                 <div className="flex items-center gap-2 flex-shrink-0">
                   {filteredQuestions.length > 0 && (
                     <button onClick={toggleSelectAll}
-                      className="text-xs border border-gray-200 rounded-lg px-3 py-2 text-gray-500 hover:bg-gray-50 transition-colors">
+                      className="text-xs border border-slate-200 rounded-lg px-3 py-2 text-slate-500 hover:bg-slate-50 transition-colors">
                       {selectedIds.size === filteredQuestions.length && filteredQuestions.length > 0 ? '選択解除' : '全選択'}
                     </button>
                   )}
                   <div className="flex flex-col items-end gap-1">
                     <div className="flex items-center gap-1.5">
                       <button onClick={handleExportPDF}
-                        className="flex items-center gap-1.5 text-xs bg-white border border-gray-200 text-gray-600 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors">
+                        className="flex items-center gap-1.5 text-xs bg-white border border-slate-200 text-slate-600 px-3 py-2 rounded-lg hover:bg-slate-50 transition-colors">
                         📄 PDF
                       </button>
                       <button onClick={handleExportExcel}
-                        className="flex items-center gap-1.5 text-xs bg-white border border-gray-200 text-gray-600 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors">
+                        className="flex items-center gap-1.5 text-xs bg-white border border-slate-200 text-slate-600 px-3 py-2 rounded-lg hover:bg-slate-50 transition-colors">
                         📊 Excel
                       </button>
                     </div>
@@ -696,7 +696,7 @@ export default function QuestionsPage() {
                         : `選択した${pdfSelectedIds.size}問をExcel出力`}
                   </button>
                   <button onClick={() => { setPdfMode(false); setPdfSelectedIds(new Set<string>()); }}
-                    className="text-xs text-gray-400 hover:text-gray-600 px-2 py-1.5 transition-colors">
+                    className="text-xs text-slate-400 hover:text-slate-600 px-2 py-1.5 transition-colors">
                     キャンセル
                   </button>
                 </div>
@@ -705,21 +705,21 @@ export default function QuestionsPage() {
 
             {/* 一括移動バー（PDF選択モード中は非表示） */}
             {!pdfMode && selectedIds.size > 0 && (
-              <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 mb-4 flex flex-col sm:flex-row sm:items-center gap-2">
-                <span className="text-sm text-blue-700 font-medium flex-shrink-0">{selectedIds.size}問を選択中</span>
+              <div className="bg-sky-50 border border-sky-200 rounded-xl p-3 mb-4 flex flex-col sm:flex-row sm:items-center gap-2">
+                <span className="text-sm text-sky-700 font-medium flex-shrink-0">{selectedIds.size}問を選択中</span>
                 <div className="flex items-center gap-2 flex-1">
                   <select value={bulkTargetFolderId} onChange={e => setBulkTargetFolderId(e.target.value)}
-                    className="flex-1 text-sm border border-blue-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white">
+                    className="flex-1 text-sm border border-sky-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-400 bg-white">
                     {folderMoveOptions.map(o => (
                       <option key={o.value} value={o.value}>{o.label}</option>
                     ))}
                   </select>
                   <button onClick={handleBulkMove} disabled={bulkMoving}
-                    className="flex-shrink-0 bg-blue-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-60 transition-colors">
+                    className="flex-shrink-0 bg-sky-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-sky-700 disabled:opacity-60 transition-colors">
                     {bulkMoving ? '移動中...' : '移動'}
                   </button>
                   <button onClick={() => setSelectedIds(new Set<string>())}
-                    className="flex-shrink-0 text-sm text-gray-400 hover:text-gray-600 px-2 py-2">
+                    className="flex-shrink-0 text-sm text-slate-400 hover:text-slate-600 px-2 py-2">
                     ×
                   </button>
                 </div>
@@ -732,8 +732,8 @@ export default function QuestionsPage() {
                 {filteredQuestions.map((q, i) => (
                   <div key={q.id} className={`bg-white rounded-2xl border p-4 sm:p-5 transition-colors ${
                     pdfMode
-                      ? (pdfSelectedIds.has(q.id) ? 'border-orange-300 bg-orange-50/20' : '')
-                      : (selectedIds.has(q.id) ? 'border-blue-300 bg-blue-50/30' : '')
+                      ? (pdfSelectedIds.has(q.id) ? 'border-orange-300 bg-orange-50/20' : 'border-slate-200')
+                      : (selectedIds.has(q.id) ? 'border-sky-300 bg-sky-50/30' : 'border-slate-200')
                   }`}>
                     {/* カードヘッダー */}
                     <div className="flex items-start justify-between mb-3 gap-2">
@@ -743,11 +743,11 @@ export default function QuestionsPage() {
                           type="checkbox"
                           checked={pdfMode ? pdfSelectedIds.has(q.id) : selectedIds.has(q.id)}
                           onChange={() => pdfMode ? togglePdfSelect(q.id) : toggleSelect(q.id)}
-                          className={`w-4 h-4 rounded cursor-pointer flex-shrink-0 ${pdfMode ? 'accent-orange-500' : 'accent-blue-600'}`}
+                          className={`w-4 h-4 rounded cursor-pointer flex-shrink-0 ${pdfMode ? 'accent-orange-500' : 'accent-sky-600'}`}
                         />
-                        <span className="text-xs text-gray-400">Q{i + 1}</span>
-                        {q.subject && <span className="bg-green-50 text-green-700 text-xs px-2.5 py-0.5 rounded-full font-medium">{q.subject}</span>}
-                        <span className="bg-gray-100 text-gray-500 text-xs px-2.5 py-0.5 rounded-full">
+                        <span className="text-xs text-slate-400">Q{i + 1}</span>
+                        {q.subject && <span className="bg-emerald-50 text-emerald-700 text-xs px-2.5 py-0.5 rounded-full font-medium">{q.subject}</span>}
+                        <span className="bg-slate-100 text-slate-500 text-xs px-2.5 py-0.5 rounded-full">
                           {DIFF_LABEL[q.difficulty] ?? q.difficulty}
                         </span>
                       </div>
@@ -757,41 +757,41 @@ export default function QuestionsPage() {
                           <div className="flex items-center gap-1">
                             <select onChange={e => handleMoveQuestion(q.id, e.target.value)}
                               defaultValue=""
-                              className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none bg-white">
+                              className="text-xs border border-slate-200 rounded-lg px-2 py-1.5 focus:outline-none bg-white">
                               <option value="" disabled>移動先を選択</option>
                               {folderMoveOptions.map(o => (
                                 <option key={o.value} value={o.value}>{o.label}</option>
                               ))}
                             </select>
-                            <button onClick={() => setMovingQuestionId(null)} className="text-gray-400 hover:text-gray-600 px-1">×</button>
+                            <button onClick={() => setMovingQuestionId(null)} className="text-slate-400 hover:text-slate-600 px-1">×</button>
                           </div>
                         ) : (
                           <button onClick={() => setMovingQuestionId(q.id)}
-                            className="text-xs text-gray-400 hover:text-gray-600 border border-gray-200 hover:border-gray-300 px-2.5 py-1.5 rounded-lg transition-colors">
+                            className="text-xs text-slate-400 hover:text-slate-600 border border-slate-200 hover:border-slate-300 px-2.5 py-1.5 rounded-lg transition-colors">
                             移動
                           </button>
                         )}
                         <Link href={`/questions/${q.id}/edit`}
-                          className="text-xs text-blue-400 hover:text-blue-600 border border-blue-200 hover:border-blue-400 px-2.5 py-1.5 rounded-lg transition-colors">
+                          className="text-xs text-sky-400 hover:text-sky-600 border border-sky-200 hover:border-sky-400 px-2.5 py-1.5 rounded-lg transition-colors">
                           編集
                         </Link>
                         <button onClick={() => handleDelete(q.id)} disabled={deleting === q.id}
-                          className="text-xs text-red-400 hover:text-red-600 border border-red-200 hover:border-red-400 px-2.5 py-1.5 rounded-lg transition-colors disabled:opacity-60">
+                          className="text-xs text-rose-400 hover:text-rose-600 border border-rose-200 hover:border-rose-400 px-2.5 py-1.5 rounded-lg transition-colors disabled:opacity-60">
                           {deleting === q.id ? '...' : '削除'}
                         </button>
                       </div>
                     </div>
 
                     {/* 問題文 */}
-                    <p className="text-sm font-medium text-gray-900 mb-3 leading-relaxed">{q.question}</p>
+                    <p className="text-sm font-medium text-slate-900 mb-3 leading-relaxed">{q.question}</p>
 
                     {/* 選択肢 */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       {(['A', 'B', 'C', 'D'] as const).map(lbl => {
                         const key = `option_${lbl.toLowerCase()}` as keyof Question;
                         return (
-                          <div key={lbl} className={`flex items-center gap-2 p-3 sm:p-2.5 rounded-lg text-xs ${q.answer === lbl ? 'bg-green-50 text-green-700 font-medium' : 'bg-gray-50 text-gray-600'}`}>
-                            <span className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-medium flex-shrink-0 ${q.answer === lbl ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-500'}`}>
+                          <div key={lbl} className={`flex items-center gap-2 p-3 sm:p-2.5 rounded-lg text-xs ${q.answer === lbl ? 'bg-emerald-50 text-emerald-700 font-medium' : 'bg-slate-50 text-slate-600'}`}>
+                            <span className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-medium flex-shrink-0 ${q.answer === lbl ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-slate-500'}`}>
                               {lbl}
                             </span>
                             {q[key] as string}
@@ -802,9 +802,9 @@ export default function QuestionsPage() {
 
                     {/* 解説 */}
                     {q.explanation && (
-                      <div className="mt-3 p-3 bg-gray-50 rounded-xl">
-                        <p className="text-xs text-gray-500">
-                          <span className="font-medium text-green-600">💡 解説：</span>{q.explanation}
+                      <div className="mt-3 p-3 bg-slate-50 rounded-xl">
+                        <p className="text-xs text-slate-500">
+                          <span className="font-medium text-emerald-600">💡 解説：</span>{q.explanation}
                         </p>
                       </div>
                     )}
@@ -812,12 +812,12 @@ export default function QuestionsPage() {
                 ))}
               </div>
             ) : (
-              <div className="bg-white rounded-2xl border p-10 text-center">
-                <p className="text-gray-400 mb-4">
+              <div className="bg-white rounded-2xl border border-slate-200 p-10 text-center">
+                <p className="text-slate-400 mb-4">
                   {questions.length > 0 ? 'このフォルダに問題はありません' : 'まだ問題がありません'}
                 </p>
                 {questions.length === 0 && (
-                  <Link href="/questions/new" className="bg-green-600 text-white px-6 py-3 rounded-xl text-sm font-medium hover:bg-green-700">
+                  <Link href="/questions/new" className="bg-emerald-600 text-white px-6 py-3 rounded-xl text-sm font-medium hover:bg-emerald-700">
                     最初の問題を追加する
                   </Link>
                 )}

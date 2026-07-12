@@ -300,11 +300,11 @@ export default function GeneratePage() {
 
   if (checking) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
-          <div style={{ width: 40, height: 40, border: '3px solid #16a34a', borderTopColor: 'transparent', borderRadius: '50%', margin: '0 auto 20px', animation: 'spin 0.8s linear infinite' }} />
-          <p className="text-gray-600 font-medium">画像を確認しています...</p>
-          <p className="text-sm text-gray-400 mt-2">読み取り品質をチェック中</p>
+          <div style={{ width: 40, height: 40, border: '3px solid #059669', borderTopColor: 'transparent', borderRadius: '50%', margin: '0 auto 20px', animation: 'spin 0.8s linear infinite' }} />
+          <p className="text-slate-600 font-medium">画像を確認しています...</p>
+          <p className="text-sm text-slate-400 mt-2">読み取り品質をチェック中</p>
         </div>
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
@@ -313,22 +313,22 @@ export default function GeneratePage() {
 
   if (showCheckDialog) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-slate-50">
         <Navbar />
         <div className="flex items-center justify-center p-8 min-h-[calc(100vh-60px)]">
-          <div className="bg-white rounded-2xl border p-8 max-w-md w-full">
+          <div className="bg-white rounded-2xl border border-slate-200 p-8 max-w-md w-full">
             <div className="text-4xl mb-4 text-center">⚠️</div>
-            <h2 className="text-lg font-semibold text-gray-900 mb-2 text-center">読み取りにくい部分があります</h2>
-            <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-5">
-              <p className="text-sm text-yellow-800">{checkIssues}</p>
+            <h2 className="text-lg font-semibold text-slate-900 mb-2 text-center">読み取りにくい部分があります</h2>
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-5">
+              <p className="text-sm text-amber-800">{checkIssues}</p>
             </div>
             <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">補足テキストを入力（任意）</label>
+              <label className="block text-sm font-medium text-slate-700 mb-2">補足テキストを入力（任意）</label>
               <textarea
                 value={supplementText}
                 onChange={e => setSupplementText(e.target.value)}
                 placeholder="読み取れなかった部分の内容を補足入力してください..."
-                className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
+                className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
                 rows={3}
               />
             </div>
@@ -336,13 +336,13 @@ export default function GeneratePage() {
               <button
                 onClick={() => executeGenerate(supplementText)}
                 disabled={!supplementText.trim()}
-                className="w-full bg-green-600 text-white py-3 rounded-xl text-sm font-medium hover:bg-green-700 disabled:opacity-40"
+                className="w-full bg-emerald-600 text-white py-3 rounded-xl text-sm font-medium hover:bg-emerald-700 disabled:opacity-40"
               >
                 補足を追加して生成する
               </button>
               <button
                 onClick={() => executeGenerate('')}
-                className="w-full border border-gray-200 text-gray-600 py-3 rounded-xl text-sm font-medium hover:border-gray-300 hover:bg-gray-50"
+                className="w-full border border-slate-200 text-slate-600 py-3 rounded-xl text-sm font-medium hover:border-slate-300 hover:bg-slate-50"
               >
                 このまま生成する
               </button>
@@ -355,16 +355,16 @@ export default function GeneratePage() {
 
   if (generating) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center max-w-sm w-full px-8">
-          <div style={{ width: 48, height: 48, border: '3px solid #16a34a', borderTopColor: 'transparent', borderRadius: '50%', margin: '0 auto 24px', animation: 'spin 0.8s linear infinite' }} />
-          <p className="text-gray-900 font-semibold text-lg mb-2">問題を生成中...</p>
-          <p className="text-green-600 text-sm font-medium mb-6 min-h-[20px]">{progressMessage}</p>
-          <div className="h-2 bg-gray-200 rounded-full overflow-hidden mb-2">
-            <div className="h-full bg-green-600 rounded-full transition-all duration-500" style={{ width: `${progress}%` }} />
+          <div style={{ width: 48, height: 48, border: '3px solid #059669', borderTopColor: 'transparent', borderRadius: '50%', margin: '0 auto 24px', animation: 'spin 0.8s linear infinite' }} />
+          <p className="text-slate-900 font-semibold text-lg mb-2">問題を生成中...</p>
+          <p className="text-emerald-600 text-sm font-medium mb-6 min-h-[20px]">{progressMessage}</p>
+          <div className="h-2 bg-slate-200 rounded-full overflow-hidden mb-2">
+            <div className="h-full bg-emerald-600 rounded-full transition-all duration-500" style={{ width: `${progress}%` }} />
           </div>
-          <p className="text-xs text-yellow-600 mb-2">⏳ 教材を読み取って正確な問題を生成しています。1〜2分ほどお待ちください。</p>
-          <p className="text-xs text-gray-400">{selectedIds.length}件の教材を処理中</p>
+          <p className="text-xs text-amber-600 mb-2">⏳ 教材を読み取って正確な問題を生成しています。1〜2分ほどお待ちください。</p>
+          <p className="text-xs text-slate-400">{selectedIds.length}件の教材を処理中</p>
         </div>
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
@@ -377,28 +377,28 @@ export default function GeneratePage() {
     const wrongCount = results.length - correct;
     const isPerfect = wrongCount === 0;
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-8">
-        <div className="bg-white rounded-2xl border p-8 max-w-md w-full text-center">
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-8">
+        <div className="bg-white rounded-2xl border border-slate-200 p-8 max-w-md w-full text-center">
           <div className="text-5xl mb-4">{isPerfect ? '🎉' : '🏆'}</div>
-          <h2 className="text-2xl font-semibold text-gray-900 mb-2">{isPerfect ? '全問正解！' : '演習完了！'}</h2>
-          <p className="text-5xl font-bold text-green-600 mb-2">{accuracy}%</p>
-          <p className="text-gray-500 mb-6">{results.length}問中 {correct}問正解</p>
+          <h2 className="text-2xl font-semibold text-slate-900 mb-2">{isPerfect ? '全問正解！' : '演習完了！'}</h2>
+          <p className="text-5xl font-bold text-emerald-600 mb-2">{accuracy}%</p>
+          <p className="text-slate-500 mb-6">{results.length}問中 {correct}問正解</p>
           {!isPerfect && (
             <button onClick={handleReviewWrong}
               className="w-full bg-orange-500 text-white rounded-xl py-3 text-sm font-medium hover:bg-orange-600 mb-4">
               🔁 間違えた問題を復習する（{wrongCount}問）
             </button>
           )}
-          <div className="bg-gray-50 rounded-xl p-4 mb-6">
+          <div className="bg-slate-50 rounded-xl p-4 mb-6">
             {saved ? (
-              <p className="text-sm text-green-600 font-medium">✅ {questions.length}問を保存しました！</p>
+              <p className="text-sm text-emerald-600 font-medium">✅ {questions.length}問を保存しました！</p>
             ) : (
               <div className="space-y-3">
-                <p className="text-sm text-gray-600">この問題を問題一覧に保存しますか？</p>
+                <p className="text-sm text-slate-600">この問題を問題一覧に保存しますか？</p>
                 <div>
-                  <label className="block text-xs text-gray-500 mb-1">保存先フォルダ（任意）</label>
+                  <label className="block text-xs text-slate-500 mb-1">保存先フォルダ（任意）</label>
                   <select value={saveFolderId} onChange={e => setSaveFolderId(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
                     <option value="">フォルダなし</option>
                     {folders.map(f => (
                       <option key={f.id} value={f.id}>{f.name}</option>
@@ -412,22 +412,22 @@ export default function GeneratePage() {
                     value={newSaveFolderName}
                     onChange={e => { setNewSaveFolderName(e.target.value); setShowNewSaveFolder(true); }}
                     placeholder="新しいフォルダ名を入力"
-                    className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   />
                 )}
                 <button onClick={handleSaveAll} disabled={saving}
-                  className="w-full bg-green-600 text-white py-2.5 rounded-xl text-sm font-medium hover:bg-green-700 disabled:opacity-60">
+                  className="w-full bg-emerald-600 text-white py-2.5 rounded-xl text-sm font-medium hover:bg-emerald-700 disabled:opacity-60">
                   {saving ? '保存中...' : `${questions.length}問を保存する`}
                 </button>
               </div>
             )}
           </div>
           <div className="flex gap-3">
-            <Link href="/dashboard" className="flex-1 border border-gray-200 rounded-xl py-3 text-sm text-gray-600 text-center">
+            <Link href="/dashboard" className="flex-1 border border-slate-200 rounded-xl py-3 text-sm text-slate-600 text-center">
               ダッシュボードへ
             </Link>
             <button onClick={() => { setPhase('select'); setQuestions([]); setSaved(false); }}
-              className="flex-1 bg-green-600 text-white rounded-xl py-3 text-sm font-medium">
+              className="flex-1 bg-emerald-600 text-white rounded-xl py-3 text-sm font-medium">
               もう一度生成
             </button>
           </div>
@@ -440,31 +440,31 @@ export default function GeneratePage() {
     const q = questions[current];
     const accuracy = results.length > 0 ? Math.round((results.filter(r => r.correct).length / results.length) * 100) : 0;
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-slate-50">
         <Navbar />
         <div className="max-w-2xl mx-auto p-8">
-          <div className="flex justify-between items-center mb-2 text-sm text-gray-500">
+          <div className="flex justify-between items-center mb-2 text-sm text-slate-500">
             <span>{current + 1} / {questions.length}問</span>
             <span>正解率 {accuracy}%</span>
           </div>
-          <div className="h-2 bg-gray-200 rounded-full mb-8 overflow-hidden">
-            <div className="h-full bg-green-600 rounded-full transition-all" style={{ width: `${(current / questions.length) * 100}%` }} />
+          <div className="h-2 bg-slate-200 rounded-full mb-8 overflow-hidden">
+            <div className="h-full bg-emerald-600 rounded-full transition-all" style={{ width: `${(current / questions.length) * 100}%` }} />
           </div>
-          <p className="text-xs text-gray-400 mb-3">⚠️ AI生成問題のため、内容の正確性を保証しません</p>
+          <p className="text-xs text-slate-400 mb-3">⚠️ AI生成問題のため、内容の正確性を保証しません</p>
           {limitedNotice && (
-            <div className="bg-yellow-50 border border-yellow-200 rounded-xl px-4 py-3 mb-3 flex items-center justify-between gap-3">
-              <p className="text-xs text-yellow-800">{limitedNotice}</p>
-              <Link href="/pricing" className="text-xs font-medium text-green-600 hover:underline flex-shrink-0">
+            <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-3 flex items-center justify-between gap-3">
+              <p className="text-xs text-amber-800">{limitedNotice}</p>
+              <Link href="/pricing" className="text-xs font-medium text-emerald-600 hover:underline flex-shrink-0">
                 教材を追加 →
               </Link>
             </div>
           )}
-          <div className="bg-white rounded-2xl border p-6 mb-4">
+          <div className="bg-white rounded-2xl border border-slate-200 p-6 mb-4">
             <div className="flex gap-2 mb-4">
-              <span className="bg-green-50 text-green-700 text-xs px-3 py-1 rounded-full font-medium">AI生成問題</span>
-              <span className="bg-gray-100 text-gray-500 text-xs px-3 py-1 rounded-full">{q.difficulty === 'easy' ? '基礎' : q.difficulty === 'hard' ? '応用' : '標準'}</span>
+              <span className="bg-emerald-50 text-emerald-700 text-xs px-3 py-1 rounded-full font-medium">AI生成問題</span>
+              <span className="bg-slate-100 text-slate-500 text-xs px-3 py-1 rounded-full">{q.difficulty === 'easy' ? '基礎' : q.difficulty === 'hard' ? '応用' : '標準'}</span>
             </div>
-            <p className="text-base font-medium text-gray-900 leading-relaxed mb-6">{q.question}</p>
+            <p className="text-base font-medium text-slate-900 leading-relaxed mb-6">{q.question}</p>
             {format === '○×' ? (
               <div className="grid grid-cols-2 gap-4">
                 {q.options.map(opt => {
@@ -472,14 +472,14 @@ export default function GeneratePage() {
                   const isCorrect = symbol === q.answer;
                   const isSelected = selected?.charAt(0) === symbol;
                   let cls = 'flex flex-col items-center justify-center py-8 rounded-xl border-2 cursor-pointer transition-all text-4xl font-bold ';
-                  if (!answered) cls += 'border-gray-200 hover:border-gray-300';
-                  else if (isCorrect) cls += 'border-green-500 bg-green-50';
-                  else if (isSelected) cls += 'border-red-400 bg-red-50';
-                  else cls += 'border-gray-100 opacity-40';
+                  if (!answered) cls += 'border-slate-200 hover:border-slate-300';
+                  else if (isCorrect) cls += 'border-emerald-500 bg-emerald-50';
+                  else if (isSelected) cls += 'border-rose-400 bg-rose-50';
+                  else cls += 'border-slate-100 opacity-40';
                   return (
                     <div key={opt} className={cls} onClick={() => handleAnswer(opt)}>
-                      <span className={symbol === '○' ? 'text-green-600' : 'text-red-500'}>{symbol}</span>
-                      <span className="text-xs font-normal text-gray-500 mt-2">{opt.slice(3)}</span>
+                      <span className={symbol === '○' ? 'text-emerald-600' : 'text-rose-500'}>{symbol}</span>
+                      <span className="text-xs font-normal text-slate-500 mt-2">{opt.slice(3)}</span>
                     </div>
                   );
                 })}
@@ -491,25 +491,25 @@ export default function GeneratePage() {
                   const isCorrect = letter === q.answer;
                   const isSelected = selected?.charAt(0) === letter;
                   let cls = 'flex items-center gap-3 p-4 rounded-xl border cursor-pointer transition-all ';
-                  if (!answered) cls += 'border-gray-200 hover:border-gray-300';
-                  else if (isCorrect) cls += 'border-green-500 bg-green-50';
-                  else if (isSelected) cls += 'border-red-400 bg-red-50';
-                  else cls += 'border-gray-100 opacity-60';
+                  if (!answered) cls += 'border-slate-200 hover:border-slate-300';
+                  else if (isCorrect) cls += 'border-emerald-500 bg-emerald-50';
+                  else if (isSelected) cls += 'border-rose-400 bg-rose-50';
+                  else cls += 'border-slate-100 opacity-60';
                   return (
                     <div key={opt} className={cls} onClick={() => handleAnswer(opt)}>
-                      <div className={`w-6 h-6 rounded-full border flex items-center justify-center text-xs font-medium flex-shrink-0 ${answered && isCorrect ? 'bg-green-600 border-green-600 text-white' : answered && isSelected ? 'bg-red-400 border-red-400 text-white' : 'border-gray-300 text-gray-500'}`}>
+                      <div className={`w-6 h-6 rounded-full border flex items-center justify-center text-xs font-medium flex-shrink-0 ${answered && isCorrect ? 'bg-emerald-600 border-emerald-600 text-white' : answered && isSelected ? 'bg-rose-400 border-rose-400 text-white' : 'border-slate-300 text-slate-500'}`}>
                         {letter}
                       </div>
-                      <span className="text-sm text-gray-700">{opt.slice(3)}</span>
+                      <span className="text-sm text-slate-700">{opt.slice(3)}</span>
                     </div>
                   );
                 })}
               </div>
             )}
             {answered && (
-              <div className="mt-6 p-4 bg-gray-50 rounded-xl border-l-4 border-green-500">
-                <p className="text-xs font-medium text-green-600 mb-2">💡 解説</p>
-                <p className="text-sm text-gray-600 leading-relaxed">{q.explanation}</p>
+              <div className="mt-6 p-4 bg-slate-50 rounded-xl border-l-4 border-emerald-500">
+                <p className="text-xs font-medium text-emerald-600 mb-2">💡 解説</p>
+                <p className="text-sm text-slate-600 leading-relaxed">{q.explanation}</p>
                 <ExplainButton
                   question={q.question}
                   answer={q.answer}
@@ -522,33 +522,33 @@ export default function GeneratePage() {
           </div>
           <div className="flex items-center justify-between">
             {reportedSet.has(current) ? (
-              <span className="text-xs text-green-600">✅ 報告しました</span>
+              <span className="text-xs text-emerald-600">✅ 報告しました</span>
             ) : showReportForm ? (
               <div className="flex items-center gap-2 flex-wrap">
                 <select value={reportReason} onChange={e => setReportReason(e.target.value)}
-                  className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 text-gray-600 focus:outline-none">
+                  className="text-xs border border-slate-200 rounded-lg px-2 py-1.5 text-slate-600 focus:outline-none">
                   <option>内容が間違っている</option>
                   <option>問題文がおかしい</option>
                   <option>解説が不正確</option>
                   <option>その他</option>
                 </select>
                 <button onClick={handleReport} disabled={submittingReport}
-                  className="text-xs bg-red-500 text-white px-3 py-1.5 rounded-lg hover:bg-red-600 disabled:opacity-60">
+                  className="text-xs bg-rose-500 text-white px-3 py-1.5 rounded-lg hover:bg-rose-600 disabled:opacity-60">
                   {submittingReport ? '送信中...' : '送信'}
                 </button>
                 <button onClick={() => setShowReportForm(false)}
-                  className="text-xs text-gray-400 hover:text-gray-600">
+                  className="text-xs text-slate-400 hover:text-slate-600">
                   キャンセル
                 </button>
               </div>
             ) : (
               <button onClick={() => setShowReportForm(true)}
-                className="text-xs text-gray-400 hover:text-red-500 transition-colors">
+                className="text-xs text-slate-400 hover:text-rose-500 transition-colors">
                 🚩 問題を報告する
               </button>
             )}
             {answered && (
-              <button onClick={handleNext} className="bg-green-600 text-white px-6 py-2.5 rounded-xl text-sm font-medium hover:bg-green-700">
+              <button onClick={handleNext} className="bg-emerald-600 text-white px-6 py-2.5 rounded-xl text-sm font-medium hover:bg-emerald-700">
                 {current + 1 < questions.length ? '次の問題 →' : '結果を見る'}
               </button>
             )}
@@ -559,21 +559,21 @@ export default function GeneratePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-slate-50">
       <Navbar />
       <div className="max-w-xl mx-auto p-8">
-        <h1 className="text-2xl font-semibold text-gray-900 mb-2">AI問題生成</h1>
-        <p className="text-gray-500 text-sm mb-8">複数の教材を選んで一気に問題を生成できます。</p>
-        <div className="bg-white rounded-2xl border p-8 space-y-5">
+        <h1 className="text-2xl font-semibold text-slate-900 mb-2">AI問題生成</h1>
+        <p className="text-slate-500 text-sm mb-8">複数の教材を選んで一気に問題を生成できます。</p>
+        <div className="bg-white rounded-2xl border border-slate-200 p-8 space-y-5">
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">フォルダで絞り込み</label>
+            <label className="block text-sm font-medium text-slate-700 mb-2">フォルダで絞り込み</label>
             <div className="flex flex-wrap gap-2">
               {['すべて', 'なし', ...folders.map(f => f.name)].map((name, i) => {
                 const folderId = i === 0 ? 'すべて' : i === 1 ? 'なし' : folders[i - 2]?.id;
                 return (
                   <button key={name} onClick={() => setSelectedFolder(folderId)}
-                    className={`px-3 py-1.5 rounded-xl text-xs border transition-colors ${selectedFolder === folderId ? 'bg-green-600 text-white border-green-600' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}>
+                    className={`px-3 py-1.5 rounded-xl text-xs border transition-colors ${selectedFolder === folderId ? 'bg-emerald-600 text-white border-emerald-600' : 'border-slate-200 text-slate-600 hover:border-slate-300'}`}>
                     📁 {name}
                   </button>
                 );
@@ -583,30 +583,30 @@ export default function GeneratePage() {
 
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="block text-sm font-medium text-gray-700">教材を選択（複数可）</label>
+              <label className="block text-sm font-medium text-slate-700">教材を選択（複数可）</label>
               <div className="flex items-center gap-3">
                 {materials.length > 0 && (
-                  <Link href="/upload" className="text-xs text-gray-400 hover:text-green-600 transition-colors">
+                  <Link href="/upload" className="text-xs text-slate-400 hover:text-emerald-600 transition-colors">
                     + 教材を追加
                   </Link>
                 )}
-                <button onClick={selectAll} className="text-xs text-green-600 hover:underline">全選択</button>
-                <button onClick={clearAll} className="text-xs text-gray-400 hover:underline">解除</button>
+                <button onClick={selectAll} className="text-xs text-emerald-600 hover:underline">全選択</button>
+                <button onClick={clearAll} className="text-xs text-slate-400 hover:underline">解除</button>
               </div>
             </div>
             {filteredMaterials.length === 0 ? (
               materials.length === 0 ? (
-                <div className="p-6 bg-gray-50 rounded-xl text-center border-2 border-dashed border-gray-200">
+                <div className="p-6 bg-slate-50 rounded-xl text-center border-2 border-dashed border-slate-200">
                   <div className="text-3xl mb-3">📤</div>
-                  <p className="text-sm font-medium text-gray-700 mb-1">教材がまだありません</p>
-                  <p className="text-xs text-gray-400 mb-4">PDFや画像をアップロードして問題を生成しましょう</p>
+                  <p className="text-sm font-medium text-slate-700 mb-1">教材がまだありません</p>
+                  <p className="text-xs text-slate-400 mb-4">PDFや画像をアップロードして問題を生成しましょう</p>
                   <Link href="/upload"
-                    className="inline-flex items-center gap-1.5 bg-green-600 text-white text-sm font-medium px-4 py-2 rounded-xl hover:bg-green-700 transition-colors">
+                    className="inline-flex items-center gap-1.5 bg-emerald-600 text-white text-sm font-medium px-4 py-2 rounded-xl hover:bg-emerald-700 transition-colors">
                     + 教材をアップロードする
                   </Link>
                 </div>
               ) : (
-                <div className="p-4 bg-gray-50 rounded-xl text-sm text-gray-500 text-center">
+                <div className="p-4 bg-slate-50 rounded-xl text-sm text-slate-500 text-center">
                   このフォルダに教材がありません。
                 </div>
               )
@@ -614,29 +614,29 @@ export default function GeneratePage() {
               <div className="space-y-2 max-h-48 overflow-y-auto">
                 {filteredMaterials.map(m => (
                   <button key={m.id} onClick={() => toggleMaterial(m.id)}
-                    className={`w-full text-left flex items-center gap-3 p-3 rounded-xl border transition-colors ${selectedIds.includes(m.id) ? 'border-green-500 bg-green-50' : 'border-gray-200 hover:border-gray-300'}`}>
-                    <div className={`w-5 h-5 rounded border flex items-center justify-center flex-shrink-0 ${selectedIds.includes(m.id) ? 'bg-green-600 border-green-600' : 'border-gray-300'}`}>
+                    className={`w-full text-left flex items-center gap-3 p-3 rounded-xl border transition-colors ${selectedIds.includes(m.id) ? 'border-emerald-500 bg-emerald-50' : 'border-slate-200 hover:border-slate-300'}`}>
+                    <div className={`w-5 h-5 rounded border flex items-center justify-center flex-shrink-0 ${selectedIds.includes(m.id) ? 'bg-emerald-600 border-emerald-600' : 'border-slate-300'}`}>
                       {selectedIds.includes(m.id) && <span className="text-white text-xs">✓</span>}
                     </div>
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">{m.title}</p>
-                      {m.subject && <p className="text-xs text-gray-400">{m.subject}</p>}
+                      <p className="text-sm font-medium text-slate-900 truncate">{m.title}</p>
+                      {m.subject && <p className="text-xs text-slate-400">{m.subject}</p>}
                     </div>
                   </button>
                 ))}
               </div>
             )}
             {selectedIds.length > 0 && (
-              <p className="text-xs text-green-600 mt-2 font-medium">{selectedIds.length}件選択中</p>
+              <p className="text-xs text-emerald-600 mt-2 font-medium">{selectedIds.length}件選択中</p>
             )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">出題形式</label>
+            <label className="block text-sm font-medium text-slate-700 mb-2">出題形式</label>
             <div className="flex gap-3">
               {(['4択', '○×', '穴埋め'] as const).map(f => (
                 <button key={f} onClick={() => setFormat(f)}
-                  className={`flex-1 py-2.5 rounded-xl border text-sm font-medium transition-colors ${format === f ? 'bg-green-600 text-white border-green-600' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}>
+                  className={`flex-1 py-2.5 rounded-xl border text-sm font-medium transition-colors ${format === f ? 'bg-emerald-600 text-white border-emerald-600' : 'border-slate-200 text-slate-600 hover:border-slate-300'}`}>
                   {f === '4択' ? '4択問題' : f === '○×' ? '○×問題' : '穴埋め問題'}
                 </button>
               ))}
@@ -644,9 +644,9 @@ export default function GeneratePage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">教材1件あたりの問題数：{count}問</label>
-            <input type="range" min={3} max={10} value={count} onChange={e => setCount(Number(e.target.value))} className="w-full accent-green-600" />
-            <div className="flex justify-between text-xs text-gray-400 mt-1">
+            <label className="block text-sm font-medium text-slate-700 mb-2">教材1件あたりの問題数：{count}問</label>
+            <input type="range" min={3} max={10} value={count} onChange={e => setCount(Number(e.target.value))} className="w-full accent-emerald-600" />
+            <div className="flex justify-between text-xs text-slate-400 mt-1">
               <span>3問</span>
               <span>合計 {selectedIds.length * count}問生成</span>
               <span>10問</span>
@@ -654,12 +654,12 @@ export default function GeneratePage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">出題の指示（任意）</label>
+            <label className="block text-sm font-medium text-slate-700 mb-2">出題の指示（任意）</label>
             <textarea
               value={supplementText}
               onChange={e => setSupplementText(e.target.value)}
               placeholder="例：呈色反応をメインに出題して　/ テストで聞かれそうな知識問題　/ 基礎的な部分だけ"
-              className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
+              className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
               rows={2}
             />
           </div>
@@ -667,13 +667,13 @@ export default function GeneratePage() {
           {error && <ErrorBanner message={error} />}
 
           <button onClick={handleGenerate} disabled={selectedIds.length === 0 || generating}
-            className="w-full bg-green-600 text-white py-3 rounded-xl text-sm font-medium hover:bg-green-700 disabled:opacity-60">
+            className="w-full bg-emerald-600 text-white py-3 rounded-xl text-sm font-medium hover:bg-emerald-700 disabled:opacity-60">
             ✨ {selectedIds.length > 0 ? `${selectedIds.length}件の教材から問題を生成する` : '教材を選択してください'}
           </button>
 
-          <p className="text-center text-xs text-gray-400">
+          <p className="text-center text-xs text-slate-400">
             生成できる教材数が足りないときは{' '}
-            <Link href="/pricing" className="text-green-600 hover:underline font-medium">教材クレジットを追加購入</Link>
+            <Link href="/pricing" className="text-emerald-600 hover:underline font-medium">教材クレジットを追加購入</Link>
             {' '}できます
           </p>
         </div>

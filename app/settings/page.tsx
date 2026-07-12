@@ -92,49 +92,49 @@ export default function SettingsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <p className="text-gray-500">読み込み中...</p>
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <p className="text-slate-500">読み込み中...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-slate-50">
       <Navbar />
 
       <div className="max-w-xl mx-auto p-8 space-y-6">
-        <h1 className="text-2xl font-semibold text-gray-900">設定</h1>
+        <h1 className="text-2xl font-semibold text-slate-900">設定</h1>
 
         {/* プロフィール編集 */}
-        <div className="bg-white rounded-2xl border p-6">
-          <h2 className="font-semibold text-gray-900 mb-4">プロフィール編集</h2>
+        <div className="bg-white rounded-2xl border border-slate-200 p-6">
+          <h2 className="font-semibold text-slate-900 mb-4">プロフィール編集</h2>
           <div className="space-y-4">
             <div>
-              <label className="block text-xs text-gray-500 mb-1">お名前</label>
+              <label className="block text-xs text-slate-500 mb-1">お名前</label>
               <input type="text" value={name} onChange={e => setName(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 placeholder="田中 さくら" />
             </div>
             <div>
-              <label className="block text-xs text-gray-500 mb-1">メールアドレス</label>
-              <p className="text-sm text-gray-900 px-4 py-2.5 bg-gray-50 rounded-xl">{email}</p>
+              <label className="block text-xs text-slate-500 mb-1">メールアドレス</label>
+              <p className="text-sm text-slate-900 px-4 py-2.5 bg-slate-50 rounded-xl">{email}</p>
             </div>
             <div>
-              <label className="block text-xs text-gray-500 mb-1">大学名</label>
+              <label className="block text-xs text-slate-500 mb-1">大学名</label>
               <input type="text" value={university} onChange={e => setUniversity(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 placeholder="例：○○大学" />
             </div>
             <div>
-              <label className="block text-xs text-gray-500 mb-1">学部・学科</label>
+              <label className="block text-xs text-slate-500 mb-1">学部・学科</label>
               <input type="text" value={department} onChange={e => setDepartment(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 placeholder="例：医学部医学科" />
             </div>
             <div>
-              <label className="block text-xs text-gray-500 mb-1">目指している国試</label>
+              <label className="block text-xs text-slate-500 mb-1">目指している国試</label>
               <select value={targetExam} onChange={e => setTargetExam(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
                 <option value="">選択してください</option>
                 <option value="medical">医師国家試験</option>
                 <option value="pharmacy">薬剤師国家試験</option>
@@ -147,9 +147,9 @@ export default function SettingsPage() {
               </select>
             </div>
             <div>
-              <label className="block text-xs text-gray-500 mb-1">学年</label>
+              <label className="block text-xs text-slate-500 mb-1">学年</label>
               <select value={grade} onChange={e => setGrade(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
                 <option value="">選択してください</option>
                 <option value="1">1年生</option>
                 <option value="2">2年生</option>
@@ -160,21 +160,21 @@ export default function SettingsPage() {
               </select>
             </div>
             <button onClick={handleSaveProfile} disabled={saving}
-              className="w-full bg-green-600 text-white py-3 rounded-xl text-sm font-medium hover:bg-green-700 disabled:opacity-60">
+              className="w-full bg-emerald-600 text-white py-3 rounded-xl text-sm font-medium hover:bg-emerald-700 disabled:opacity-60">
               {saving ? '保存中...' : saved ? '✅ 保存しました！' : 'プロフィールを保存'}
             </button>
           </div>
         </div>
 
         {/* プラン */}
-        <div className="bg-white rounded-2xl border p-6">
-          <h2 className="font-semibold text-gray-900 mb-4">プラン</h2>
-          <div className={`p-4 rounded-xl mb-4 ${plan === 'premium' ? 'bg-purple-50 border border-purple-200' : plan === 'standard' ? 'bg-green-50 border border-green-200' : 'bg-gray-50'}`}>
-            <p className="text-sm font-semibold text-gray-900">
+        <div className="bg-white rounded-2xl border border-slate-200 p-6">
+          <h2 className="font-semibold text-slate-900 mb-4">プラン</h2>
+          <div className={`p-4 rounded-xl mb-4 ${plan === 'premium' ? 'bg-purple-50 border border-purple-200' : plan === 'standard' ? 'bg-emerald-50 border border-emerald-200' : 'bg-slate-50'}`}>
+            <p className="text-sm font-semibold text-slate-900">
               {plan === 'premium' ? '👑 プレミアムプラン' : plan === 'standard' ? '⭐ 有料プラン' : '無料プラン'}
-              {isTrial && <span className="ml-2 text-xs font-medium text-green-600">無料トライアル中</span>}
+              {isTrial && <span className="ml-2 text-xs font-medium text-emerald-600">無料トライアル中</span>}
             </p>
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-slate-500 mt-1">
               {isTrial
                 ? '1ヶ月間、有料プランを無料でご利用中です'
                 : (plan === 'standard' || plan === 'premium')
@@ -184,48 +184,48 @@ export default function SettingsPage() {
                   : '一部機能に制限あり'}
             </p>
             {planExpiresAt && planCredits !== null && (
-              <p className="text-xs text-gray-500 mt-1">
-                AI生成の残り教材クレジット：<span className="font-medium text-gray-700">{planCredits}件</span>
+              <p className="text-xs text-slate-500 mt-1">
+                AI生成の残り教材クレジット：<span className="font-medium text-slate-700">{planCredits}件</span>
               </p>
             )}
           </div>
           {isTrial ? (
-            <div className="bg-green-50 border border-green-100 rounded-xl px-4 py-3 text-xs text-green-700">
+            <div className="bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-3 text-xs text-emerald-700">
               🎁 トライアル終了後は自動的に無料プランに戻ります（自動課金はされません）。引き続きご利用の場合はプランをご購入ください。
             </div>
           ) : (plan === 'standard' || plan === 'premium') && planExpiresAt ? (
             <div className="space-y-3">
-              <div className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 text-xs text-blue-700">
+              <div className="bg-sky-50 border border-sky-100 rounded-xl px-4 py-3 text-xs text-sky-700">
                 💡 買い切りプランです。<span className="font-medium">自動更新（自動課金）はありません</span>。期限が切れると無料プランに戻ります。期間はいつでも買い足せます。
               </div>
               <Link href="/pricing"
-                className="block w-full text-center bg-green-600 text-white rounded-xl py-3 text-sm font-medium hover:bg-green-700 transition-colors">
+                className="block w-full text-center bg-emerald-600 text-white rounded-xl py-3 text-sm font-medium hover:bg-emerald-700 transition-colors">
                 プランを買い足す / 更新する
               </Link>
             </div>
           ) : (
             <Link href="/pricing"
-              className="block w-full text-center bg-green-600 text-white rounded-xl py-3 text-sm font-medium hover:bg-green-700 transition-colors">
+              className="block w-full text-center bg-emerald-600 text-white rounded-xl py-3 text-sm font-medium hover:bg-emerald-700 transition-colors">
               有料プランを購入する
             </Link>
           )}
         </div>
 
         {/* パスワード変更 */}
-        <div className="bg-white rounded-2xl border p-6">
-          <h2 className="font-semibold text-gray-900 mb-4">パスワード変更</h2>
+        <div className="bg-white rounded-2xl border border-slate-200 p-6">
+          <h2 className="font-semibold text-slate-900 mb-4">パスワード変更</h2>
           <Link href="/auth/reset"
-            className="block w-full text-center border border-gray-200 rounded-xl py-3 text-sm text-gray-600 hover:border-gray-300 transition-colors">
+            className="block w-full text-center border border-slate-200 rounded-xl py-3 text-sm text-slate-600 hover:border-slate-300 transition-colors">
             パスワードをリセットする
           </Link>
         </div>
 
 {/* 危険な操作 */}
-        <div className="bg-white rounded-2xl border border-red-100 p-6">
-          <h2 className="font-semibold text-red-600 mb-4">アカウント削除</h2>
-          <p className="text-sm text-gray-500 mb-4">アカウントを削除すると、すべてのデータが失われます。この操作は取り消せません。</p>
+        <div className="bg-white rounded-2xl border border-rose-100 p-6">
+          <h2 className="font-semibold text-rose-600 mb-4">アカウント削除</h2>
+          <p className="text-sm text-slate-500 mb-4">アカウントを削除すると、すべてのデータが失われます。この操作は取り消せません。</p>
           <button onClick={handleDeleteAccount}
-            className="w-full border border-red-200 text-red-400 rounded-xl py-3 text-sm hover:border-red-400 hover:text-red-600 transition-colors">
+            className="w-full border border-rose-200 text-rose-400 rounded-xl py-3 text-sm hover:border-rose-400 hover:text-rose-600 transition-colors">
             アカウントを削除する
           </button>
         </div>

@@ -1,34 +1,32 @@
 import Link from 'next/link';
+import { Logo } from '@/components/brand/Logo';
 
 export default function TermsPage() {
   return (
     <div className="min-h-screen bg-white">
-      <nav className="flex items-center justify-between px-8 py-4 border-b">
-        <Link href="/" className="flex items-center gap-2">
-          <div className="w-7 h-7 bg-green-600 rounded-lg flex items-center justify-center">
-            <span className="text-white text-xs font-bold">M</span>
-          </div>
-          <span className="font-semibold">MediQuiz AI</span>
-        </Link>
-      </nav>
+      <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/80 backdrop-blur">
+        <nav className="mx-auto flex h-14 max-w-2xl items-center px-8">
+          <Logo href="/" />
+        </nav>
+      </header>
 
       <div className="max-w-2xl mx-auto px-8 py-12">
-        <h1 className="text-3xl font-semibold text-gray-900 mb-8">利用規約</h1>
-        <p className="text-sm text-gray-400 mb-8">最終更新日：2026年6月25日</p>
+        <h1 className="text-3xl font-semibold text-slate-900 mb-8">利用規約</h1>
+        <p className="text-sm text-slate-400 mb-8">最終更新日：2026年6月25日</p>
 
-        <div className="space-y-8 text-gray-600 text-sm leading-relaxed">
+        <div className="space-y-8 text-slate-600 text-sm leading-relaxed">
           <section>
-            <h2 className="text-lg font-semibold text-gray-900 mb-3">第1条（適用）</h2>
+            <h2 className="text-lg font-semibold text-slate-900 mb-3">第1条（適用）</h2>
             <p>本規約は、MediQuiz AI（以下「本サービス」）の利用に関する条件を定めるものです。ユーザーの皆さまには本規約に同意の上、本サービスをご利用いただきます。</p>
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-gray-900 mb-3">第2条（利用登録）</h2>
+            <h2 className="text-lg font-semibold text-slate-900 mb-3">第2条（利用登録）</h2>
             <p>登録希望者が所定の方法によって利用登録を申請し、運営者がこれを承認することによって、利用登録が完了します。本サービスは13歳以上を対象としており、18歳未満のユーザーが利用する場合は保護者の同意が必要です。</p>
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-gray-900 mb-3">第3条（禁止事項）</h2>
+            <h2 className="text-lg font-semibold text-slate-900 mb-3">第3条（禁止事項）</h2>
             <p>ユーザーは以下の行為をしてはなりません。</p>
             <ul className="list-disc list-inside mt-2 space-y-1">
               <li>法令または公序良俗に違反する行為</li>
@@ -43,7 +41,7 @@ export default function TermsPage() {
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-gray-900 mb-3">第4条（著作物のアップロードに関する注意）</h2>
+            <h2 className="text-lg font-semibold text-slate-900 mb-3">第4条（著作物のアップロードに関する注意）</h2>
             <p>ユーザーは、教科書・参考書・講義資料等の著作物をアップロードする場合、著作権法上の私的複製（個人の学習目的）の範囲内でのみ利用できます。以下の行為は著作権法に違反するおそれがあるため禁止します。</p>
             <ul className="list-disc list-inside mt-2 space-y-1">
               <li>著作権者の許諾なく、第三者と共有することを目的としたアップロード</li>
@@ -54,7 +52,7 @@ export default function TermsPage() {
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-gray-900 mb-3">第5条（有料プランの料金・解約・返金）</h2>
+            <h2 className="text-lg font-semibold text-slate-900 mb-3">第5条（有料プランの料金・解約・返金）</h2>
             <p>有料プランは買い切り制（自動更新なし）で、利用料金は以下のとおりです。</p>
             <ul className="list-disc list-inside mt-2 space-y-1">
               <li>24時間お試し：¥380（税込）</li>
@@ -67,12 +65,12 @@ export default function TermsPage() {
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-gray-900 mb-3">第6条（アカウントの削除）</h2>
+            <h2 className="text-lg font-semibold text-slate-900 mb-3">第6条（アカウントの削除）</h2>
             <p>ユーザーはいつでも設定画面またはお問い合わせ（harumaru0723@yahoo.co.jp）によりアカウントを削除することができます。アカウント削除後は、保存された問題・学習履歴等のデータは復元できません。</p>
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-gray-900 mb-3">第7条（本サービスの提供の停止等）</h2>
+            <h2 className="text-lg font-semibold text-slate-900 mb-3">第7条（本サービスの提供の停止等）</h2>
             <p>運営者は、以下の場合に事前通知なく本サービスの提供を停止・中断することがあります。</p>
             <ul className="list-disc list-inside mt-2 space-y-1">
               <li>本サービスにかかるシステムの保守・点検を行う場合</li>
@@ -81,32 +79,32 @@ export default function TermsPage() {
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-gray-900 mb-3">第8条（免責事項）</h2>
+            <h2 className="text-lg font-semibold text-slate-900 mb-3">第8条（免責事項）</h2>
             <p>本サービスで提供する問題・解説は学習支援を目的としており、医療行為の正確性を保証するものではありません。運営者は本サービスの利用によって生じた損害について、一切の責任を負いません。</p>
             <p className="mt-3">本サービスのAIが生成した問題・解説は学習支援を目的としており、内容の正確性・完全性を保証するものではありません。医療行為の判断には使用しないでください。</p>
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-gray-900 mb-3">第9条（サービス内容の変更等）</h2>
+            <h2 className="text-lg font-semibold text-slate-900 mb-3">第9条（サービス内容の変更等）</h2>
             <p>運営者は、ユーザーへの事前通知なく本サービスの内容を変更・停止することができます。</p>
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-gray-900 mb-3">第10条（運営者情報）</h2>
+            <h2 className="text-lg font-semibold text-slate-900 mb-3">第10条（運営者情報）</h2>
             <p>本サービスの運営者：春（個人開発者）<br />お問い合わせ：harumaru0723@yahoo.co.jp</p>
             <p className="mt-3">運営者の氏名・住所・電話番号については、プロバイダ責任制限法に基づく開示請求があった場合に限り開示します。</p>
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-gray-900 mb-3">第11条（準拠法・裁判管轄）</h2>
+            <h2 className="text-lg font-semibold text-slate-900 mb-3">第11条（準拠法・裁判管轄）</h2>
             <p>本規約の解釈にあたっては、日本法を準拠法とします。本サービスに関して紛争が生じた場合には、運営者の所在地を管轄する裁判所を専属的合意管轄とします。</p>
           </section>
         </div>
 
         <div className="mt-12 pt-8 border-t flex flex-wrap gap-4">
-          <Link href="/privacy" className="text-sm text-green-600 hover:underline">プライバシーポリシー</Link>
-          <Link href="/accuracy" className="text-sm text-green-600 hover:underline">AIの正確性・免責について</Link>
-          <Link href="/" className="text-sm text-gray-500 hover:underline">トップページへ戻る</Link>
+          <Link href="/privacy" className="text-sm text-emerald-600 hover:underline">プライバシーポリシー</Link>
+          <Link href="/accuracy" className="text-sm text-emerald-600 hover:underline">AIの正確性・免責について</Link>
+          <Link href="/" className="text-sm text-slate-500 hover:underline">トップページへ戻る</Link>
         </div>
       </div>
     </div>

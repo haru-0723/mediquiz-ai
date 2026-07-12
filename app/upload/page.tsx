@@ -102,17 +102,17 @@ export default function UploadPage() {
 
   if (done) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-8">
-        <div className="bg-white rounded-2xl border p-8 max-w-md w-full text-center">
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-8">
+        <div className="bg-white rounded-2xl border border-slate-200 p-8 max-w-md w-full text-center">
           <div className="text-5xl mb-4">✅</div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">アップロード完了！</h2>
-          <p className="text-gray-500 text-sm mb-6">{files.length}件の教材が保存されました。</p>
+          <h2 className="text-xl font-semibold text-slate-900 mb-2">アップロード完了！</h2>
+          <p className="text-slate-500 text-sm mb-6">{files.length}件の教材が保存されました。</p>
           <div className="flex gap-3">
             <button onClick={() => { setFiles([]); setTitles([]); setDone(false); setSubject(''); }}
-              className="flex-1 border border-gray-200 rounded-xl py-3 text-sm text-gray-600">
+              className="flex-1 border border-slate-200 rounded-xl py-3 text-sm text-slate-600">
               続けてアップロード
             </button>
-            <Link href="/generate" className="flex-1 bg-green-600 text-white rounded-xl py-3 text-sm font-medium text-center">
+            <Link href="/generate" className="flex-1 bg-emerald-600 text-white rounded-xl py-3 text-sm font-medium text-center">
               問題生成へ
             </Link>
           </div>
@@ -122,57 +122,57 @@ export default function UploadPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-slate-50">
       <Navbar />
 
       <div className="max-w-xl mx-auto p-8">
-        <h1 className="text-2xl font-semibold text-gray-900 mb-2">教材をアップロード</h1>
-        <p className="text-gray-500 text-sm mb-8">複数の画像・PDFをまとめてアップロードできます。</p>
+        <h1 className="text-2xl font-semibold text-slate-900 mb-2">教材をアップロード</h1>
+        <p className="text-slate-500 text-sm mb-8">複数の画像・PDFをまとめてアップロードできます。</p>
 
-        <div className="bg-white rounded-2xl border p-8 space-y-5">
+        <div className="bg-white rounded-2xl border border-slate-200 p-8 space-y-5">
 
           {/* ファイル選択 */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">ファイルを選択（複数可）</label>
+            <label className="block text-sm font-medium text-slate-700 mb-2">ファイルを選択（複数可）</label>
             <input type="file" accept=".pdf,image/*" multiple onChange={handleFileChange}
-              className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-green-50 file:text-green-700 file:font-medium hover:file:bg-green-100" />
+              className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-emerald-50 file:text-emerald-700 file:font-medium hover:file:bg-emerald-100" />
             {files.length > 0 && (
               <div className="mt-3 space-y-2">
                 {files.map((file, i) => (
-                  <div key={i} className="flex flex-col gap-2 p-3 bg-gray-50 rounded-xl">
+                  <div key={i} className="flex flex-col gap-2 p-3 bg-slate-50 rounded-xl">
                     <div className="flex items-center gap-3">
                       <span className="text-lg flex-shrink-0">{file.type.includes('pdf') ? '📄' : '🖼️'}</span>
-                      <span className="text-xs text-gray-400 flex-1 truncate">{file.name}</span>
-                      <span className="text-xs text-gray-400 flex-shrink-0">{(file.size / 1024 / 1024).toFixed(1)}MB</span>
-                      <button onClick={() => removeFile(i)} className="text-gray-300 hover:text-red-400 text-lg flex-shrink-0">×</button>
+                      <span className="text-xs text-slate-400 flex-1 truncate">{file.name}</span>
+                      <span className="text-xs text-slate-400 flex-shrink-0">{(file.size / 1024 / 1024).toFixed(1)}MB</span>
+                      <button onClick={() => removeFile(i)} className="text-slate-300 hover:text-rose-400 text-lg flex-shrink-0">×</button>
                     </div>
                     <input
                       type="text"
                       value={titles[i] ?? ''}
                       onChange={e => updateTitle(i, e.target.value)}
                       placeholder="教材名"
-                      className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                      className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
                     />
                   </div>
                 ))}
-                <p className="text-xs text-green-600 font-medium">合計 {files.length}件選択中</p>
+                <p className="text-xs text-emerald-600 font-medium">合計 {files.length}件選択中</p>
               </div>
             )}
           </div>
 
           {/* フォルダ選択 */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">フォルダ（任意）</label>
+            <label className="block text-sm font-medium text-slate-700 mb-2">フォルダ（任意）</label>
             <div className="flex gap-2">
               <select value={selectedFolder} onChange={e => setSelectedFolder(e.target.value)}
-                className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
+                className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
                 <option value="">フォルダなし</option>
                 {folders.map(f => (
                   <option key={f.id} value={f.id}>{f.name}</option>
                 ))}
               </select>
               <button onClick={() => setShowNewFolder(!showNewFolder)}
-                className="px-4 py-2.5 bg-gray-100 text-gray-600 rounded-xl text-sm hover:bg-gray-200">
+                className="px-4 py-2.5 bg-slate-100 text-slate-600 rounded-xl text-sm hover:bg-slate-200">
                 + 新規
               </button>
             </div>
@@ -180,9 +180,9 @@ export default function UploadPage() {
               <div className="flex gap-2 mt-2">
                 <input type="text" value={newFolderName} onChange={e => setNewFolderName(e.target.value)}
                   placeholder="フォルダ名を入力"
-                  className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-green-500" />
+                  className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
                 <button onClick={createFolder} disabled={!newFolderName.trim()}
-                  className="px-4 py-2.5 bg-green-600 text-white rounded-xl text-sm font-medium disabled:opacity-60">
+                  className="px-4 py-2.5 bg-emerald-600 text-white rounded-xl text-sm font-medium disabled:opacity-60">
                   作成
                 </button>
               </div>
@@ -191,16 +191,16 @@ export default function UploadPage() {
 
           {/* 科目 */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">科目（任意）</label>
+            <label className="block text-sm font-medium text-slate-700 mb-2">科目（任意）</label>
             <input type="text" value={subject} onChange={e => setSubject(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+              className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
               placeholder="例：解剖生理学" />
           </div>
 
-          {error && <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-xl">{error}</div>}
+          {error && <div className="bg-rose-50 text-rose-600 text-sm px-4 py-3 rounded-xl">{error}</div>}
 
           <button onClick={handleUpload} disabled={files.length === 0 || uploading}
-            className="w-full bg-green-600 text-white py-3 rounded-xl text-sm font-medium hover:bg-green-700 disabled:opacity-60">
+            className="w-full bg-emerald-600 text-white py-3 rounded-xl text-sm font-medium hover:bg-emerald-700 disabled:opacity-60">
             {uploading ? `アップロード中...` : `📤 ${files.length > 0 ? `${files.length}件を` : ''}アップロードする`}
           </button>
         </div>

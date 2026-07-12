@@ -120,8 +120,8 @@ export default function ReviewPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <p className="text-gray-500">読み込み中...</p>
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <p className="text-slate-500">読み込み中...</p>
       </div>
     );
   }
@@ -131,32 +131,32 @@ export default function ReviewPage() {
     const accuracy = Math.round((correct / results.length) * 100);
     const stillWrong = quizQuestions.filter(q => wrongIds.includes(q.id));
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-8">
-        <div className="bg-white rounded-2xl border p-8 max-w-md w-full text-center">
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-8">
+        <div className="bg-white rounded-2xl border border-slate-200 p-8 max-w-md w-full text-center">
           <div className="text-5xl mb-4">🏆</div>
-          <h2 className="text-2xl font-semibold text-gray-900 mb-2">復習完了！</h2>
-          <p className="text-5xl font-bold text-green-600 mb-2">{accuracy}%</p>
-          <p className="text-gray-500 mb-6">{results.length}問中 {correct}問正解</p>
+          <h2 className="text-2xl font-semibold text-slate-900 mb-2">復習完了！</h2>
+          <p className="text-5xl font-bold text-emerald-600 mb-2">{accuracy}%</p>
+          <p className="text-slate-500 mb-6">{results.length}問中 {correct}問正解</p>
           {stillWrong.length > 0 && (
-            <div className="bg-red-50 rounded-xl p-4 mb-6">
-              <p className="text-sm text-red-600 mb-3">まだ{stillWrong.length}問間違えています</p>
+            <div className="bg-rose-50 rounded-xl p-4 mb-6">
+              <p className="text-sm text-rose-600 mb-3">まだ{stillWrong.length}問間違えています</p>
               <button onClick={() => handleStart(stillWrong)}
-                className="w-full bg-red-500 text-white py-2.5 rounded-xl text-sm font-medium hover:bg-red-600">
+                className="w-full bg-rose-500 text-white py-2.5 rounded-xl text-sm font-medium hover:bg-rose-600">
                 間違えた問題をもう一度
               </button>
             </div>
           )}
           {stillWrong.length === 0 && (
-            <div className="bg-green-50 rounded-xl p-4 mb-6">
-              <p className="text-sm text-green-600 font-medium">🎉 全問正解！完璧です！</p>
+            <div className="bg-emerald-50 rounded-xl p-4 mb-6">
+              <p className="text-sm text-emerald-600 font-medium">🎉 全問正解！完璧です！</p>
             </div>
           )}
           <div className="flex gap-3">
-            <Link href="/dashboard" className="flex-1 border border-gray-200 rounded-xl py-3 text-sm text-gray-600 text-center">
+            <Link href="/dashboard" className="flex-1 border border-slate-200 rounded-xl py-3 text-sm text-slate-600 text-center">
               ダッシュボードへ
             </Link>
             <button onClick={() => setPhase('select')}
-              className="flex-1 bg-green-600 text-white rounded-xl py-3 text-sm font-medium">
+              className="flex-1 bg-emerald-600 text-white rounded-xl py-3 text-sm font-medium">
               最初から
             </button>
           </div>
@@ -175,47 +175,47 @@ export default function ReviewPage() {
       { label: 'D', text: q.option_d },
     ].filter(o => o.text);
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-slate-50">
         <Navbar />
         <div className="max-w-2xl mx-auto p-8">
-          <div className="flex justify-between items-center mb-2 text-sm text-gray-500">
+          <div className="flex justify-between items-center mb-2 text-sm text-slate-500">
             <span>{current + 1} / {quizQuestions.length}問</span>
             <span>正解率 {accuracy}%</span>
           </div>
-          <div className="h-2 bg-gray-200 rounded-full mb-8 overflow-hidden">
+          <div className="h-2 bg-slate-200 rounded-full mb-8 overflow-hidden">
             <div className="h-full bg-orange-500 rounded-full transition-all" style={{ width: `${(current / quizQuestions.length) * 100}%` }} />
           </div>
-          <div className="bg-white rounded-2xl border p-6 mb-4">
+          <div className="bg-white rounded-2xl border border-slate-200 p-6 mb-4">
             <div className="flex gap-2 mb-4">
               {q.subject && <span className="bg-orange-50 text-orange-700 text-xs px-3 py-1 rounded-full font-medium">{q.subject}</span>}
-              <span className="bg-gray-100 text-gray-500 text-xs px-3 py-1 rounded-full">
+              <span className="bg-slate-100 text-slate-500 text-xs px-3 py-1 rounded-full">
                 {q.difficulty === 'easy' ? '基礎' : q.difficulty === 'hard' ? '応用' : '標準'}
               </span>
             </div>
-            <p className="text-base font-medium text-gray-900 leading-relaxed mb-6">{q.question}</p>
+            <p className="text-base font-medium text-slate-900 leading-relaxed mb-6">{q.question}</p>
             <div className="space-y-3">
               {options.map(({ label, text }) => {
                 const isCorrect = label === q.answer;
                 const isSelected = selected === label;
                 let cls = 'flex items-center gap-3 p-4 rounded-xl border cursor-pointer transition-all ';
-                if (!answered) cls += 'border-gray-200 hover:border-gray-300';
-                else if (isCorrect) cls += 'border-green-500 bg-green-50';
-                else if (isSelected) cls += 'border-red-400 bg-red-50';
-                else cls += 'border-gray-100 opacity-60';
+                if (!answered) cls += 'border-slate-200 hover:border-slate-300';
+                else if (isCorrect) cls += 'border-emerald-500 bg-emerald-50';
+                else if (isSelected) cls += 'border-rose-400 bg-rose-50';
+                else cls += 'border-slate-100 opacity-60';
                 return (
                   <div key={label} className={cls} onClick={() => handleAnswer(label)}>
-                    <div className={`w-6 h-6 rounded-full border flex items-center justify-center text-xs font-medium flex-shrink-0 ${answered && isCorrect ? 'bg-green-600 border-green-600 text-white' : answered && isSelected ? 'bg-red-400 border-red-400 text-white' : 'border-gray-300 text-gray-500'}`}>
+                    <div className={`w-6 h-6 rounded-full border flex items-center justify-center text-xs font-medium flex-shrink-0 ${answered && isCorrect ? 'bg-emerald-600 border-emerald-600 text-white' : answered && isSelected ? 'bg-rose-400 border-rose-400 text-white' : 'border-slate-300 text-slate-500'}`}>
                       {label}
                     </div>
-                    <span className="text-sm text-gray-700">{text}</span>
+                    <span className="text-sm text-slate-700">{text}</span>
                   </div>
                 );
               })}
             </div>
             {answered && q.explanation && (
-              <div className="mt-6 p-4 bg-gray-50 rounded-xl border-l-4 border-orange-500">
+              <div className="mt-6 p-4 bg-slate-50 rounded-xl border-l-4 border-orange-500">
                 <p className="text-xs font-medium text-orange-600 mb-2">💡 解説</p>
-                <p className="text-sm text-gray-600 leading-relaxed">{q.explanation}</p>
+                <p className="text-sm text-slate-600 leading-relaxed">{q.explanation}</p>
               </div>
             )}
             {answered && (
@@ -235,20 +235,20 @@ export default function ReviewPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-slate-50">
       <Navbar />
       <div className="max-w-xl mx-auto p-8">
-        <h1 className="text-2xl font-semibold text-gray-900 mb-2">復習モード</h1>
-        <p className="text-gray-500 text-sm mb-8">フォルダや科目を選んで復習しましょう。</p>
+        <h1 className="text-2xl font-semibold text-slate-900 mb-2">復習モード</h1>
+        <p className="text-slate-500 text-sm mb-8">フォルダや科目を選んで復習しましょう。</p>
         <div className="space-y-4">
-          <div className="bg-white rounded-2xl border p-6">
-            <h2 className="font-semibold text-gray-900 mb-3">フォルダで絞り込み</h2>
+          <div className="bg-white rounded-2xl border border-slate-200 p-6">
+            <h2 className="font-semibold text-slate-900 mb-3">フォルダで絞り込み</h2>
             <div className="flex flex-wrap gap-2">
               {['すべて', 'なし', ...folders.map(f => f.id)].map((id, i) => {
                 const label = i === 0 ? 'すべて' : i === 1 ? 'フォルダなし' : folders[i - 2]?.name;
                 return (
                   <button key={id} onClick={() => setSelectedFolder(id)}
-                    className={`px-3 py-1.5 rounded-xl text-xs border transition-colors ${selectedFolder === id ? 'bg-orange-500 text-white border-orange-500' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}>
+                    className={`px-3 py-1.5 rounded-xl text-xs border transition-colors ${selectedFolder === id ? 'bg-orange-500 text-white border-orange-500' : 'border-slate-200 text-slate-600 hover:border-slate-300'}`}>
                     📁 {label}
                   </button>
                 );
@@ -256,33 +256,33 @@ export default function ReviewPage() {
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl border p-6">
-            <h2 className="font-semibold text-gray-900 mb-2">全問復習</h2>
-            <p className="text-sm text-gray-500 mb-4">{filteredQuestions.length}問を復習します。</p>
+          <div className="bg-white rounded-2xl border border-slate-200 p-6">
+            <h2 className="font-semibold text-slate-900 mb-2">全問復習</h2>
+            <p className="text-sm text-slate-500 mb-4">{filteredQuestions.length}問を復習します。</p>
             {filteredQuestions.length > 0 ? (
               <button onClick={() => handleStart(filteredQuestions)}
                 className="w-full bg-orange-500 text-white py-3 rounded-xl text-sm font-medium hover:bg-orange-600">
                 復習を始める（{filteredQuestions.length}問）
               </button>
             ) : (
-              <div className="text-center py-4 text-gray-400">
+              <div className="text-center py-4 text-slate-400">
                 <p className="text-sm">問題がありません</p>
-                <Link href="/questions/new" className="text-xs text-green-600 hover:underline mt-2 inline-block">問題を追加する</Link>
+                <Link href="/questions/new" className="text-xs text-emerald-600 hover:underline mt-2 inline-block">問題を追加する</Link>
               </div>
             )}
           </div>
 
           {filteredQuestions.length > 0 && (
-            <div className="bg-white rounded-2xl border p-6">
-              <h2 className="font-semibold text-gray-900 mb-2">科目別復習</h2>
+            <div className="bg-white rounded-2xl border border-slate-200 p-6">
+              <h2 className="font-semibold text-slate-900 mb-2">科目別復習</h2>
               <div className="space-y-2">
                 {Array.from(new Set(filteredQuestions.map(q => q.subject ?? 'その他'))).map(subject => {
                   const subjectQuestions = filteredQuestions.filter(q => (q.subject ?? 'その他') === subject);
                   return (
                     <button key={subject} onClick={() => handleStart(subjectQuestions)}
-                      className="w-full text-left flex items-center justify-between p-4 rounded-xl border border-gray-200 hover:border-orange-300 hover:bg-orange-50 transition-colors">
-                      <span className="text-sm font-medium text-gray-900">{subject}</span>
-                      <span className="text-xs text-gray-400">{subjectQuestions.length}問 →</span>
+                      className="w-full text-left flex items-center justify-between p-4 rounded-xl border border-slate-200 hover:border-orange-300 hover:bg-orange-50 transition-colors">
+                      <span className="text-sm font-medium text-slate-900">{subject}</span>
+                      <span className="text-xs text-slate-400">{subjectQuestions.length}問 →</span>
                     </button>
                   );
                 })}

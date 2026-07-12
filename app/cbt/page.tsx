@@ -311,8 +311,8 @@ async function handleStart() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <p className="text-gray-500">読み込み中...</p>
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <p className="text-slate-500">読み込み中...</p>
       </div>
     );
   }
@@ -323,30 +323,30 @@ async function handleStart() {
   if (!isCbtAllowed) {
     const isRehabOrOther = ['pt', 'ot', 'st', 'other'].includes(activeDeptType);
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-slate-50">
         <Navbar />
         <div className="max-w-xl mx-auto p-8">
-          <h1 className="text-2xl font-semibold text-gray-900 mb-2">CBTモード</h1>
-          <div className="bg-white rounded-2xl border p-10 text-center">
+          <h1 className="text-2xl font-semibold text-slate-900 mb-2">CBTモード</h1>
+          <div className="bg-white rounded-2xl border border-slate-200 p-10 text-center">
             <div className="text-4xl mb-4">🎓</div>
-            <p className="text-gray-700 font-medium mb-2">このモードは医学部・歯学部・薬学部・看護学部向けです</p>
+            <p className="text-slate-700 font-medium mb-2">このモードは医学部・歯学部・薬学部・看護学部向けです</p>
             {isRehabOrOther ? (
               <>
-                <p className="text-sm text-gray-500 mb-6">
+                <p className="text-sm text-slate-500 mb-6">
                   PT・OT・ST向けの国家試験対策は国試モードをご利用ください。
                 </p>
                 <Link href="/kokushi"
-                  className="inline-block bg-purple-600 text-white px-6 py-3 rounded-xl text-sm font-medium hover:bg-purple-700 transition-colors">
+                  className="inline-block bg-teal-600 text-white px-6 py-3 rounded-xl text-sm font-medium hover:bg-teal-700 transition-colors">
                   国試モードへ →
                 </Link>
               </>
             ) : (
               <>
-                <p className="text-sm text-gray-500 mb-6">
+                <p className="text-sm text-slate-500 mb-6">
                   プロフィールで「目指している国試」を設定してください。
                 </p>
                 <Link href="/settings"
-                  className="inline-block bg-green-600 text-white px-6 py-3 rounded-xl text-sm font-medium hover:bg-green-700 transition-colors">
+                  className="inline-block bg-emerald-600 text-white px-6 py-3 rounded-xl text-sm font-medium hover:bg-emerald-700 transition-colors">
                   プロフィールを設定する →
                 </Link>
               </>
@@ -359,16 +359,16 @@ async function handleStart() {
 
   if (generating) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center max-w-sm w-full px-8">
-          <div style={{ width: 48, height: 48, border: '3px solid #2563EB', borderTopColor: 'transparent', borderRadius: '50%', margin: '0 auto 24px', animation: 'spin 0.8s linear infinite' }} />
-          <p className="text-gray-900 font-semibold text-lg mb-2">問題を生成中...</p>
-          <p className="text-blue-600 text-sm font-medium mb-6 min-h-[20px]">{genProgress.message}</p>
-          <div className="h-2 bg-gray-200 rounded-full overflow-hidden mb-2">
-            <div className="h-full bg-blue-600 rounded-full transition-all duration-500" style={{ width: `${genProgress.value}%` }} />
+          <div style={{ width: 48, height: 48, border: '3px solid #0284c7', borderTopColor: 'transparent', borderRadius: '50%', margin: '0 auto 24px', animation: 'spin 0.8s linear infinite' }} />
+          <p className="text-slate-900 font-semibold text-lg mb-2">問題を生成中...</p>
+          <p className="text-sky-600 text-sm font-medium mb-6 min-h-[20px]">{genProgress.message}</p>
+          <div className="h-2 bg-slate-200 rounded-full overflow-hidden mb-2">
+            <div className="h-full bg-sky-600 rounded-full transition-all duration-500" style={{ width: `${genProgress.value}%` }} />
           </div>
-          <p className="text-xs text-yellow-600 mb-2">⏳ CBTレベルの正確な問題を生成しています。1〜2分ほどお待ちください。</p>
-          <p className="text-xs text-gray-400">AIが{questionCount}問を準備しています</p>
+          <p className="text-xs text-amber-600 mb-2">⏳ CBTレベルの正確な問題を生成しています。1〜2分ほどお待ちください。</p>
+          <p className="text-xs text-slate-400">AIが{questionCount}問を準備しています</p>
         </div>
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
@@ -390,22 +390,22 @@ async function handleStart() {
     }, {} as Record<string, { correct: number; total: number }>);
 
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-slate-50">
         <Navbar />
         <div className="max-w-2xl mx-auto p-8">
-          <div className="bg-white rounded-2xl border p-8 text-center mb-6">
+          <div className="bg-white rounded-2xl border border-slate-200 p-8 text-center mb-6">
             <div className="text-5xl mb-4">📊</div>
-            <h2 className="text-2xl font-semibold text-gray-900 mb-2">模試結果</h2>
-            <p className="text-5xl font-bold text-blue-600 mb-2">{accuracy}%</p>
-            <p className="text-gray-500 mb-2">{answers.length}問中 {correct}問正解</p>
-            <div className={`inline-block px-4 py-2 rounded-full text-sm font-medium mt-2 ${accuracy >= 80 ? 'bg-green-100 text-green-700' : accuracy >= 60 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-600'}`}>
+            <h2 className="text-2xl font-semibold text-slate-900 mb-2">模試結果</h2>
+            <p className="text-5xl font-bold text-sky-600 mb-2">{accuracy}%</p>
+            <p className="text-slate-500 mb-2">{answers.length}問中 {correct}問正解</p>
+            <div className={`inline-block px-4 py-2 rounded-full text-sm font-medium mt-2 ${accuracy >= 80 ? 'bg-emerald-100 text-emerald-700' : accuracy >= 60 ? 'bg-amber-100 text-amber-700' : 'bg-rose-100 text-rose-600'}`}>
               {accuracy >= 80 ? '🎉 優秀！合格圏内です' : accuracy >= 60 ? '📚 もう少し頑張りましょう' : '💪 基礎から復習しましょう'}
             </div>
           </div>
 
           {Object.keys(subjectStats).length > 0 && (
-            <div className="bg-white rounded-2xl border p-6 mb-6">
-              <h3 className="font-semibold text-gray-900 mb-4">📊 苦手分野分析</h3>
+            <div className="bg-white rounded-2xl border border-slate-200 p-6 mb-6">
+              <h3 className="font-semibold text-slate-900 mb-4">📊 苦手分野分析</h3>
               <div className="space-y-3">
                 {Object.entries(subjectStats)
                   .sort((a, b) => (a[1].correct / a[1].total) - (b[1].correct / b[1].total))
@@ -414,23 +414,23 @@ async function handleStart() {
                     const isWeak = pct <= 60;
                     const isReview = pct > 60 && pct <= 80;
                     return (
-                      <div key={subject} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+                      <div key={subject} className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
-                            <span className="text-sm text-gray-700 truncate">{subject}</span>
-                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium flex-shrink-0 ${isWeak ? 'bg-red-100 text-red-600' : isReview ? 'bg-yellow-100 text-yellow-600' : 'bg-green-100 text-green-600'}`}>
+                            <span className="text-sm text-slate-700 truncate">{subject}</span>
+                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium flex-shrink-0 ${isWeak ? 'bg-rose-100 text-rose-600' : isReview ? 'bg-amber-100 text-amber-600' : 'bg-emerald-100 text-emerald-600'}`}>
                               {isWeak ? '苦手' : isReview ? '要復習' : '得意'}
                             </span>
-                            <span className={`text-sm font-medium flex-shrink-0 ${isWeak ? 'text-red-500' : isReview ? 'text-yellow-600' : 'text-green-600'}`}>{pct}%</span>
+                            <span className={`text-sm font-medium flex-shrink-0 ${isWeak ? 'text-rose-500' : isReview ? 'text-amber-600' : 'text-emerald-600'}`}>{pct}%</span>
                           </div>
-                          <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                            <div className={`h-full rounded-full ${isWeak ? 'bg-red-400' : isReview ? 'bg-yellow-400' : 'bg-green-500'}`}
+                          <div className="h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                            <div className={`h-full rounded-full ${isWeak ? 'bg-rose-400' : isReview ? 'bg-amber-400' : 'bg-emerald-500'}`}
                               style={{ width: `${pct}%` }} />
                           </div>
-                          <p className="text-xs text-gray-400 mt-1">{stat.total}問中{stat.correct}問正解</p>
+                          <p className="text-xs text-slate-400 mt-1">{stat.total}問中{stat.correct}問正解</p>
                         </div>
                         <Link href={`/review?subject=${encodeURIComponent(subject)}`}
-                          className="flex-shrink-0 text-xs text-green-600 border border-green-200 px-3 py-1.5 rounded-lg hover:bg-green-50">
+                          className="flex-shrink-0 text-xs text-emerald-600 border border-emerald-200 px-3 py-1.5 rounded-lg hover:bg-emerald-50">
                           復習する
                         </Link>
                       </div>
@@ -440,20 +440,20 @@ async function handleStart() {
             </div>
           )}
 
-          <div className="bg-white rounded-2xl border p-6 mb-6">
-            <h3 className="font-semibold text-gray-900 mb-4">📝 問題別結果</h3>
+          <div className="bg-white rounded-2xl border border-slate-200 p-6 mb-6">
+            <h3 className="font-semibold text-slate-900 mb-4">📝 問題別結果</h3>
             <div className="space-y-3">
               {questions.map((q, i) => {
                 const answer = answers[i];
                 return (
-                  <div key={q.id} className={`p-4 rounded-xl border ${answer?.isCorrect ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}`}>
+                  <div key={q.id} className={`p-4 rounded-xl border ${answer?.isCorrect ? 'border-emerald-200 bg-emerald-50' : 'border-rose-200 bg-rose-50'}`}>
                     <div className="flex items-start gap-3">
                       <span className="text-lg flex-shrink-0">{answer?.isCorrect ? '✅' : '❌'}</span>
                       <div className="min-w-0">
-                        <p className="text-sm font-medium text-gray-900 mb-1">Q{i + 1}. {q.question}</p>
-                        <p className="text-xs text-gray-500">正解：{q.answer}　あなた：{answer?.selected ?? '未回答'}</p>
+                        <p className="text-sm font-medium text-slate-900 mb-1">Q{i + 1}. {q.question}</p>
+                        <p className="text-xs text-slate-500">正解：{q.answer}　あなた：{answer?.selected ?? '未回答'}</p>
                         {!answer?.isCorrect && q.explanation && (
-                          <p className="text-xs text-gray-600 mt-2 p-2 bg-white rounded-lg">💡 {q.explanation}</p>
+                          <p className="text-xs text-slate-600 mt-2 p-2 bg-white rounded-lg">💡 {q.explanation}</p>
                         )}
                       </div>
                     </div>
@@ -465,16 +465,16 @@ async function handleStart() {
 
           <div className="flex gap-3 mb-3">
             <button onClick={() => { setReviewIndex(0); setPhase('review'); }}
-              className="flex-1 border border-blue-300 text-blue-600 rounded-xl py-3 text-sm font-medium hover:bg-blue-50">
+              className="flex-1 border border-sky-300 text-sky-600 rounded-xl py-3 text-sm font-medium hover:bg-sky-50">
               📖 一問ずつ振り返る
             </button>
           </div>
           <div className="flex gap-3">
-            <Link href="/dashboard" className="flex-1 border border-gray-200 rounded-xl py-3 text-sm text-gray-600 text-center">
+            <Link href="/dashboard" className="flex-1 border border-slate-200 rounded-xl py-3 text-sm text-slate-600 text-center">
               ダッシュボードへ
             </Link>
             <button onClick={() => setPhase('select')}
-              className="flex-1 bg-blue-600 text-white rounded-xl py-3 text-sm font-medium hover:bg-blue-700">
+              className="flex-1 bg-sky-600 text-white rounded-xl py-3 text-sm font-medium hover:bg-sky-700">
               もう一度挑戦
             </button>
           </div>
@@ -493,52 +493,52 @@ async function handleStart() {
       { label: 'D', text: q.option_d },
     ].filter(o => o.text);
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-slate-50">
         <Navbar />
         <div className="max-w-2xl mx-auto p-4 sm:p-8">
           <div className="flex items-center justify-between mb-6">
-            <button onClick={() => setPhase('result')} className="text-sm text-gray-500 hover:text-gray-700">
+            <button onClick={() => setPhase('result')} className="text-sm text-slate-500 hover:text-slate-700">
               ← 結果に戻る
             </button>
-            <span className="text-sm text-gray-500">{reviewIndex + 1} / {questions.length}問</span>
+            <span className="text-sm text-slate-500">{reviewIndex + 1} / {questions.length}問</span>
           </div>
-          <div className="h-1.5 bg-gray-200 rounded-full mb-6 overflow-hidden">
-            <div className="h-full bg-blue-500 rounded-full transition-all"
+          <div className="h-1.5 bg-slate-200 rounded-full mb-6 overflow-hidden">
+            <div className="h-full bg-sky-500 rounded-full transition-all"
               style={{ width: `${((reviewIndex + 1) / questions.length) * 100}%` }} />
           </div>
-          <div className="bg-white rounded-2xl border p-6 mb-4">
+          <div className="bg-white rounded-2xl border border-slate-200 p-6 mb-4">
             <div className="flex items-center gap-2 mb-4">
               <span className="text-xl">{answer?.isCorrect ? '✅' : '❌'}</span>
-              {q.subject && <span className="bg-blue-50 text-blue-700 text-xs px-3 py-1 rounded-full font-medium">{q.subject}</span>}
+              {q.subject && <span className="bg-sky-50 text-sky-700 text-xs px-3 py-1 rounded-full font-medium">{q.subject}</span>}
             </div>
-            <p className="text-base font-medium text-gray-900 leading-relaxed mb-6">{q.question}</p>
+            <p className="text-base font-medium text-slate-900 leading-relaxed mb-6">{q.question}</p>
             <div className="space-y-3 mb-6">
               {options.map(({ label, text }) => {
                 const isCorrect = label === q.answer;
                 const isSelected = label === answer?.selected;
                 let cls = 'flex items-center gap-3 p-4 rounded-xl border ';
-                if (isCorrect) cls += 'border-green-500 bg-green-50';
-                else if (isSelected) cls += 'border-red-400 bg-red-50';
-                else cls += 'border-gray-100 opacity-60';
+                if (isCorrect) cls += 'border-emerald-500 bg-emerald-50';
+                else if (isSelected) cls += 'border-rose-400 bg-rose-50';
+                else cls += 'border-slate-100 opacity-60';
                 return (
                   <div key={label} className={cls}>
                     <div className={`w-6 h-6 rounded-full border flex items-center justify-center text-xs font-medium flex-shrink-0
-                      ${isCorrect ? 'bg-green-600 border-green-600 text-white' :
-                        isSelected ? 'bg-red-400 border-red-400 text-white' :
-                        'border-gray-300 text-gray-400'}`}>
+                      ${isCorrect ? 'bg-emerald-600 border-emerald-600 text-white' :
+                        isSelected ? 'bg-rose-400 border-rose-400 text-white' :
+                        'border-slate-300 text-slate-400'}`}>
                       {label}
                     </div>
-                    <span className="text-sm text-gray-700">{text}</span>
-                    {isCorrect && <span className="ml-auto text-xs text-green-600 font-medium flex-shrink-0">正解</span>}
-                    {isSelected && !isCorrect && <span className="ml-auto text-xs text-red-500 font-medium flex-shrink-0">あなたの回答</span>}
+                    <span className="text-sm text-slate-700">{text}</span>
+                    {isCorrect && <span className="ml-auto text-xs text-emerald-600 font-medium flex-shrink-0">正解</span>}
+                    {isSelected && !isCorrect && <span className="ml-auto text-xs text-rose-500 font-medium flex-shrink-0">あなたの回答</span>}
                   </div>
                 );
               })}
             </div>
             {q.explanation && (
-              <div className="p-4 bg-gray-50 rounded-xl border-l-4 border-blue-500">
-                <p className="text-xs font-medium text-blue-600 mb-2">💡 解説</p>
-                <p className="text-sm text-gray-600 leading-relaxed">{q.explanation}</p>
+              <div className="p-4 bg-slate-50 rounded-xl border-l-4 border-sky-500">
+                <p className="text-xs font-medium text-sky-600 mb-2">💡 解説</p>
+                <p className="text-sm text-slate-600 leading-relaxed">{q.explanation}</p>
               </div>
             )}
             <ExplainButton key={q.id} question={q.question} answer={q.answer} explanation={q.explanation} subject={q.subject} accentColor="blue" />
@@ -547,19 +547,19 @@ async function handleStart() {
             <button
               onClick={() => setReviewIndex(i => i - 1)}
               disabled={reviewIndex === 0}
-              className="flex-1 border border-gray-200 rounded-xl py-3 text-sm text-gray-600 hover:bg-gray-50 disabled:opacity-40">
+              className="flex-1 border border-slate-200 rounded-xl py-3 text-sm text-slate-600 hover:bg-slate-50 disabled:opacity-40">
               ← 前の問題
             </button>
             {reviewIndex + 1 < questions.length ? (
               <button
                 onClick={() => setReviewIndex(i => i + 1)}
-                className="flex-1 bg-blue-600 text-white rounded-xl py-3 text-sm font-medium hover:bg-blue-700">
+                className="flex-1 bg-sky-600 text-white rounded-xl py-3 text-sm font-medium hover:bg-sky-700">
                 次の問題 →
               </button>
             ) : (
               <button
                 onClick={() => setPhase('result')}
-                className="flex-1 bg-blue-600 text-white rounded-xl py-3 text-sm font-medium hover:bg-blue-700">
+                className="flex-1 bg-sky-600 text-white rounded-xl py-3 text-sm font-medium hover:bg-sky-700">
                 結果に戻る
               </button>
             )}
@@ -580,68 +580,68 @@ async function handleStart() {
     const isUrgent = timeLeft <= 60;
 
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-slate-50">
         <Navbar />
         <div className="bg-white border-b px-4 sm:px-8 py-2 flex items-center justify-end gap-3">
-          <span aria-live="polite" aria-label={`残り時間 ${formatTime(timeLeft)}`} className={`text-sm font-semibold px-3 py-1 rounded-full ${isUrgent ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'}`}>
+          <span aria-live="polite" aria-label={`残り時間 ${formatTime(timeLeft)}`} className={`text-sm font-semibold px-3 py-1 rounded-full ${isUrgent ? 'bg-rose-100 text-rose-600' : 'bg-sky-100 text-sky-600'}`}>
             ⏱ {formatTime(timeLeft)}
           </span>
           <button onClick={() => handleFinish(answers, questions)}
-            className="text-xs text-gray-400 hover:text-gray-600 border border-gray-200 px-3 py-1 rounded-lg">
+            className="text-xs text-slate-400 hover:text-slate-600 border border-slate-200 px-3 py-1 rounded-lg">
             終了
           </button>
         </div>
 
         <div className="max-w-2xl mx-auto p-8">
-          <div className="flex justify-between items-center mb-2 text-sm text-gray-500">
+          <div className="flex justify-between items-center mb-2 text-sm text-slate-500">
             <span>{current + 1} / {questions.length}問</span>
             <span>{Math.round((answers.filter(a => a.isCorrect).length / Math.max(answers.length, 1)) * 100)}%</span>
           </div>
-          <div className="h-2 bg-gray-200 rounded-full mb-6 overflow-hidden">
-            <div className="h-full bg-blue-600 rounded-full transition-all"
+          <div className="h-2 bg-slate-200 rounded-full mb-6 overflow-hidden">
+            <div className="h-full bg-sky-600 rounded-full transition-all"
               style={{ width: `${(current / questions.length) * 100}%` }} />
           </div>
 
-          <p className="text-xs text-gray-400 mb-3">⚠️ AI生成問題のため、内容の正確性を保証しません</p>
+          <p className="text-xs text-slate-400 mb-3">⚠️ AI生成問題のため、内容の正確性を保証しません</p>
 
-          <div className="bg-white rounded-2xl border p-6 mb-4">
+          <div className="bg-white rounded-2xl border border-slate-200 p-6 mb-4">
             <div className="flex gap-2 mb-4">
-              {q.subject && <span className="bg-blue-50 text-blue-700 text-xs px-3 py-1 rounded-full font-medium">{q.subject}</span>}
-              <span className="bg-gray-100 text-gray-500 text-xs px-3 py-1 rounded-full">
+              {q.subject && <span className="bg-sky-50 text-sky-700 text-xs px-3 py-1 rounded-full font-medium">{q.subject}</span>}
+              <span className="bg-slate-100 text-slate-500 text-xs px-3 py-1 rounded-full">
                 {q.difficulty === 'easy' ? '基礎' : q.difficulty === 'hard' ? '応用' : '標準'}
               </span>
             </div>
-            <p className="text-base font-medium text-gray-900 leading-relaxed mb-6">{q.question}</p>
+            <p className="text-base font-medium text-slate-900 leading-relaxed mb-6">{q.question}</p>
             <div className="space-y-3" role="radiogroup" aria-label="選択肢">
               {options.map(({ label, text }) => {
                 const isSelected = selected === label;
                 const isCorrect = label === q.answer;
                 let cls = 'flex items-center gap-3 p-4 rounded-xl border cursor-pointer transition-all ';
                 if (!showResult) {
-                  cls += isSelected ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300';
+                  cls += isSelected ? 'border-sky-500 bg-sky-50' : 'border-slate-200 hover:border-slate-300';
                 } else {
-                  if (isCorrect) cls += 'border-green-500 bg-green-50';
-                  else if (isSelected) cls += 'border-red-400 bg-red-50';
-                  else cls += 'border-gray-100 opacity-60';
+                  if (isCorrect) cls += 'border-emerald-500 bg-emerald-50';
+                  else if (isSelected) cls += 'border-rose-400 bg-rose-50';
+                  else cls += 'border-slate-100 opacity-60';
                 }
                 return (
                   <div key={label} role="radio" aria-checked={isSelected} aria-label={`選択肢${label}: ${text}`} className={cls} onClick={() => !showResult && handleAnswer(label)}>
                     <div className={`w-6 h-6 rounded-full border flex items-center justify-center text-xs font-medium flex-shrink-0
-                      ${showResult && isCorrect ? 'bg-green-600 border-green-600 text-white' :
-                        showResult && isSelected ? 'bg-red-400 border-red-400 text-white' :
-                        isSelected ? 'bg-blue-600 border-blue-600 text-white' :
-                        'border-gray-300 text-gray-500'}`}>
+                      ${showResult && isCorrect ? 'bg-emerald-600 border-emerald-600 text-white' :
+                        showResult && isSelected ? 'bg-rose-400 border-rose-400 text-white' :
+                        isSelected ? 'bg-sky-600 border-sky-600 text-white' :
+                        'border-slate-300 text-slate-500'}`}>
                       {label}
                     </div>
-                    <span className="text-sm text-gray-700">{text}</span>
+                    <span className="text-sm text-slate-700">{text}</span>
                   </div>
                 );
               })}
             </div>
             {showResult && q.explanation && (
-              <div className="mt-6 p-4 bg-gray-50 rounded-xl border-l-4 border-blue-500">
-                <p className="text-xs font-medium text-blue-600 mb-2">💡 解説</p>
-                <p className="text-sm text-gray-600 leading-relaxed">{q.explanation}</p>
+              <div className="mt-6 p-4 bg-slate-50 rounded-xl border-l-4 border-sky-500">
+                <p className="text-xs font-medium text-sky-600 mb-2">💡 解説</p>
+                <p className="text-sm text-slate-600 leading-relaxed">{q.explanation}</p>
               </div>
             )}
             {showResult && (
@@ -651,45 +651,45 @@ async function handleStart() {
 
           <div className="flex items-center mb-3">
             {reportedSet.has(current) ? (
-              <span className="text-xs text-green-600">✅ 報告しました</span>
+              <span className="text-xs text-emerald-600">✅ 報告しました</span>
             ) : report.show ? (
               <div className="flex items-center gap-2 flex-wrap">
                 <select value={report.reason} onChange={e => setReport(r => ({ ...r, reason: e.target.value }))}
-                  className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 text-gray-600 focus:outline-none">
+                  className="text-xs border border-slate-200 rounded-lg px-2 py-1.5 text-slate-600 focus:outline-none">
                   <option>内容が間違っている</option>
                   <option>問題文がおかしい</option>
                   <option>解説が不正確</option>
                   <option>その他</option>
                 </select>
                 <button onClick={handleReport} disabled={report.submitting}
-                  className="text-xs bg-red-500 text-white px-3 py-1.5 rounded-lg hover:bg-red-600 disabled:opacity-60">
+                  className="text-xs bg-rose-500 text-white px-3 py-1.5 rounded-lg hover:bg-rose-600 disabled:opacity-60">
                   {report.submitting ? '送信中...' : '送信'}
                 </button>
                 <button onClick={() => setReport(r => ({ ...r, show: false }))}
-                  className="text-xs text-gray-400 hover:text-gray-600">
+                  className="text-xs text-slate-400 hover:text-slate-600">
                   キャンセル
                 </button>
               </div>
             ) : (
               <button onClick={() => setReport(r => ({ ...r, show: true }))}
-                className="text-xs text-gray-400 hover:text-red-500 transition-colors">
+                className="text-xs text-slate-400 hover:text-rose-500 transition-colors">
                 🚩 問題を報告する
               </button>
             )}
           </div>
 
           <div className="flex justify-between items-center">
-            <span className="text-xs text-gray-400">{answers.length}問回答済み</span>
+            <span className="text-xs text-slate-400">{answers.length}問回答済み</span>
             <div className="flex gap-3">
               {!showResult && selected && (
                 <button onClick={() => setShowResult(true)}
-                  className="border border-blue-300 text-blue-600 px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-blue-50">
+                  className="border border-sky-300 text-sky-600 px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-sky-50">
                   解説を見る
                 </button>
               )}
               {selected && (
                 <button onClick={handleNext}
-                  className="bg-blue-600 text-white px-6 py-2.5 rounded-xl text-sm font-medium hover:bg-blue-700">
+                  className="bg-sky-600 text-white px-6 py-2.5 rounded-xl text-sm font-medium hover:bg-sky-700">
                   {current + 1 < questions.length ? '次の問題 →' : '結果を見る'}
                 </button>
               )}
@@ -701,20 +701,20 @@ async function handleStart() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-slate-50">
       <Navbar />
 
       <div className="max-w-xl mx-auto p-8">
-        <h1 className="text-2xl font-semibold text-gray-900 mb-2">CBTモード</h1>
-        <p className="text-gray-500 text-sm mb-8">本番さながらの模試形式で実力を試しましょう。</p>
+        <h1 className="text-2xl font-semibold text-slate-900 mb-2">CBTモード</h1>
+        <p className="text-slate-500 text-sm mb-8">本番さながらの模試形式で実力を試しましょう。</p>
 
-        <div className="bg-white rounded-2xl border p-8 space-y-6">
+        <div className="bg-white rounded-2xl border border-slate-200 p-8 space-y-6">
           <div>
             <div className="flex items-center justify-between mb-3">
-              <label className="text-sm font-medium text-gray-700">出題範囲</label>
+              <label className="text-sm font-medium text-slate-700">出題範囲</label>
               <button
                 onClick={() => { setUseManualSubjectList(v => !v); setSelectedSubject('すべて'); }}
-                className="text-xs text-blue-500 hover:underline"
+                className="text-xs text-sky-500 hover:underline"
               >
                 {useManualSubjectList ? '学部別に表示' : '既存の問題から選ぶ'}
               </button>
@@ -722,24 +722,24 @@ async function handleStart() {
             <div className="flex flex-wrap gap-2">
               {subjects.map(s => (
                 <button key={s} onClick={() => setSelectedSubject(s)}
-                  className={`px-4 py-2 rounded-xl text-sm border transition-colors ${selectedSubject === s ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}>
+                  className={`px-4 py-2 rounded-xl text-sm border transition-colors ${selectedSubject === s ? 'bg-sky-600 text-white border-sky-600' : 'border-slate-200 text-slate-600 hover:border-slate-300'}`}>
                   {s}
                 </button>
               ))}
             </div>
             {!useManualSubjectList && (
-              <p className="text-xs text-gray-400 mt-2">
+              <p className="text-xs text-slate-400 mt-2">
                 {activeDeptType === 'pharmacy' ? '薬学部' : activeDeptType === 'medical' ? '医学部' : activeDeptType === 'nursing' ? '看護学部' : activeDeptType === 'pt' ? '理学療法士' : activeDeptType === 'ot' ? '作業療法士' : activeDeptType === 'st' ? '言語聴覚士' : activeDeptType === 'dental' ? '歯学部' : '薬学部・医学部・看護学部'}の科目リストを表示中
               </p>
             )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-3">問題数</label>
+            <label className="block text-sm font-medium text-slate-700 mb-3">問題数</label>
             <div className="grid grid-cols-4 gap-2">
               {[10, 20, 30, 50].map(n => (
                 <button key={n} onClick={() => setQuestionCount(n)}
-                  className={`py-2.5 rounded-xl text-sm border transition-colors ${questionCount === n ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}>
+                  className={`py-2.5 rounded-xl text-sm border transition-colors ${questionCount === n ? 'bg-sky-600 text-white border-sky-600' : 'border-slate-200 text-slate-600 hover:border-slate-300'}`}>
                   {n}問
                 </button>
               ))}
@@ -747,11 +747,11 @@ async function handleStart() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-3">制限時間</label>
+            <label className="block text-sm font-medium text-slate-700 mb-3">制限時間</label>
             <div className="grid grid-cols-4 gap-2">
               {[10, 20, 30, 60].map(t => (
                 <button key={t} onClick={() => setTimeLimit(t)}
-                  className={`py-2.5 rounded-xl text-sm border transition-colors ${timeLimit === t ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}>
+                  className={`py-2.5 rounded-xl text-sm border transition-colors ${timeLimit === t ? 'bg-sky-600 text-white border-sky-600' : 'border-slate-200 text-slate-600 hover:border-slate-300'}`}>
                   {t}分
                 </button>
               ))}
@@ -761,7 +761,7 @@ async function handleStart() {
           {error && <ErrorBanner message={error} />}
 
           <button onClick={handleStart}
-            className="w-full bg-blue-600 text-white py-3 rounded-xl text-sm font-medium hover:bg-blue-700">
+            className="w-full bg-sky-600 text-white py-3 rounded-xl text-sm font-medium hover:bg-sky-700">
             🎯 模試を開始する
           </button>
         </div>

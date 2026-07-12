@@ -146,7 +146,7 @@ export default function SignupPage() {
           <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
             <form onSubmit={handleSignup} className="space-y-5">
               {error && (
-                <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600">{error}</div>
+                <div className="rounded-xl border border-rose-100 bg-rose-50 px-4 py-3 text-sm text-rose-600">{error}</div>
               )}
 
               <Field label="お名前" icon={User}>
