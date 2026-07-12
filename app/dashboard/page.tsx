@@ -2,27 +2,34 @@ import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { ADMIN_EMAIL } from '@/lib/constants';
 import Link from 'next/link';
+import {
+  Stethoscope, Settings, GraduationCap, Award, Flame,
+  CalendarCheck, Zap, RotateCcw, Target, Sparkles, BookMarked, Upload, ClipboardList,
+  BookOpen, Repeat, Trophy, History, FileText, Image as ImageIcon, Library,
+  AlertTriangle, Infinity as InfinityIcon, Lock,
+} from 'lucide-react';
 import ExamSection from './ExamSection';
 import LogoutButton from './LogoutButton';
 import HelpModal from '@/components/HelpModal';
 import { dashboardHelp } from '@/lib/helpContent';
 import GuideBanner from './GuideBanner';
 import WeakAnalysisCard from './WeakAnalysisCard';
-import StreakCard from './StreakCard';
 import AddToHomeScreen from '@/components/AddToHomeScreen';
 import { getTitleInfo } from '@/lib/titleUtils';
 import { getEffectivePlan, getPlanExpiry } from '@/lib/planUtils';
 
 const FEATURE_CARDS = [
-  { href: '/today',    icon: '📅', title: '今日の問題',    desc: '毎日5問で実力アップ' },
-  { href: '/quiz',      icon: '⚡', title: '演習を始める',  desc: '科目・難易度を選んで演習' },
-  { href: '/review',   icon: '🔁', title: '復習モード',    desc: '間違えた問題を再チャレンジ' },
-  { href: '/cbt',      icon: '🎯', title: 'CBTモード',      desc: '医学部・薬学部・看護学部向けの模試形式' },
-  { href: '/generate', icon: '✨', title: 'AI問題生成',    desc: '教材からAIが問題を自動作成' },
-  { href: '/questions',icon: '📚', title: 'マイ問題集',    desc: '自分の問題をフォルダ管理' },
-  { href: '/materials',icon: '📤', title: '教材管理',      desc: 'PDFや画像をアップロード' },
-  { href: '/kokushi', icon: '📝', title: '国試モード',    desc: '国試形式の本格模試に挑戦' },
+  { href: '/today',    icon: CalendarCheck, title: '今日の問題',    desc: '毎日5問で実力アップ',          tint: 'bg-emerald-50', iconColor: 'text-emerald-600' },
+  { href: '/quiz',      icon: Zap,           title: '演習を始める',  desc: '科目・難易度を選んで演習',      tint: 'bg-emerald-50', iconColor: 'text-emerald-600' },
+  { href: '/review',   icon: RotateCcw,     title: '復習モード',    desc: '間違えた問題を再チャレンジ',    tint: 'bg-sky-50',     iconColor: 'text-sky-600' },
+  { href: '/cbt',      icon: Target,        title: 'CBTモード',      desc: '医・薬・看護向けの模試形式',    tint: 'bg-sky-50',     iconColor: 'text-sky-600' },
+  { href: '/generate', icon: Sparkles,      title: 'AI問題生成',    desc: '教材からAIが問題を自動作成',    tint: 'bg-teal-50',    iconColor: 'text-teal-600' },
+  { href: '/questions',icon: BookMarked,    title: 'マイ問題集',    desc: '自分の問題をフォルダ管理',      tint: 'bg-slate-100',  iconColor: 'text-slate-600' },
+  { href: '/materials',icon: Upload,        title: '教材管理',      desc: 'PDFや画像をアップロード',        tint: 'bg-slate-100',  iconColor: 'text-slate-600' },
+  { href: '/kokushi',  icon: ClipboardList, title: '国試モード',    desc: '国試形式の本格模試に挑戦',      tint: 'bg-teal-50',    iconColor: 'text-teal-600' },
 ];
+
+const PLAN_LABEL: Record<string, string> = { free: '無料プラン', standard: '有料プラン', premium: 'プレミアム' };
 
 export default async function DashboardPage() {
   const supabase = createClient();
@@ -181,8 +188,8 @@ export default async function DashboardPage() {
   };
   const todayJST = toJSTDate(new Date().toISOString());
   const mondayJST = new Date(todayJST);
-  mondayJST.setDate(todayJST.getDate() - (todayJST.getDay() === 0 ? 6 : todayJST.getDay() - 1));
-  mondayJST.setHours(0, 0, 0, 0);
+  mondayJST.setUTCDate(todayJST.getUTCDate() - (todayJST.getUTCDay() === 0 ? 6 : todayJST.getUTCDay() - 1));
+  mondayJST.setUTCHours(0, 0, 0, 0);
   for (const s of allSessions ?? []) {
     const d = toJSTDate(s.completed_at as string);
     const diffDays = Math.floor((d.getTime() - mondayJST.getTime()) / 86400000);
@@ -190,7 +197,9 @@ export default async function DashboardPage() {
       weekDailyQuestions[diffDays] += s.total_questions as number;
     }
   }
+  const todayIdx = todayJST.getUTCDay() === 0 ? 6 : todayJST.getUTCDay() - 1;
   const titleInfo = getTitleInfo(totalQuestions);
+  const weekLabels = ['月', '火', '水', '木', '金', '土', '日'];
 
   const profileSummary = [
     profile?.university,
@@ -200,330 +209,375 @@ export default async function DashboardPage() {
 
   const isFirstTime = !profileSummary && (sessions?.length ?? 0) === 0;
 
+  const statCards = [
+    { label: '今週の学習問題数', value: hasWeekData ? `${weekQuestions}` : '--', hint: hasWeekData ? '問 解答' : '今週はまだ演習していません', icon: BookOpen },
+    { label: '今週の正解率',     value: weekAccuracy !== null ? `${weekAccuracy}%` : '--', hint: hasWeekData ? '頑張ってます！' : '今週はまだ演習していません', icon: Target },
+    { label: '今週の演習回数',   value: hasWeekData ? `${weekSessionCount}` : '--', hint: hasWeekData ? '回 実施' : '今週はまだ演習していません', icon: Repeat },
+    { label: '今週の最高正解率', value: weekBestAccuracy !== null ? `${weekBestAccuracy}%` : '--', hint: hasWeekData ? '自己ベスト更新中🏆' : '今週はまだ演習していません', icon: Trophy },
+  ];
+
+  const modeStyle: Record<string, { label: string; cls: string }> = {
+    quiz: { label: '演習', cls: 'bg-slate-100 text-slate-600' },
+    cbt: { label: 'CBT', cls: 'bg-sky-100 text-sky-700' },
+    kokushi: { label: '国試', cls: 'bg-teal-100 text-teal-700' },
+  };
+
   return (
-    <>
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white border-b px-4 sm:px-8 py-3 sm:py-4 flex items-center justify-between">
-        <div className="flex items-center gap-2 flex-shrink-0">
-          <div className="w-7 h-7 bg-green-600 rounded-lg flex items-center justify-center">
-            <span className="text-white text-xs font-bold">M</span>
-          </div>
-          <span className="font-semibold text-sm sm:text-base">MediQuiz AI</span>
-        </div>
-        <div className="flex items-center gap-1.5 sm:gap-2">
-          {isAdmin && (
-            <Link href="/admin" className="text-xs bg-red-500 text-white px-2 py-1 rounded-lg hover:bg-red-600">管理者</Link>
-          )}
-          <Link href="/settings" className="text-xs text-gray-400 hover:text-gray-600">設定</Link>
-          <HelpModal steps={dashboardHelp.steps} pageTitle={dashboardHelp.pageTitle} />
-          <LogoutButton />
-        </div>
-      </nav>
-
-      <div className="max-w-4xl mx-auto p-4 sm:p-8">
-        <GuideBanner />
-
-        {/* プロフィールカード */}
-        <div className="mb-6 sm:mb-8">
-          <div className="flex items-center gap-2 mb-2">
-            <Link
-              href="/pricing"
-              className={`text-xs px-2.5 py-1 rounded-full font-medium ${plan === 'premium' ? 'bg-purple-100 text-purple-700' : plan === 'standard' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-600'}`}
-            >
-              {plan === 'premium' ? '👑 プレミアム' : plan === 'standard' ? '⭐ 有料プラン' : '🔓 無料プラン'}
+    <div className="min-h-screen bg-slate-50">
+      {/* トップナビ */}
+      <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/80 backdrop-blur">
+        <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4 sm:px-6">
+          <Link href="/dashboard" className="flex items-center gap-2">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-600">
+              <Stethoscope className="h-[18px] w-[18px] text-white" strokeWidth={2.2} />
+            </span>
+            <span className="text-[15px] font-bold tracking-tight text-slate-900">
+              MediQuiz<span className="text-emerald-600"> AI</span>
+            </span>
+          </Link>
+          <div className="flex items-center gap-1">
+            {isAdmin && (
+              <Link href="/admin" className="mr-1 rounded-lg bg-rose-500 px-2 py-1 text-xs font-medium text-white hover:bg-rose-600">管理者</Link>
+            )}
+            <HelpModal steps={dashboardHelp.steps} pageTitle={dashboardHelp.pageTitle} />
+            <Link href="/settings" aria-label="設定"
+              className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700">
+              <Settings className="h-5 w-5" strokeWidth={2} />
             </Link>
+            <LogoutButton />
           </div>
-          <Link href="/settings" className="group block bg-white rounded-2xl border p-4 sm:p-6 hover:border-green-300 hover:shadow-sm transition-all">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
+        </div>
+      </header>
+
+      <main className="mx-auto max-w-5xl px-4 py-6 sm:px-6 sm:py-8">
+        <div className="space-y-6 sm:space-y-8">
+
+          {/* グリーティング + ストリーク */}
+          <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white">
+            <div className="flex flex-col gap-6 p-5 sm:p-7 lg:flex-row lg:items-center lg:justify-between">
               <div className="min-w-0">
-                <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 group-hover:text-green-700 transition-colors leading-snug break-all">
-                  こんにちは、{name.split(' ')[0]}さん 👋
-                </h1>
-                <p className="text-gray-500 mt-1 text-sm leading-relaxed">
-                  {profileSummary || '今日も一緒に頑張りましょう。プロフィールを設定しましょう →'}
-                </p>
-                <div className="mt-3 flex items-center gap-2">
-                  <span className="text-xs bg-green-100 text-green-700 font-medium px-2.5 py-1 rounded-full">
-                    {titleInfo.name} Lv.{titleInfo.level}
-                  </span>
-                  <span className="text-xs text-gray-400">累計 {totalQuestions}問</span>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Link href="/pricing"
+                    className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${
+                      plan === 'premium' ? 'bg-purple-50 text-purple-700' :
+                      plan === 'standard' ? 'bg-emerald-50 text-emerald-700' :
+                        'bg-orange-50 text-orange-600'
+                    }`}>
+                    <GraduationCap className="h-3.5 w-3.5" strokeWidth={2.2} />
+                    {PLAN_LABEL[plan]}
+                  </Link>
+                  {profileSummary && <span className="truncate text-xs text-slate-400">{profileSummary}</span>}
                 </div>
-                <div className="mt-2 w-full sm:max-w-xs">
-                  <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                    <div className="h-full bg-green-500 rounded-full transition-all" style={{ width: `${titleInfo.progress}%` }} />
+
+                <Link href="/settings" className="group mt-3 block">
+                  <h1 className="text-balance text-2xl font-bold tracking-tight text-slate-900 group-hover:text-emerald-700 sm:text-[28px]">
+                    おかえりなさい、{name.split(' ')[0]}さん
+                  </h1>
+                  {!profileSummary && (
+                    <p className="mt-1 text-sm text-slate-500">プロフィールを設定しましょう →</p>
+                  )}
+                </Link>
+
+                <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-slate-600">
+                  <Award className="h-4 w-4 text-amber-500" strokeWidth={2.2} />
+                  <span className="font-medium text-slate-900">{titleInfo.name}</span>
+                  <span className="text-slate-300">·</span>
+                  <span>Lv.{titleInfo.level}</span>
+                  <span className="text-slate-300">·</span>
+                  <span>累計 {totalQuestions.toLocaleString()} 問</span>
+                </div>
+
+                <div className="mt-3 max-w-md">
+                  <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+                    <div className="h-full rounded-full bg-emerald-500 transition-all" style={{ width: `${titleInfo.progress}%` }} />
                   </div>
-                  <p className="text-xs text-gray-400 mt-1">次のレベルまであと {titleInfo.nextLevelAt - totalQuestions}問</p>
+                  <p className="mt-1.5 text-xs text-slate-400">次のレベルまで あと {titleInfo.nextLevelAt - totalQuestions} 問</p>
                 </div>
               </div>
-              <span className="flex-shrink-0 text-xs text-gray-400 group-hover:text-green-600 flex items-center gap-1 transition-colors self-start sm:self-auto">
-                プロフィール編集 <span aria-hidden="true">→</span>
-              </span>
-            </div>
-          </Link>
-        </div>
 
-        {/* プラン残量（残り教材数・残り日数） */}
-        {isUnlimited ? (
-          <div className="mb-6 sm:mb-8 flex items-center gap-3 bg-white rounded-2xl border p-4 sm:p-5">
-            <span className="text-2xl flex-shrink-0">♾️</span>
-            <div>
-              <p className="text-sm font-semibold text-gray-900">AI問題生成は無制限でご利用いただけます</p>
-              <p className="text-xs text-gray-400 mt-0.5">
-                {dbPlan === 'premium' ? 'プレミアムプラン' : '有料プラン'}特典
-              </p>
+              {/* ストリーク */}
+              <div className="shrink-0 rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:min-w-[260px]">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-9 w-9 items-center justify-center rounded-full bg-orange-100">
+                      <Flame className="h-5 w-5 text-orange-500" strokeWidth={2.2} />
+                    </span>
+                    <div>
+                      <p className="text-xl font-bold leading-none text-slate-900">{streak.current}日</p>
+                      <p className="mt-0.5 text-xs text-slate-500">{streak.todayDone ? '連続学習中' : '今日はまだ'}</p>
+                    </div>
+                  </div>
+                  <p className="text-xs text-slate-400">最長 {streak.longest}日</p>
+                </div>
+
+                <div className="mt-4 flex items-center justify-between gap-1">
+                  {weekLabels.map((label, i) => {
+                    const q = weekDailyQuestions[i];
+                    const done = q > 0;
+                    const isToday = i === todayIdx;
+                    const future = i > todayIdx;
+                    return (
+                      <div key={label} className="flex flex-1 flex-col items-center gap-1">
+                        <span className={[
+                          'flex h-7 w-7 items-center justify-center rounded-lg text-[11px] font-semibold transition-colors',
+                          done ? 'bg-emerald-500 text-white' : 'bg-white text-slate-300 ring-1 ring-slate-200',
+                          isToday && !done ? 'ring-2 ring-emerald-300' : '',
+                          future ? 'opacity-40' : '',
+                        ].join(' ')}>
+                          {done ? q : ''}
+                        </span>
+                        <span className={`text-[10px] ${isToday ? 'font-semibold text-emerald-600' : 'text-slate-400'}`}>{label}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
-          </div>
-        ) : (planExpiry || trialEndsAt) ? (
-          <div className="mb-6 sm:mb-8 grid grid-cols-2 gap-3 sm:gap-4">
-            <div className="bg-white rounded-2xl border p-4 sm:p-6">
-              <p className="text-xs sm:text-sm text-gray-400 mb-1">残り教材生成数</p>
-              {planExpiry ? (
-                <>
-                  <p className={`text-2xl sm:text-3xl font-semibold ${(credits ?? 0) <= 3 ? 'text-orange-500' : 'text-gray-900'}`}>
-                    {credits ?? 0}<span className="text-base font-normal text-gray-400 ml-1">件</span>
-                  </p>
-                  <p className="text-xs text-gray-400 mt-1">
-                    {(credits ?? 0) > 0 ? 'AI問題生成に使えます' : '料金ページで買い足せます'}
-                  </p>
-                </>
+          </section>
+
+          {/* プラン残量 */}
+          {isUnlimited ? (
+            <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50">
+                <InfinityIcon className="h-5 w-5 text-emerald-600" strokeWidth={2.2} />
+              </span>
+              <div>
+                <p className="text-sm font-semibold text-slate-900">AI問題生成は無制限でご利用いただけます</p>
+                <p className="mt-0.5 text-xs text-slate-400">{dbPlan === 'premium' ? 'プレミアムプラン' : '有料プラン'}特典</p>
+              </div>
+            </div>
+          ) : (planExpiry || trialEndsAt) ? (
+            <div className="grid grid-cols-2 gap-3 sm:gap-4">
+              <div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
+                <p className="text-xs font-medium text-slate-500">残り教材生成数</p>
+                {planExpiry ? (
+                  <>
+                    <p className={`mt-2 text-2xl font-bold tracking-tight sm:text-3xl ${(credits ?? 0) <= 3 ? 'text-orange-500' : 'text-slate-900'}`}>
+                      {credits ?? 0}<span className="ml-1 text-base font-normal text-slate-400">件</span>
+                    </p>
+                    <p className="mt-1 text-xs text-slate-400">{(credits ?? 0) > 0 ? 'AI問題生成に使えます' : '料金ページで買い足せます'}</p>
+                  </>
+                ) : (
+                  <>
+                    <p className="mt-2 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">1日10回</p>
+                    <p className="mt-1 text-xs text-slate-400">トライアル中の生成上限</p>
+                  </>
+                )}
+              </div>
+              <div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
+                <p className="text-xs font-medium text-slate-500">プラン残り日数</p>
+                <p className={`mt-2 text-2xl font-bold tracking-tight sm:text-3xl ${(remainingDays ?? 0) <= 3 ? 'text-orange-500' : 'text-slate-900'}`}>
+                  {remainingDays ?? 0}<span className="ml-1 text-base font-normal text-slate-400">日</span>
+                </p>
+                <p className="mt-1 text-xs text-slate-400">{expiryDateLabel} まで</p>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-start gap-3 rounded-2xl border border-orange-200 bg-orange-50 px-4 py-3 sm:items-center">
+              <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center sm:mt-0">
+                <Lock className="h-4 w-4 text-orange-500" strokeWidth={2} />
+              </span>
+              <p className="flex-1 text-sm text-orange-800">
+                無料プランのAI問題生成は残り<span className="font-semibold">{freeGenerateRemaining ?? 0}回</span>（通算{FREE_GENERATE_LIMIT}回まで）・保存は<span className="font-semibold">30問</span>まで
+              </p>
+              <Link href="/pricing" className="whitespace-nowrap text-xs font-medium text-orange-700 hover:underline">アップグレード →</Link>
+            </div>
+          )}
+
+          {/* 初回オンボーディング */}
+          {isFirstTime && (
+            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
+              <h2 className="mb-1 font-semibold text-emerald-900">👋 MediQuiz AIへようこそ！</h2>
+              <p className="mb-4 text-sm text-emerald-800">教材がなくてもすぐ試せます。まずは1問解いてみましょう。</p>
+              <Link href="/trial"
+                className="mb-4 flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-emerald-700">
+                🎯 まず1問やってみる（教材アップロード不要）
+              </Link>
+              <p className="mb-2 text-xs font-medium text-emerald-700">慣れてきたら、こちらもおすすめです</p>
+              <ol className="space-y-3">
+                {[
+                  { n: 1, title: '教材をアップロードして自分専用の問題を作る', desc: '授業スライドや教科書の写真からAIが問題を自動生成します', href: '/upload', cta: 'アップロードする →' },
+                  { n: 2, title: 'プロフィールを設定する', desc: '学部・目標国試を設定すると、AIが最適な問題を出してくれます', href: '/settings', cta: '設定する →' },
+                  { n: 3, title: '今日の問題に挑戦する', desc: '毎日5問、AIが厳選した問題で実力を積み上げましょう', href: '/today', cta: '挑戦する →' },
+                ].map(step => (
+                  <li key={step.n} className="flex items-start gap-3">
+                    <span className="mt-0.5 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-emerald-600 text-xs font-medium text-white">{step.n}</span>
+                    <div>
+                      <p className="text-sm font-medium text-emerald-900">{step.title}</p>
+                      <p className="mt-0.5 text-xs text-emerald-700">{step.desc}</p>
+                      <Link href={step.href} className="mt-1 inline-block text-xs font-medium text-emerald-600 hover:underline">{step.cta}</Link>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          )}
+
+          <AddToHomeScreen inline />
+          <GuideBanner />
+
+          {/* 国試未設定バナー */}
+          {(!profile?.target_exam || profile.target_exam === 'other') && (
+            <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 sm:items-center">
+              <span className="text-lg">📝</span>
+              <p className="flex-1 text-sm text-amber-800">目指している国試を設定すると、AIが最適な科目の問題を生成します</p>
+              <Link href="/settings" className="whitespace-nowrap text-xs font-medium text-amber-700 hover:underline">設定する →</Link>
+            </div>
+          )}
+
+          {/* 学習メニュー */}
+          <section>
+            <h2 className="mb-3 px-1 text-xs font-semibold uppercase tracking-wide text-slate-400">学習メニュー</h2>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
+              {FEATURE_CARDS.map(card => {
+                const Icon = card.icon;
+                return (
+                  <Link key={card.href} href={card.href}
+                    className="group flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white p-4 transition-all hover:border-emerald-300 hover:shadow-sm sm:p-5">
+                    <span className={`flex h-10 w-10 items-center justify-center rounded-xl ${card.tint}`}>
+                      <Icon className={`h-5 w-5 ${card.iconColor}`} strokeWidth={2} />
+                    </span>
+                    <div className="mt-1">
+                      <p className="text-sm font-semibold leading-snug text-slate-900 sm:text-[15px]">{card.title}</p>
+                      <p className="mt-0.5 text-xs leading-relaxed text-slate-500">{card.desc}</p>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </section>
+
+          {/* 今週のサマリー */}
+          <section>
+            <h2 className="mb-3 px-1 text-xs font-semibold uppercase tracking-wide text-slate-400">今週のサマリー</h2>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
+              {statCards.map(s => {
+                const Icon = s.icon;
+                return (
+                  <div key={s.label} className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
+                    <div className="flex items-center gap-2">
+                      <Icon className="h-4 w-4 text-emerald-600" strokeWidth={2} />
+                      <p className="text-xs font-medium text-slate-500">{s.label}</p>
+                    </div>
+                    <p className="mt-3 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">{s.value}</p>
+                    <p className="mt-1 text-xs text-slate-400">{s.hint}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+
+          {/* 苦手分野分析 */}
+          {plan !== 'standard' && plan !== 'premium' ? (
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
+              <div className="mb-4 flex items-center gap-2">
+                <Target className="h-4 w-4 text-slate-500" strokeWidth={2} />
+                <h2 className="text-sm font-semibold text-slate-900">苦手分野分析</h2>
+              </div>
+              <div className="rounded-xl bg-slate-50 py-8 text-center">
+                <p className="text-sm text-slate-500">有料プランで科目別の弱点を可視化できます</p>
+                <Link href="/pricing"
+                  className="mt-3 inline-block rounded-lg bg-emerald-600 px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-emerald-700">
+                  アップグレードする →
+                </Link>
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <WeakAnalysisCard title="苦手分野分析（CBT）" stats={cbtStats} emptyMessage="CBTモードを行うと分析が表示されます" emptyLink="/cbt" />
+              <WeakAnalysisCard title="苦手分野分析（国試）" stats={kokushiStats} emptyMessage="国試モードを行うと分析が表示されます" emptyLink="/kokushi" />
+            </div>
+          )}
+
+          {/* 試験カウントダウン / 最近の演習 */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <ExamSection userId={user.id} initialExams={exams ?? []} />
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
+              <div className="mb-4 flex items-center gap-2">
+                <History className="h-4 w-4 text-slate-500" strokeWidth={2} />
+                <h2 className="text-sm font-semibold text-slate-900">最近の演習</h2>
+              </div>
+              {recentSessions.length > 0 ? (
+                <div className="space-y-2.5">
+                  {recentSessions.map(session => {
+                    const acc = Math.round((session.correct / session.total) * 100);
+                    const accColor = acc >= 80 ? 'text-emerald-600' : acc >= 60 ? 'text-amber-600' : 'text-rose-500';
+                    const ms = modeStyle[session.mode] ?? modeStyle.quiz;
+                    return (
+                      <div key={session.id} className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 p-3">
+                        <div className="flex min-w-0 items-center gap-2">
+                          <span className={`rounded px-1.5 py-0.5 text-[11px] font-semibold ${ms.cls}`}>{ms.label}</span>
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-medium text-slate-900">{session.label}</p>
+                            <p className="text-xs text-slate-400">{session.total}問</p>
+                          </div>
+                        </div>
+                        <span className={`text-sm font-bold tabular-nums ${accColor}`}>{acc}%</span>
+                      </div>
+                    );
+                  })}
+                </div>
               ) : (
-                <>
-                  <p className="text-2xl sm:text-3xl font-semibold text-gray-900">1日10回</p>
-                  <p className="text-xs text-gray-400 mt-1">トライアル中の生成上限</p>
-                </>
+                <div className="py-6 text-center">
+                  <p className="text-sm text-slate-400">まだ演習履歴がありません</p>
+                  <Link href="/quiz" className="mt-2 inline-block text-xs font-medium text-emerald-600 hover:underline">演習を始める →</Link>
+                </div>
               )}
             </div>
-            <div className="bg-white rounded-2xl border p-4 sm:p-6">
-              <p className="text-xs sm:text-sm text-gray-400 mb-1">プラン残り日数</p>
-              <p className={`text-2xl sm:text-3xl font-semibold ${(remainingDays ?? 0) <= 3 ? 'text-orange-500' : 'text-gray-900'}`}>
-                {remainingDays ?? 0}<span className="text-base font-normal text-gray-400 ml-1">日</span>
-              </p>
-              <p className="text-xs text-gray-400 mt-1">{expiryDateLabel} まで</p>
+          </div>
+
+          {/* 教材一覧 */}
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
+            <div className="mb-4 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Library className="h-4 w-4 text-slate-500" strokeWidth={2} />
+                <h2 className="text-sm font-semibold text-slate-900">教材一覧</h2>
+              </div>
+              <div className="flex items-center gap-3 text-xs">
+                <Link href="/materials" className="text-slate-400 hover:text-slate-600 hover:underline">管理・削除</Link>
+                <Link href="/upload" className="font-medium text-emerald-600 hover:underline">+ 追加</Link>
+              </div>
             </div>
-          </div>
-        ) : (
-          <div className="mb-6 sm:mb-8 flex items-start sm:items-center gap-3 bg-orange-50 border border-orange-200 rounded-2xl px-4 py-3">
-            <span className="text-lg flex-shrink-0">🔓</span>
-            <p className="text-sm text-orange-800 flex-1">
-              無料プランのAI問題生成は残り<span className="font-medium">{freeGenerateRemaining ?? 0}回</span>（通算{FREE_GENERATE_LIMIT}回まで）・保存は<span className="font-medium">30問</span>までです
-            </p>
-            <Link href="/pricing" className="text-xs text-orange-700 font-medium hover:underline whitespace-nowrap flex-shrink-0">
-              アップグレード →
-            </Link>
-          </div>
-        )}
-
-        <AddToHomeScreen inline />
-
-        {/* 初回ユーザー向けオンボーディング */}
-        {isFirstTime && (
-          <div className="mb-6 sm:mb-8 bg-green-50 border border-green-200 rounded-2xl p-5">
-            <h2 className="font-semibold text-green-900 mb-1">👋 MediQuiz AIへようこそ！</h2>
-            <p className="text-sm text-green-800 mb-4">教材がなくてもすぐ試せます。まずは1問解いてみましょう。</p>
-            <Link href="/trial"
-              className="flex items-center justify-center gap-2 w-full bg-green-600 text-white rounded-xl py-3.5 text-sm font-semibold hover:bg-green-700 transition-colors mb-4">
-              🎯 まず1問やってみる（教材アップロード不要）
-            </Link>
-            <p className="text-xs text-green-700 font-medium mb-2">慣れてきたら、こちらもおすすめです</p>
-            <ol className="space-y-3">
-              <li className="flex items-start gap-3">
-                <span className="w-6 h-6 rounded-full bg-green-600 text-white text-xs flex items-center justify-center flex-shrink-0 mt-0.5 font-medium">1</span>
-                <div>
-                  <p className="text-sm font-medium text-green-900">教材をアップロードして自分専用の問題を作る</p>
-                  <p className="text-xs text-green-700 mt-0.5">授業スライドや教科書の写真からAIが問題を自動生成します</p>
-                  <Link href="/upload" className="text-xs text-green-600 font-medium hover:underline mt-1 inline-block">アップロードする →</Link>
-                </div>
-              </li>
-              <li className="flex items-start gap-3">
-                <span className="w-6 h-6 rounded-full bg-green-600 text-white text-xs flex items-center justify-center flex-shrink-0 mt-0.5 font-medium">2</span>
-                <div>
-                  <p className="text-sm font-medium text-green-900">プロフィールを設定する</p>
-                  <p className="text-xs text-green-700 mt-0.5">学部・目標国試を設定すると、AIが最適な問題を出してくれます</p>
-                  <Link href="/settings" className="text-xs text-green-600 font-medium hover:underline mt-1 inline-block">設定する →</Link>
-                </div>
-              </li>
-              <li className="flex items-start gap-3">
-                <span className="w-6 h-6 rounded-full bg-green-600 text-white text-xs flex items-center justify-center flex-shrink-0 mt-0.5 font-medium">3</span>
-                <div>
-                  <p className="text-sm font-medium text-green-900">今日の問題に挑戦する</p>
-                  <p className="text-xs text-green-700 mt-0.5">毎日5問、AIが厳選した問題で実力を積み上げましょう</p>
-                  <Link href="/today" className="text-xs text-green-600 font-medium hover:underline mt-1 inline-block">挑戦する →</Link>
-                </div>
-              </li>
-            </ol>
-          </div>
-        )}
-
-        <div className="mb-6 sm:mb-8">
-          <StreakCard
-            current={streak.current}
-            longest={streak.longest}
-            todayDone={streak.todayDone}
-            weekAccuracy={weekAccuracy}
-            totalQuestions={totalQuestions}
-            weekDailyQuestions={weekDailyQuestions}
-          />
-        </div>
-
-
-        {/* 国試未設定バナー */}
-        {(!profile?.target_exam || profile.target_exam === 'other') && (
-          <div className="mb-6 sm:mb-8 flex items-start sm:items-center gap-3 bg-yellow-50 border border-yellow-200 rounded-xl px-4 py-3">
-            <span className="text-lg flex-shrink-0">📝</span>
-            <p className="text-sm text-yellow-800 flex-1">
-              目指している国試を設定すると、AIが最適な科目の問題を生成します
-            </p>
-            <Link href="/settings" className="text-xs text-yellow-700 font-medium hover:underline whitespace-nowrap flex-shrink-0">
-              プロフィールを設定する →
-            </Link>
-          </div>
-        )}
-
-        {/* 機能カード 6枚 */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
-          {FEATURE_CARDS.map(card => (
-            <Link
-              key={card.href}
-              href={card.href}
-              className="bg-white rounded-2xl border p-4 sm:p-5 hover:border-green-300 hover:shadow-sm transition-all flex flex-col gap-2"
-            >
-              <span className="text-2xl">{card.icon}</span>
-              <p className="font-semibold text-sm sm:text-base text-gray-900 leading-snug">{card.title}</p>
-              <p className="text-xs text-gray-400 leading-relaxed">{card.desc}</p>
-            </Link>
-          ))}
-        </div>
-
-        {/* 統計カード */}
-        <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-6 sm:mb-8">
-          <div className="bg-white rounded-2xl border p-4 sm:p-6">
-            <p className="text-xs sm:text-sm text-gray-400 mb-1">今週の学習問題数</p>
-            <p className="text-2xl sm:text-3xl font-semibold text-gray-900">{hasWeekData ? weekQuestions : '--'}</p>
-            <p className="text-xs text-gray-400 mt-1">{hasWeekData ? '問題解いてます！' : '今週はまだ演習していません'}</p>
-          </div>
-          <div className="bg-white rounded-2xl border p-4 sm:p-6">
-            <p className="text-xs sm:text-sm text-gray-400 mb-1">今週の正解率</p>
-            <p className="text-2xl sm:text-3xl font-semibold text-gray-900">{weekAccuracy !== null ? `${weekAccuracy}%` : '--'}</p>
-            <p className="text-xs text-gray-400 mt-1">{hasWeekData ? '頑張ってます！' : '今週はまだ演習していません'}</p>
-          </div>
-          <div className="bg-white rounded-2xl border p-4 sm:p-6">
-            <p className="text-xs sm:text-sm text-gray-400 mb-1">今週の演習回数</p>
-            <p className="text-2xl sm:text-3xl font-semibold text-gray-900">{hasWeekData ? `${weekSessionCount}回` : '--'}</p>
-            <p className="text-xs text-gray-400 mt-1">{hasWeekData ? '毎日続けよう🔥' : '今週はまだ演習していません'}</p>
-          </div>
-          <div className="bg-white rounded-2xl border p-4 sm:p-6">
-            <p className="text-xs sm:text-sm text-gray-400 mb-1">今週の最高正解率</p>
-            <p className="text-2xl sm:text-3xl font-semibold text-gray-900">{weekBestAccuracy !== null ? `${weekBestAccuracy}%` : '--'}</p>
-            <p className="text-xs text-gray-400 mt-1">{hasWeekData ? '自己ベストを更新しよう🏆' : '今週はまだ演習していません'}</p>
-          </div>
-        </div>
-
-        {/* 苦手分野分析 */}
-        {plan !== 'standard' && plan !== 'premium' ? (
-          <div className="bg-white rounded-2xl border p-4 sm:p-6 mb-6 sm:mb-8">
-            <h2 className="font-semibold text-gray-900 mb-4">📊 苦手分野分析</h2>
-            <div className="text-center py-6">
-              <p className="text-sm text-gray-400 mb-3">有料プランの機能です</p>
-              <Link href="/pricing"
-                className="inline-block text-xs bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors">
-                アップグレードする →
-              </Link>
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-4 mb-6 sm:mb-8">
-            {/* CBT */}
-            <WeakAnalysisCard
-              title="🎯 苦手分野分析（CBT）"
-              stats={cbtStats}
-              emptyMessage="CBTモードを行うと分析が表示されます"
-              emptyLink="/cbt"
-            />
-            {/* 国試 */}
-            <WeakAnalysisCard
-              title="📝 苦手分野分析（国試）"
-              stats={kokushiStats}
-              emptyMessage="国試モードを行うと分析が表示されます"
-              emptyLink="/kokushi"
-            />
-          </div>
-        )}
-
-        {/* 試験予定 / 最近の演習 */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 sm:mb-8">
-          <ExamSection userId={user.id} initialExams={exams ?? []} />
-          <div className="bg-white rounded-2xl border p-4 sm:p-6">
-            <h2 className="font-semibold text-gray-900 mb-4">最近の演習</h2>
-            {recentSessions.length > 0 ? (
-              <div className="space-y-3">
-                {recentSessions.map(session => {
-                  const acc = Math.round((session.correct / session.total) * 100);
-                  const modeLabel = session.mode === 'cbt' ? 'CBT' : session.mode === 'kokushi' ? '国試' : '演習';
-                  const modeCls = session.mode === 'cbt' ? 'bg-blue-100 text-blue-600' : session.mode === 'kokushi' ? 'bg-purple-100 text-purple-600' : 'bg-gray-100 text-gray-500';
+            {materials && materials.length > 0 ? (
+              <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+                {materials.map(material => {
+                  const isPdf = material.file_type?.includes('pdf');
+                  const Icon = isPdf ? FileText : ImageIcon;
                   return (
-                    <div key={session.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
-                      <div className="min-w-0 mr-2">
-                        <div className="flex items-center gap-1.5 mb-0.5">
-                          <span className={`text-xs px-1.5 py-0.5 rounded font-medium flex-shrink-0 ${modeCls}`}>{modeLabel}</span>
-                          <p className="text-sm font-medium text-gray-900 truncate">{session.label}</p>
-                        </div>
-                        <p className="text-xs text-gray-400">{session.total}問</p>
+                    <div key={material.id} className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50 p-3">
+                      <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${isPdf ? 'bg-rose-50 text-rose-500' : 'bg-sky-50 text-sky-500'}`}>
+                        <Icon className="h-[18px] w-[18px]" strokeWidth={2} />
+                      </span>
+                      <div className="min-w-0">
+                        <p className="line-clamp-2 text-sm font-medium text-slate-900">{material.title}</p>
+                        {material.subject && <p className="text-xs text-slate-400">{material.subject}</p>}
                       </div>
-                      <span className={`text-sm font-semibold flex-shrink-0 ${acc >= 80 ? 'text-green-600' : acc >= 60 ? 'text-yellow-600' : 'text-red-500'}`}>{acc}%</span>
                     </div>
                   );
                 })}
               </div>
             ) : (
-              <div className="text-center py-6 text-gray-400">
-                <p className="text-sm">まだ演習履歴がありません</p>
-                <Link href="/quiz" className="text-xs text-green-600 hover:underline mt-2 inline-block">演習を始める</Link>
+              <div className="py-6 text-center">
+                <p className="text-sm text-slate-400">教材がまだありません</p>
+                <Link href="/upload" className="mt-2 inline-block text-xs font-medium text-emerald-600 hover:underline">教材をアップロードする →</Link>
               </div>
             )}
           </div>
-        </div>
 
-        {/* 教材一覧 */}
-        <div className="bg-white rounded-2xl border p-4 sm:p-6 mb-6 sm:mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-gray-900">教材一覧</h2>
-            <div className="flex items-center gap-3">
-              <Link href="/materials" className="text-xs text-gray-400 hover:underline">管理・削除</Link>
-              <Link href="/upload" className="text-xs text-green-600 hover:underline">+ 追加</Link>
-            </div>
+          {/* 注意書き */}
+          <div className="flex items-start gap-2.5 rounded-xl border border-amber-100 bg-amber-50 px-4 py-3">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" strokeWidth={2} />
+            <p className="text-xs leading-relaxed text-amber-700">
+              本サービスのAI生成問題は学習補助を目的としており、内容の正確性を保証するものではありません。医療行為の判断には必ず公式テキスト・医療専門家の指示に従ってください。
+            </p>
           </div>
-          {materials && materials.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {materials.map(material => (
-                <div key={material.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
-                  <div className="w-8 h-8 bg-green-50 rounded-lg flex items-center justify-center flex-shrink-0 text-lg">
-                    {material.file_type?.includes('pdf') ? '📄' : '🖼️'}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-gray-900 break-words line-clamp-2">{material.title}</p>
-                    {material.subject && <p className="text-xs text-gray-400">{material.subject}</p>}
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-6 text-gray-400">
-              <p className="text-sm">教材がまだありません</p>
-              <Link href="/upload" className="text-xs text-green-600 hover:underline mt-2 inline-block">教材をアップロードする</Link>
-            </div>
-          )}
-        </div>
 
-        <div className="mt-8 bg-yellow-50 border border-yellow-100 rounded-xl px-4 py-3 text-xs text-yellow-700">
-          ⚠️ 本サービスのAI生成問題は学習補助を目的としており、内容の正確性を保証するものではありません。医療行為の判断には必ず公式テキスト・医療専門家の指示に従ってください。
+          <p className="text-center text-xs text-slate-400">
+            お問い合わせはこちらまで：
+            <a href="mailto:harumaru0723@yahoo.co.jp" className="underline hover:text-slate-600">harumaru0723@yahoo.co.jp</a>
+          </p>
         </div>
-
-        <p className="text-center text-xs text-gray-400 mt-4">
-          お問い合わせはこちらまでメールをお送りください：
-          <a href="mailto:harumaru0723@yahoo.co.jp" className="underline hover:text-gray-600">harumaru0723@yahoo.co.jp</a>
-        </p>
-      </div>
+      </main>
     </div>
-    </>
   );
 }
