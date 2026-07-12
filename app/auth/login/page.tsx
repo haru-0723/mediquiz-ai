@@ -3,7 +3,9 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { Mail, Lock, ArrowRight, Loader2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { Logo } from '@/components/brand/Logo';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -17,9 +19,9 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     setError('');
-    
+
     const { error } = await supabase.auth.signInWithPassword({ email, password });
-    
+
     if (error) {
       setError('メールアドレスまたはパスワードが正しくありません');
       setLoading(false);
@@ -30,50 +32,84 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+    <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-12">
       <div className="w-full max-w-sm">
-        <div className="text-center mb-8">
-          <Link href="/" className="inline-block mb-6">
-            <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center mx-auto">
-              <span className="text-white text-sm font-bold">M</span>
-            </div>
-          </Link>
-          <h1 className="text-2xl font-semibold">ログイン</h1>
-          <p className="text-sm text-gray-500 mt-1">アカウントにサインイン</p>
+        <div className="mb-8 text-center">
+          <div className="mb-6 flex justify-center">
+            <Logo />
+          </div>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">おかえりなさい</h1>
+          <p className="mt-1 text-sm text-slate-500">アカウントにサインインしましょう</p>
         </div>
 
-        <div className="bg-white rounded-2xl border p-8">
+        <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
           <form onSubmit={handleLogin} className="space-y-4">
-            {error && <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-xl">{error}</div>}
-            
+            {error && (
+              <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600">{error}</div>
+            )}
+
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">メールアドレス</label>
-              <input type="email" value={email} onChange={e => setEmail(e.target.value)} required
-                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-                placeholder="example@university.ac.jp" />
+              <label className="mb-1.5 block text-sm font-medium text-slate-700">メールアドレス</label>
+              <div className="relative">
+                <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="w-full rounded-xl border border-slate-200 py-2.5 pl-10 pr-4 text-sm text-slate-900 transition-colors focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                  placeholder="example@university.ac.jp"
+                />
+              </div>
             </div>
-            
-           <div>
-  <div className="flex items-center justify-between mb-1.5">
-    <label className="block text-sm font-medium text-gray-700">パスワード</label>
-    <Link href="/auth/reset" className="text-xs text-green-600 hover:underline">パスワードを忘れた方</Link>
-  </div>
-  <input type="password" value={password} onChange={e => setPassword(e.target.value)} required
-    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-    placeholder="••••••••" />
-</div>
-            
-            <button type="submit" disabled={loading}
-              className="w-full bg-green-600 text-white py-2.5 rounded-xl text-sm font-medium hover:bg-green-700 disabled:opacity-60">
-              {loading ? '処理中...' : 'ログイン'}
+
+            <div>
+              <div className="mb-1.5 flex items-center justify-between">
+                <label className="block text-sm font-medium text-slate-700">パスワード</label>
+                <Link href="/auth/reset" className="text-xs font-medium text-emerald-600 hover:underline">
+                  お忘れですか？
+                </Link>
+              </div>
+              <div className="relative">
+                <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="w-full rounded-xl border border-slate-200 py-2.5 pl-10 pr-4 text-sm text-slate-900 transition-colors focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                  placeholder="••••••••"
+                />
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-emerald-700 disabled:opacity-60"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  処理中...
+                </>
+              ) : (
+                <>
+                  ログイン
+                  <ArrowRight className="h-4 w-4" />
+                </>
+              )}
             </button>
           </form>
         </div>
 
-        <p className="text-center text-sm text-gray-500 mt-6">
-          アカウントをお持ちでない方は <Link href="/auth/signup" className="text-green-600 hover:underline font-medium">新規登録</Link>
+        <p className="mt-6 text-center text-sm text-slate-500">
+          アカウントをお持ちでない方は{' '}
+          <Link href="/auth/signup" className="font-medium text-emerald-600 hover:underline">
+            新規登録
+          </Link>
         </p>
       </div>
-    </div>
+    </main>
   );
 }
