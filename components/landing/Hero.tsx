@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ArrowRight, Check, FileText, Sparkles, Target, BarChart3 } from 'lucide-react';
+import { ArrowRight, Check, Sparkles } from 'lucide-react';
 
 export function Hero() {
   return (
@@ -47,8 +47,8 @@ export function Hero() {
         </div>
 
         {/* プロダクトモック */}
-        <div className="relative">
-          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xl shadow-slate-200/60">
+        <div className="mx-auto w-full max-w-md lg:mx-0">
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xl shadow-slate-200/60 sm:p-5">
             <div className="flex items-center gap-1.5 pb-3">
               <span className="h-2.5 w-2.5 rounded-full bg-slate-200" />
               <span className="h-2.5 w-2.5 rounded-full bg-slate-200" />
@@ -56,58 +56,48 @@ export function Hero() {
             </div>
             <div className="rounded-xl bg-slate-50 p-4">
               <div className="flex items-center justify-between">
-                <span className="rounded-md bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700">循環器</span>
-                <span className="text-xs text-slate-400">Q3 / 10</span>
+                <span className="rounded-md bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700">看護師国家試験</span>
+                <span className="text-xs text-slate-400">午後 問63</span>
               </div>
-              <p className="mt-3 text-sm font-semibold text-slate-800">
-                心不全患者で最初に確認すべきバイタルサインはどれか。
+              <p className="mt-3 text-xs leading-relaxed text-slate-500">
+                Aさん（72歳、男性）。慢性心不全の急性増悪で入院した。呼吸困難と両下腿の浮腫を認める。
+              </p>
+              <p className="mt-2 text-sm font-semibold leading-relaxed text-slate-800">
+                入院時のアセスメントで最も優先度が高いのはどれか。
               </p>
               <div className="mt-3 space-y-2">
                 {[
-                  { label: '呼吸数と SpO₂', correct: true },
-                  { label: '体温', correct: false },
-                  { label: '身長', correct: false },
+                  { n: 1, label: '体重の増減', correct: false },
+                  { n: 2, label: '経皮的動脈血酸素飽和度〈SpO₂〉', correct: true },
+                  { n: 3, label: '1日の飲水量', correct: false },
+                  { n: 4, label: '排便の有無', correct: false },
                 ].map((o) => (
                   <div
-                    key={o.label}
-                    className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm ${
+                    key={o.n}
+                    className={`flex items-center gap-2.5 rounded-lg border px-3 py-2 text-sm ${
                       o.correct
                         ? 'border-emerald-300 bg-emerald-50 text-emerald-800'
                         : 'border-slate-200 bg-white text-slate-600'
                     }`}
                   >
                     <span
-                      className={`flex h-4 w-4 items-center justify-center rounded-full border ${
-                        o.correct ? 'border-emerald-500 bg-emerald-500' : 'border-slate-300'
+                      className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full text-xs font-semibold ${
+                        o.correct ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-500'
                       }`}
                     >
-                      {o.correct && <Check className="h-3 w-3 text-white" />}
+                      {o.correct ? <Check className="h-3 w-3" /> : o.n}
                     </span>
                     {o.label}
                   </div>
                 ))}
               </div>
+              <div className="mt-3 flex items-start gap-1.5 rounded-lg bg-emerald-50 px-3 py-2">
+                <Check className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-emerald-600" />
+                <p className="text-xs leading-relaxed text-emerald-700">
+                  正解。急性増悪では呼吸状態とSpO₂の把握が最優先。解説つきで理解が深まります。
+                </p>
+              </div>
             </div>
-          </div>
-
-          {/* フローティングチップ */}
-          <div className="absolute -left-3 top-8 hidden rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-lg sm:flex sm:items-center sm:gap-2">
-            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-sky-100">
-              <FileText className="h-4 w-4 text-sky-600" />
-            </span>
-            <span className="text-xs font-medium text-slate-700">PDF から生成</span>
-          </div>
-          <div className="absolute -bottom-3 -right-2 hidden rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-lg sm:flex sm:items-center sm:gap-2">
-            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-100">
-              <BarChart3 className="h-4 w-4 text-amber-600" />
-            </span>
-            <span className="text-xs font-medium text-slate-700">苦手分野を分析</span>
-          </div>
-          <div className="absolute -right-3 top-1/2 hidden -translate-y-1/2 rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-lg lg:flex lg:items-center lg:gap-2">
-            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-100">
-              <Target className="h-4 w-4 text-emerald-600" />
-            </span>
-            <span className="text-xs font-medium text-slate-700">国試モード</span>
           </div>
         </div>
       </div>
