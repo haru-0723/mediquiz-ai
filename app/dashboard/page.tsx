@@ -5,7 +5,7 @@ import Link from 'next/link';
 import {
   Stethoscope, Settings, GraduationCap, Award, Flame,
   CalendarCheck, Zap, RotateCcw, Target, Sparkles, BookMarked, Upload, ClipboardList,
-  BookOpen, Repeat, Trophy, History, FileText, Image as ImageIcon, Library,
+  BookOpen, Repeat, Trophy, History,
   AlertTriangle, Infinity as InfinityIcon, Lock,
 } from 'lucide-react';
 import ExamSection from './ExamSection';
@@ -78,14 +78,12 @@ export default async function DashboardPage() {
     { data: sessions },
     { data: weekSessions },
     { data: allSessions },
-    { data: materials },
     { count: freeGenerateCount },
   ] = await Promise.all([
     supabase.from('exams').select('*').eq('user_id', user.id).order('exam_date'),
     supabase.from('quiz_sessions').select('*').eq('user_id', user.id).order('completed_at', { ascending: false }).limit(50),
     supabase.from('quiz_sessions').select('correct_count, total_questions').eq('user_id', user.id).gte('completed_at', weekStart),
     supabase.from('quiz_sessions').select('subject, correct_count, total_questions, mode, completed_at').eq('user_id', user.id).order('completed_at', { ascending: false }).limit(200),
-    supabase.from('materials').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
     isFreePlan
       ? supabase.from('generate_logs').select('*', { count: 'exact', head: true }).eq('user_id', user.id)
       : Promise.resolve({ count: null }),
@@ -524,44 +522,6 @@ export default async function DashboardPage() {
                 </div>
               )}
             </div>
-          </div>
-
-          {/* 教材一覧 */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
-            <div className="mb-4 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Library className="h-4 w-4 text-slate-500" strokeWidth={2} />
-                <h2 className="text-sm font-semibold text-slate-900">教材一覧</h2>
-              </div>
-              <div className="flex items-center gap-3 text-xs">
-                <Link href="/materials" className="text-slate-400 hover:text-slate-600 hover:underline">管理・削除</Link>
-                <Link href="/upload" className="font-medium text-emerald-600 hover:underline">+ 追加</Link>
-              </div>
-            </div>
-            {materials && materials.length > 0 ? (
-              <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-                {materials.map(material => {
-                  const isPdf = material.file_type?.includes('pdf');
-                  const Icon = isPdf ? FileText : ImageIcon;
-                  return (
-                    <div key={material.id} className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50 p-3">
-                      <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${isPdf ? 'bg-rose-50 text-rose-500' : 'bg-sky-50 text-sky-500'}`}>
-                        <Icon className="h-[18px] w-[18px]" strokeWidth={2} />
-                      </span>
-                      <div className="min-w-0">
-                        <p className="line-clamp-2 text-sm font-medium text-slate-900">{material.title}</p>
-                        {material.subject && <p className="text-xs text-slate-400">{material.subject}</p>}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="py-6 text-center">
-                <p className="text-sm text-slate-400">教材がまだありません</p>
-                <Link href="/upload" className="mt-2 inline-block text-xs font-medium text-emerald-600 hover:underline">教材をアップロードする →</Link>
-              </div>
-            )}
           </div>
 
           {/* 注意書き */}
