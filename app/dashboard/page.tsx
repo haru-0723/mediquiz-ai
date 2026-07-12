@@ -4,7 +4,7 @@ import { ADMIN_EMAIL } from '@/lib/constants';
 import Link from 'next/link';
 import {
   Stethoscope, Settings, GraduationCap, Award, Flame,
-  CalendarCheck, Zap, RotateCcw, Target, Sparkles, BookMarked, Upload, ClipboardList,
+  CalendarCheck, RotateCcw, Target, Sparkles, BookMarked, Upload, ClipboardList,
   BookOpen, Repeat, Trophy, History,
   AlertTriangle, Infinity as InfinityIcon, Lock,
 } from 'lucide-react';
@@ -20,8 +20,7 @@ import { getEffectivePlan, getPlanExpiry } from '@/lib/planUtils';
 
 const FEATURE_CARDS = [
   { href: '/today',    icon: CalendarCheck, title: '今日の問題',    desc: '毎日5問で実力アップ',          tint: 'bg-emerald-50', iconColor: 'text-emerald-600' },
-  { href: '/quiz',      icon: Zap,           title: '演習を始める',  desc: '科目・難易度を選んで演習',      tint: 'bg-emerald-50', iconColor: 'text-emerald-600' },
-  { href: '/review',   icon: RotateCcw,     title: '復習モード',    desc: '間違えた問題を再チャレンジ',    tint: 'bg-sky-50',     iconColor: 'text-sky-600' },
+  { href: '/review',   icon: RotateCcw,     title: '復習モード',    desc: 'フォルダ・科目を選んで演習',    tint: 'bg-sky-50',     iconColor: 'text-sky-600' },
   { href: '/cbt',      icon: Target,        title: 'CBTモード',      desc: '医・薬・看護向けの模試形式',    tint: 'bg-sky-50',     iconColor: 'text-sky-600' },
   { href: '/generate', icon: Sparkles,      title: 'AI問題生成',    desc: '教材からAIが問題を自動作成',    tint: 'bg-teal-50',    iconColor: 'text-teal-600' },
   { href: '/questions',icon: BookMarked,    title: 'マイ問題集',    desc: '自分の問題をフォルダ管理',      tint: 'bg-slate-100',  iconColor: 'text-slate-600' },
