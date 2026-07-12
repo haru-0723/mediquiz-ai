@@ -18,7 +18,7 @@ export function HowItWorks() {
           const Icon = s.icon;
           return (
             <div key={s.title} className="relative rounded-2xl border border-slate-200 bg-white p-7 transition-shadow hover:shadow-md">
-              <span className="absolute right-6 top-6 text-5xl font-bold text-slate-100">{i + 1}</span>
+              <span className="pointer-events-none absolute -z-10 right-6 top-6 text-5xl font-bold text-slate-100" aria-hidden="true">{i + 1}</span>
               <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-50">
                 <Icon className="h-6 w-6 text-emerald-600" strokeWidth={2} />
               </span>
