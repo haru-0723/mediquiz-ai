@@ -55,3 +55,27 @@ export function extractQuestions(text: string): RawQuestion[] {
 
   return questions;
 }
+
+// AIは単発（1問だけ）の生成依頼だと正解をAに置きがちなため、
+// 生成後に選択肢の並びをプログラム側でシャッフルして正解位置を均等化する。
+export function randomizeAnswerPosition<T extends RawQuestion>(q: T): T {
+  const letters = ['A', 'B', 'C', 'D'];
+  const correctIndex = letters.indexOf(q.answer?.toUpperCase?.() ?? '');
+  if (correctIndex === -1) return q;
+
+  const options = [q.option_a, q.option_b, q.option_c, q.option_d];
+  const order = [0, 1, 2, 3];
+  for (let i = order.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [order[i], order[j]] = [order[j], order[i]];
+  }
+
+  return {
+    ...q,
+    option_a: options[order[0]],
+    option_b: options[order[1]],
+    option_c: options[order[2]],
+    option_d: options[order[3]],
+    answer: letters[order.indexOf(correctIndex)],
+  };
+}

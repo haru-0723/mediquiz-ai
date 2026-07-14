@@ -8,15 +8,22 @@ import {
   BookOpen, Repeat, Trophy, History,
   AlertTriangle, Infinity as InfinityIcon, Lock,
 } from 'lucide-react';
-import ExamSection from './ExamSection';
 import LogoutButton from './LogoutButton';
 import HelpModal from '@/components/HelpModal';
 import { dashboardHelp } from '@/lib/helpContent';
 import GuideBanner from './GuideBanner';
 import WeakAnalysisCard from './WeakAnalysisCard';
+import TodayUnitsSection from './TodayUnitsSection';
 import AddToHomeScreen from '@/components/AddToHomeScreen';
 import { getTitleInfo } from '@/lib/titleUtils';
 import { getEffectivePlan, getPlanExpiry } from '@/lib/planUtils';
+import { getTodayUnits } from '@/lib/recommendation/getTodayUnits';
+
+const EXAM_TYPE_LABEL: Record<string, string> = {
+  regular_test: '定期テスト',
+  cbt: 'CBT',
+  kokushi: '薬剤師国家試験',
+};
 
 const FEATURE_CARDS = [
   { href: '/today',    icon: CalendarCheck, title: '今日の問題',    desc: '毎日5問で実力アップ',          tint: 'bg-emerald-50', iconColor: 'text-emerald-600' },
@@ -41,6 +48,18 @@ export default async function DashboardPage() {
     .select('plan, trial_ends_at, plan_expires_at, generate_credits, university, department, grade, target_exam')
     .eq('id', user.id)
     .single();
+
+  const { data: activeExam } = await supabase
+    .from('user_exam_settings')
+    .select('exam_type, exam_date')
+    .eq('user_id', user.id)
+    .eq('is_active', true)
+    .maybeSingle();
+
+  if (!activeExam) redirect('/onboarding');
+
+  const examDaysUntil = Math.ceil((new Date(activeExam.exam_date).getTime() - Date.now()) / 86_400_000);
+  const todayUnits = await getTodayUnits(user.id);
 
   const plan = getEffectivePlan(profile);
   const isAdmin = user.email === ADMIN_EMAIL;
@@ -73,20 +92,37 @@ export default async function DashboardPage() {
   const isFreePlan = plan === 'free';
 
   const [
-    { data: exams },
     { data: sessions },
     { data: weekSessions },
     { data: allSessions },
     { count: freeGenerateCount },
+    { data: unitProgressRows },
   ] = await Promise.all([
-    supabase.from('exams').select('*').eq('user_id', user.id).order('exam_date'),
     supabase.from('quiz_sessions').select('*').eq('user_id', user.id).order('completed_at', { ascending: false }).limit(50),
     supabase.from('quiz_sessions').select('correct_count, total_questions').eq('user_id', user.id).gte('completed_at', weekStart),
     supabase.from('quiz_sessions').select('subject, correct_count, total_questions, mode, completed_at').eq('user_id', user.id).order('completed_at', { ascending: false }).limit(200),
     isFreePlan
       ? supabase.from('generate_logs').select('*', { count: 'exact', head: true }).eq('user_id', user.id)
       : Promise.resolve({ count: null }),
+    supabase.from('user_unit_progress').select('answered_count, correct_count, units(name, subjects(name))').eq('user_id', user.id),
   ]);
+
+  // 単元別正答率を科目名でグルーピング（苦手分野分析のドリルダウン用）
+  type UnitStat = { unitName: string; accuracy: number; answered: number };
+  const unitsBySubject: Record<string, UnitStat[]> = {};
+  for (const row of unitProgressRows ?? []) {
+    if (row.answered_count === 0) continue;
+    const unit = Array.isArray(row.units) ? row.units[0] : row.units;
+    if (!unit) continue;
+    const subject = Array.isArray(unit.subjects) ? unit.subjects[0] : unit.subjects;
+    const subjectName = subject?.name ?? 'その他';
+    if (!unitsBySubject[subjectName]) unitsBySubject[subjectName] = [];
+    unitsBySubject[subjectName].push({
+      unitName: unit.name,
+      accuracy: Math.round((row.correct_count / row.answered_count) * 100),
+      answered: row.answered_count,
+    });
+  }
 
   const FREE_GENERATE_LIMIT = 5;
   const freeGenerateRemaining = isFreePlan
@@ -248,6 +284,24 @@ export default async function DashboardPage() {
 
       <main className="mx-auto max-w-5xl px-4 py-6 sm:px-6 sm:py-8">
         <div className="space-y-6 sm:space-y-8">
+
+          {/* 試験カウントダウン */}
+          <div className={`flex items-center justify-between rounded-2xl border px-5 py-4 sm:px-6 ${
+            examDaysUntil <= 30 ? 'border-rose-200 bg-rose-50' : 'border-slate-200 bg-white'
+          }`}>
+            <div>
+              <p className="text-xs font-medium text-slate-500">{EXAM_TYPE_LABEL[activeExam.exam_type] ?? '試験'}まで</p>
+              <p className={`mt-0.5 text-2xl font-bold sm:text-3xl ${examDaysUntil <= 30 ? 'text-rose-500' : 'text-slate-900'}`}>
+                あと{Math.max(examDaysUntil, 0)}日
+              </p>
+            </div>
+            <Link href="/onboarding" className="whitespace-nowrap text-xs font-medium text-emerald-600 hover:underline">
+              試験を変更する →
+            </Link>
+          </div>
+
+          {/* 今日やること */}
+          <TodayUnitsSection units={todayUnits} />
 
           {/* グリーティング + ストリーク */}
           <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white">
@@ -481,46 +535,43 @@ export default async function DashboardPage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <WeakAnalysisCard title="苦手分野分析（CBT）" stats={cbtStats} emptyMessage="CBTモードを行うと分析が表示されます" emptyLink="/cbt" />
-              <WeakAnalysisCard title="苦手分野分析（国試）" stats={kokushiStats} emptyMessage="国試モードを行うと分析が表示されます" emptyLink="/kokushi" />
+              <WeakAnalysisCard title="苦手分野分析（CBT）" stats={cbtStats} emptyMessage="CBTモードを行うと分析が表示されます" emptyLink="/cbt" unitsBySubject={unitsBySubject} />
+              <WeakAnalysisCard title="苦手分野分析（国試）" stats={kokushiStats} emptyMessage="国試モードを行うと分析が表示されます" emptyLink="/kokushi" unitsBySubject={unitsBySubject} />
             </div>
           )}
 
-          {/* 試験カウントダウン / 最近の演習 */}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <ExamSection userId={user.id} initialExams={exams ?? []} />
-            <div className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
-              <div className="mb-4 flex items-center gap-2">
-                <History className="h-4 w-4 text-slate-500" strokeWidth={2} />
-                <h2 className="text-sm font-semibold text-slate-900">最近の演習</h2>
-              </div>
-              {recentSessions.length > 0 ? (
-                <div className="space-y-2.5">
-                  {recentSessions.map(session => {
-                    const acc = Math.round((session.correct / session.total) * 100);
-                    const accColor = acc >= 80 ? 'text-emerald-600' : acc >= 60 ? 'text-amber-600' : 'text-rose-500';
-                    const ms = modeStyle[session.mode] ?? modeStyle.quiz;
-                    return (
-                      <div key={session.id} className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 p-3">
-                        <div className="flex min-w-0 items-center gap-2">
-                          <span className={`rounded px-1.5 py-0.5 text-[11px] font-semibold ${ms.cls}`}>{ms.label}</span>
-                          <div className="min-w-0">
-                            <p className="truncate text-sm font-medium text-slate-900">{session.label}</p>
-                            <p className="text-xs text-slate-400">{session.total}問</p>
-                          </div>
-                        </div>
-                        <span className={`text-sm font-bold tabular-nums ${accColor}`}>{acc}%</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="py-6 text-center">
-                  <p className="text-sm text-slate-400">まだ演習履歴がありません</p>
-                  <Link href="/quiz" className="mt-2 inline-block text-xs font-medium text-emerald-600 hover:underline">演習を始める →</Link>
-                </div>
-              )}
+          {/* 最近の演習 */}
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
+            <div className="mb-4 flex items-center gap-2">
+              <History className="h-4 w-4 text-slate-500" strokeWidth={2} />
+              <h2 className="text-sm font-semibold text-slate-900">最近の演習</h2>
             </div>
+            {recentSessions.length > 0 ? (
+              <div className="space-y-2.5">
+                {recentSessions.map(session => {
+                  const acc = Math.round((session.correct / session.total) * 100);
+                  const accColor = acc >= 80 ? 'text-emerald-600' : acc >= 60 ? 'text-amber-600' : 'text-rose-500';
+                  const ms = modeStyle[session.mode] ?? modeStyle.quiz;
+                  return (
+                    <div key={session.id} className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 p-3">
+                      <div className="flex min-w-0 items-center gap-2">
+                        <span className={`rounded px-1.5 py-0.5 text-[11px] font-semibold ${ms.cls}`}>{ms.label}</span>
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium text-slate-900">{session.label}</p>
+                          <p className="text-xs text-slate-400">{session.total}問</p>
+                        </div>
+                      </div>
+                      <span className={`text-sm font-bold tabular-nums ${accColor}`}>{acc}%</span>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="py-6 text-center">
+                <p className="text-sm text-slate-400">まだ演習履歴がありません</p>
+                <Link href="/quiz" className="mt-2 inline-block text-xs font-medium text-emerald-600 hover:underline">演習を始める →</Link>
+              </div>
+            )}
           </div>
 
           {/* 注意書き */}
