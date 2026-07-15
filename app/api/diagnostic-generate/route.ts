@@ -121,12 +121,12 @@ export async function POST(request: NextRequest) {
     const candidates = shuffle(allTargets);
     const candidateIds = candidates.map(t => t.unitId);
 
-    const { data: bankRows } = await supabase
-      .from('unit_question_bank')
-      .select('*')
-      .eq('exam_type', examType)
-      .in('unit_id', candidateIds);
+    const [{ data: bankRows }, { data: historyRows }] = await Promise.all([
+      supabase.from('unit_question_bank').select('*').eq('exam_type', examType).in('unit_id', candidateIds),
+      supabase.from('user_question_history').select('question_id').eq('user_id', user.id),
+    ]);
 
+    const seenIds = new Set((historyRows ?? []).map(h => h.question_id));
     const bankByUnit = new Map<string, NonNullable<typeof bankRows>>();
     for (const row of bankRows ?? []) {
       const list = bankByUnit.get(row.unit_id) ?? [];
@@ -138,8 +138,8 @@ export async function POST(request: NextRequest) {
     const missing: UnitTarget[] = [];
 
     for (const target of candidates) {
-      const cached = bankByUnit.get(target.unitId);
-      if (cached && cached.length > 0) {
+      const cached = (bankByUnit.get(target.unitId) ?? []).filter(r => !seenIds.has(r.id));
+      if (cached.length > 0) {
         const pick = cached[Math.floor(Math.random() * cached.length)];
         questions.push({
           id: pick.id,
@@ -220,7 +220,13 @@ export async function POST(request: NextRequest) {
       throw new Error('問題を準備できませんでした');
     }
 
-    return NextResponse.json({ questions: shuffle(questions).slice(0, questionCount) });
+    const finalQuestions = shuffle(questions).slice(0, questionCount);
+    await supabase.from('user_question_history').upsert(
+      finalQuestions.map(q => ({ user_id: user.id, question_id: q.id })),
+      { onConflict: 'user_id,question_id', ignoreDuplicates: true }
+    );
+
+    return NextResponse.json({ questions: finalQuestions });
   } catch (e) {
     console.error('[diagnostic-generate]', e);
     return NextResponse.json({ error: e instanceof Error ? e.message : '問題の準備に失敗しました' }, { status: 500 });

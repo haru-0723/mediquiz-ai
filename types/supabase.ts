@@ -645,6 +645,20 @@ export type Database = {
           },
         ]
       }
+      user_question_history: {
+        Row: { created_at: string; question_id: string; user_id: string }
+        Insert: { created_at?: string; question_id: string; user_id: string }
+        Update: { created_at?: string; question_id?: string; user_id?: string }
+        Relationships: [
+          {
+            foreignKeyName: "user_question_history_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "unit_question_bank"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_subject_goals: {
         Row: {
           baseline_accuracy: number | null
