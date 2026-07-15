@@ -15,6 +15,8 @@ type SubjectGoal = {
   onTrack: boolean;
 };
 
+const GRID_LINES = [0, 25, 50, 75, 100];
+
 export default function SubjectGoalsSection({ goals }: { goals: SubjectGoal[] }) {
   const supabase = createClient();
   const [items, setItems] = useState(goals);
@@ -52,20 +54,26 @@ export default function SubjectGoalsSection({ goals }: { goals: SubjectGoal[] })
     <section>
       <h2 className="mb-3 px-1 text-xs font-semibold uppercase tracking-wide text-slate-400">学習目標・到達度</h2>
       <div className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
-        <div className="mb-4 flex items-center gap-2">
+        <div className="mb-1 flex items-center gap-2">
           <Target className="h-4 w-4 text-slate-500" strokeWidth={2} />
-          <h3 className="text-sm font-semibold text-slate-900">科目別 今日の目標</h3>
+          <h3 className="text-sm font-semibold text-slate-900">科目別 正答率と目標</h3>
           {withData > 0 && (
             <span className="ml-auto text-xs text-slate-400">{onTrackCount}/{withData} 科目が順調</span>
           )}
         </div>
-        <div className="space-y-4">
+        <div className="mb-3 flex items-center gap-4 px-0.5 text-[11px] text-slate-400">
+          <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-emerald-500" />現在の正答率</span>
+          <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-amber-400" />今日の目標</span>
+          <span className="flex items-center gap-1"><span className="h-2 w-0.5 bg-slate-400" />最終目標</span>
+        </div>
+
+        <div className="space-y-5">
           {items.map(g => {
             const hasData = g.currentAccuracy !== null;
             const gap = hasData ? g.todayTarget - (g.currentAccuracy as number) : null;
             const isEditing = editingId === g.subjectId;
             return (
-              <div key={g.subjectId} className="rounded-xl border border-slate-100 bg-slate-50 p-3">
+              <div key={g.subjectId}>
                 <div className="mb-1.5 flex items-center justify-between gap-2">
                   <Link href={`/subject/${g.subjectId}`}
                     className="flex min-w-0 items-center gap-0.5 text-sm font-medium text-slate-900 hover:text-emerald-600">
@@ -85,22 +93,51 @@ export default function SubjectGoalsSection({ goals }: { goals: SubjectGoal[] })
                   </div>
                 </div>
 
-                {/* バー：現在の正答率＋今日の目標ライン＋最終目標ライン */}
-                <div className="relative h-2 overflow-hidden rounded-full bg-slate-200">
-                  <div
-                    className={`h-full rounded-full ${g.onTrack ? 'bg-emerald-500' : 'bg-sky-400'}`}
-                    style={{ width: `${hasData ? g.currentAccuracy : 0}%` }}
-                  />
-                  <div className="absolute top-0 h-full w-0.5 bg-amber-500" style={{ left: `${g.todayTarget}%` }} title="今日の目標" />
-                  <div className="absolute top-0 h-full w-0.5 bg-slate-400" style={{ left: `${g.targetAccuracy}%` }} title="最終目標" />
+                {/* 現在の正答率と目標を比較する棒グラフ（グリッド線付き） */}
+                <div className="relative rounded-lg bg-slate-50 px-2 pb-1.5 pt-2">
+                  <div className="pointer-events-none absolute inset-x-2 top-2 bottom-6">
+                    {GRID_LINES.map(v => (
+                      <div key={v} className="absolute top-0 h-full w-px bg-slate-200" style={{ left: `${v}%` }} />
+                    ))}
+                  </div>
+
+                  <div className="relative mb-1.5 flex items-center gap-2">
+                    <span className="w-10 shrink-0 text-[10px] text-slate-400">現在</span>
+                    <div className="relative h-3.5 flex-1 overflow-hidden rounded bg-slate-200">
+                      <div
+                        className={`h-full rounded ${g.onTrack ? 'bg-emerald-500' : 'bg-emerald-400'}`}
+                        style={{ width: `${hasData ? g.currentAccuracy : 0}%` }}
+                      />
+                      <div className="absolute top-0 h-full w-0.5 bg-slate-500" style={{ left: `${g.targetAccuracy}%` }} title="最終目標" />
+                    </div>
+                    <span className="w-9 shrink-0 text-right text-xs font-semibold tabular-nums text-slate-700">
+                      {hasData ? `${g.currentAccuracy}%` : '--'}
+                    </span>
+                  </div>
+
+                  <div className="relative flex items-center gap-2">
+                    <span className="w-10 shrink-0 text-[10px] text-slate-400">今日</span>
+                    <div className="relative h-3.5 flex-1 overflow-hidden rounded bg-slate-200">
+                      <div className="h-full rounded bg-amber-400" style={{ width: `${g.todayTarget}%` }} />
+                      <div className="absolute top-0 h-full w-0.5 bg-slate-500" style={{ left: `${g.targetAccuracy}%` }} title="最終目標" />
+                    </div>
+                    <span className="w-9 shrink-0 text-right text-xs font-semibold tabular-nums text-amber-600">
+                      {g.todayTarget}%
+                    </span>
+                  </div>
+
+                  <div className="relative mt-1.5 flex h-3 items-center">
+                    <span className="w-10 shrink-0" />
+                    <div className="relative flex-1">
+                      {GRID_LINES.map(v => (
+                        <span key={v} className="absolute -translate-x-1/2 text-[9px] text-slate-300" style={{ left: `${v}%` }}>{v}</span>
+                      ))}
+                    </div>
+                    <span className="w-9 shrink-0" />
+                  </div>
                 </div>
 
-                <div className="mt-1.5 flex items-center justify-between text-xs">
-                  <span className="text-slate-500">
-                    {hasData ? <>現在 <span className="font-semibold text-slate-700">{g.currentAccuracy}%</span></> : 'データなし'}
-                    <span className="mx-1.5 text-slate-300">·</span>
-                    今日の目標 <span className="font-semibold text-amber-600">{g.todayTarget}%</span>
-                  </span>
+                <div className="mt-1 flex items-center justify-end text-xs">
                   {isEditing ? (
                     <span className="flex items-center gap-1">
                       <input type="number" min={1} max={100} value={draftValue} onChange={e => setDraftValue(e.target.value)}
