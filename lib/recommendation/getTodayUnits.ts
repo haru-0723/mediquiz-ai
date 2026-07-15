@@ -10,8 +10,10 @@ export type TodayUnit = {
   answeredCount: number;
   importance: number;
   reasons: TodayReason[];
+  detail: string;
   priority: number;
 };
+
 
 const STALENESS_WINDOW_DAYS = 14;
 const REVIEW_THRESHOLD_DAYS = 7;
@@ -126,6 +128,29 @@ export async function getTodayUnits(userId: string, limit = 4): Promise<TodayUni
         reasons.push({ label: '定着のため復習', tone: 'stale' });
       }
 
+      // 優先順位の根拠を文章で伝える（一番上のカードで詳しく表示するため）
+      const detailParts: string[] = [];
+      if (hasData) {
+        const diff = target - (accuracy as number);
+        detailParts.push(
+          diff > 0
+            ? `正答率${accuracy}%で、目標の${target}%まであと${diff}%です。`
+            : `正答率${accuracy}%で目標${target}%を達成中ですが、定着のため復習をおすすめします。`
+        );
+      } else {
+        detailParts.push('まだ一度もこの単元を学習していません。');
+      }
+      if (daysSince !== Infinity && daysSince >= REVIEW_THRESHOLD_DAYS) {
+        detailParts.push(`最後に勉強してから${Math.floor(daysSince)}日経っています。`);
+      }
+      if (importance >= 4) {
+        detailParts.push(`${examSetting.exam_type === 'cbt' ? 'CBT' : examSetting.exam_type === 'kokushi' ? '国試' : '試験'}で${importance >= 5 ? '最重要' : '重要'}とされる単元です。`);
+      }
+      if (hasData && dataDeficit) {
+        detailParts.push(`回答数がまだ${answered}問と少なく、正答率の信頼度が低い状態です。`);
+      }
+      detailParts.push(`試験まで残り${daysToExam}日。`);
+
       return {
         unitId: s.unit_id,
         unitName: unit.name as string,
@@ -134,6 +159,7 @@ export async function getTodayUnits(userId: string, limit = 4): Promise<TodayUni
         answeredCount: answered,
         importance,
         reasons,
+        detail: detailParts.join(''),
         priority,
       };
     });

@@ -504,9 +504,9 @@ export type Database = {
         Relationships: []
       }
       today_dismissals: {
-        Row: { created_at: string; dismissed_on: string; unit_id: string; user_id: string }
-        Insert: { created_at?: string; dismissed_on?: string; unit_id: string; user_id: string }
-        Update: { created_at?: string; dismissed_on?: string; unit_id?: string; user_id?: string }
+        Row: { created_at: string; dismissed_on: string; reason: string | null; unit_id: string; user_id: string }
+        Insert: { created_at?: string; dismissed_on?: string; reason?: string | null; unit_id: string; user_id: string }
+        Update: { created_at?: string; dismissed_on?: string; reason?: string | null; unit_id?: string; user_id?: string }
         Relationships: [
           {
             foreignKeyName: "today_dismissals_unit_id_fkey"

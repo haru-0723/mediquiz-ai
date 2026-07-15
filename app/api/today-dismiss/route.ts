@@ -8,7 +8,7 @@ export async function POST(request: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: 'ログインが必要です' }, { status: 401 });
 
-    const { unitId } = await request.json();
+    const { unitId, reason } = await request.json();
     if (!unitId || typeof unitId !== 'string') {
       return NextResponse.json({ error: '単元が指定されていません' }, { status: 400 });
     }
@@ -17,6 +17,7 @@ export async function POST(request: NextRequest) {
       user_id: user.id,
       unit_id: unitId,
       dismissed_on: getJSTDateStr(),
+      reason: typeof reason === 'string' ? reason.slice(0, 50) : null,
     });
     if (error) throw error;
 
