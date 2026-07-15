@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { ensureSubjectBaselines } from '@/lib/subjectBaseline';
+import { getJSTDateStr } from '@/lib/recommendation/getTodayUnits';
 
 type ResultEntry = { unitId: string; correct: number; total: number };
 
@@ -46,6 +47,12 @@ export async function POST(request: NextRequest) {
     // 試験日までの逆算目標（今日の目標正答率）の起点となる「開始地点」を、
     // まだ記録されていない科目についてのみ記録する。
     await ensureSubjectBaselines(supabase, user.id, entries.map(e => e.unitId));
+
+    // 今日すでに取り組んだ単元は「今日やること」から外す（＝次点の優先度が繰り上がる）
+    await supabase.from('today_dismissals').upsert(
+      entries.map(e => ({ user_id: user.id, unit_id: e.unitId, dismissed_on: getJSTDateStr(), reason: 'completed' })),
+      { onConflict: 'user_id,unit_id,dismissed_on' }
+    );
 
     return NextResponse.json({ success: true, unitsUpdated: entries.length });
   } catch (e) {
