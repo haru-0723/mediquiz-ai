@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 
-type CheckQuestion = {
+type PracticeQuestion = {
   id: string;
   unitId: string;
   unitName: string;
@@ -22,43 +22,48 @@ type CheckQuestion = {
 type Phase = 'loading' | 'quiz' | 'result' | 'error';
 
 const OPTION_KEYS = ['A', 'B', 'C', 'D'] as const;
+const PRACTICE_QUESTION_COUNT = 10;
 
-export default function UnitCheckPage() {
-  const [unitIds, setUnitIds] = useState<string[]>([]);
+export default function SubjectPracticePage() {
+  const [subjectId, setSubjectId] = useState('');
+  const [subjectName, setSubjectName] = useState('');
+  const [examType, setExamType] = useState('');
   const [phase, setPhase] = useState<Phase>('loading');
-  const [questions, setQuestions] = useState<CheckQuestion[]>([]);
+  const [questions, setQuestions] = useState<PracticeQuestion[]>([]);
   const [current, setCurrent] = useState(0);
   const [selected, setSelected] = useState<string | null>(null);
   const [answered, setAnswered] = useState(false);
-  const [correctByUnit, setCorrectByUnit] = useState<Map<string, { correct: number; total: number }>>(new Map());
+  const [correctCount, setCorrectCount] = useState(0);
+  const [unitResults, setUnitResults] = useState<Map<string, { correct: number; total: number }>>(new Map());
   const [errorMsg, setErrorMsg] = useState('');
 
-  const loadQuestions = useCallback(async (ids: string[]) => {
+  const loadQuestions = useCallback(async (sId: string, exType: string) => {
     try {
-      const res = await fetch('/api/unit-check-generate', {
+      const res = await fetch('/api/diagnostic-generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ unitIds: ids }),
+        body: JSON.stringify({ examType: exType, subjectId: sId, count: PRACTICE_QUESTION_COUNT }),
       });
       if (res.status === 401) { window.location.href = '/auth/login'; return; }
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? '問題の取得に失敗しました');
+      if (!res.ok) throw new Error(data.error ?? '問題の準備に失敗しました');
       setQuestions(data.questions);
       setPhase('quiz');
     } catch (e) {
-      setErrorMsg(e instanceof Error ? e.message : '問題の取得に失敗しました');
+      setErrorMsg(e instanceof Error ? e.message : '問題の準備に失敗しました');
       setPhase('error');
     }
   }, []);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const multi = params.get('units');
-    const single = params.get('unit');
-    const ids = multi ? multi.split(',').filter(Boolean) : single ? [single] : [];
-    setUnitIds(ids);
-    if (ids.length === 0) { setErrorMsg('単元が指定されていません'); setPhase('error'); return; }
-    loadQuestions(ids);
+    const sId = params.get('subjectId') ?? '';
+    const exType = params.get('examType') ?? '';
+    setSubjectId(sId);
+    setSubjectName(params.get('subjectName') ?? '');
+    setExamType(exType);
+    if (!sId || !exType) { setErrorMsg('科目が指定されていません'); setPhase('error'); return; }
+    loadQuestions(sId, exType);
   }, [loadQuestions]);
 
   function handleSelect(option: string) {
@@ -70,10 +75,13 @@ export default function UnitCheckPage() {
   async function handleNext() {
     const q = questions[current];
     const isCorrect = selected === q.answer;
-    const next = new Map(correctByUnit);
-    const prev = next.get(q.unitId) ?? { correct: 0, total: 0 };
-    next.set(q.unitId, { correct: prev.correct + (isCorrect ? 1 : 0), total: prev.total + 1 });
-    setCorrectByUnit(next);
+    const newCorrectCount = correctCount + (isCorrect ? 1 : 0);
+    setCorrectCount(newCorrectCount);
+
+    const nextResults = new Map(unitResults);
+    const prev = nextResults.get(q.unitId) ?? { correct: 0, total: 0 };
+    nextResults.set(q.unitId, { correct: prev.correct + (isCorrect ? 1 : 0), total: prev.total + 1 });
+    setUnitResults(nextResults);
 
     if (current + 1 >= questions.length) {
       try {
@@ -81,7 +89,7 @@ export default function UnitCheckPage() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            results: Array.from(next.entries()).map(([unitId, r]) => ({ unitId, correct: r.correct, total: r.total })),
+            results: Array.from(nextResults.entries()).map(([unitId, r]) => ({ unitId, correct: r.correct, total: r.total })),
           }),
         });
       } catch {
@@ -101,10 +109,8 @@ export default function UnitCheckPage() {
         <Navbar />
         <div className="flex min-h-[60vh] items-center justify-center">
           <div className="text-center">
-            <div className="mb-4 text-4xl">🧠</div>
-            <p className="text-sm text-slate-500">
-              {unitIds.length > 1 ? `${unitIds.length}単元の理解度チェックを準備しています...` : '理解度チェックの問題を準備しています...'}
-            </p>
+            <div className="mb-4 text-4xl">📘</div>
+            <p className="text-sm text-slate-500">問題を準備しています...</p>
           </div>
         </div>
       </div>
@@ -129,48 +135,27 @@ export default function UnitCheckPage() {
   }
 
   if (phase === 'result') {
-    const totalCorrect = Array.from(correctByUnit.values()).reduce((s, r) => s + r.correct, 0);
-    const total = questions.length;
-    // 単元ごとの結果ラベル
-    const unitNameById = new Map(questions.map(q => [q.unitId, { unitName: q.unitName, subjectName: q.subjectName }]));
-    const perUnit = Array.from(correctByUnit.entries()).map(([unitId, r]) => ({
-      unitId,
-      ...(unitNameById.get(unitId) ?? { unitName: '', subjectName: '' }),
-      ...r,
-    }));
-
+    const accuracy = Math.round((correctCount / questions.length) * 100);
     return (
       <div className="min-h-screen bg-slate-50">
         <Navbar />
         <div className="mx-auto max-w-lg p-4 sm:p-8">
           <div className="mt-8 rounded-2xl border border-slate-200 bg-white p-8 text-center">
             <div className="mb-3 text-5xl">✅</div>
-            <h1 className="mb-1 text-xl font-bold text-slate-900">理解度チェック完了</h1>
-            <p className="mb-6 text-sm text-slate-400">{perUnit.length}単元 ・ {total}問</p>
-            <p className="text-3xl font-bold text-emerald-600">{totalCorrect}<span className="text-base font-medium text-slate-500">/{total}問正解</span></p>
+            <h1 className="mb-1 text-xl font-bold text-slate-900">演習完了</h1>
+            <p className="mb-6 text-sm text-slate-400">{subjectName}</p>
+            <p className="text-3xl font-bold text-emerald-600">{correctCount}<span className="text-base font-medium text-slate-500">/{questions.length}問正解（{accuracy}%）</span></p>
 
-            <div className="mt-6 space-y-2 text-left">
-              {perUnit.map(u => {
-                const acc = Math.round((u.correct / u.total) * 100);
-                return (
-                  <div key={u.unitId} className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 p-3">
-                    <div className="min-w-0">
-                      <p className="text-xs text-slate-400">{u.subjectName}</p>
-                      <p className="truncate text-sm font-medium text-slate-900">{u.unitName}</p>
-                    </div>
-                    <span className={`text-sm font-bold ${acc >= 80 ? 'text-emerald-600' : acc >= 60 ? 'text-amber-600' : 'text-rose-500'}`}>
-                      {u.correct}/{u.total}
-                    </span>
-                  </div>
-                );
-              })}
+            <div className="mt-8 space-y-2">
+              <Link href={`/subject/${subjectId}`}
+                className="block w-full rounded-xl bg-emerald-600 py-3 text-sm font-semibold text-white transition-colors hover:bg-emerald-700">
+                単元別の結果を見る
+              </Link>
+              <Link href="/dashboard"
+                className="block w-full rounded-xl border border-slate-200 py-3 text-sm text-slate-600 hover:bg-slate-50">
+                ダッシュボードへ戻る
+              </Link>
             </div>
-            <p className="mt-4 text-xs text-slate-400">過去の記録と合算して、各単元の正答率を更新しました。</p>
-
-            <Link href="/dashboard"
-              className="mt-6 block w-full rounded-xl bg-emerald-600 py-3 text-sm font-semibold text-white transition-colors hover:bg-emerald-700">
-              ダッシュボードへ戻る
-            </Link>
           </div>
         </div>
       </div>
@@ -184,8 +169,8 @@ export default function UnitCheckPage() {
       <div className="mx-auto max-w-2xl p-4 sm:p-8">
         <div className="mb-6 mt-2 flex items-center justify-between">
           <div>
-            <p className="text-xs text-slate-400">{q.subjectName}・{q.unitName}</p>
-            <h1 className="text-base font-semibold text-slate-800">理解度チェック</h1>
+            <p className="text-xs text-slate-400">{q.subjectName}</p>
+            <h1 className="text-base font-semibold text-slate-800">{q.unitName}</h1>
           </div>
           <span className="text-sm text-slate-400">{current + 1} / {questions.length}</span>
         </div>
@@ -200,7 +185,7 @@ export default function UnitCheckPage() {
 
           <div className="space-y-2.5">
             {OPTION_KEYS.map(key => {
-              const optionText = q[`option_${key.toLowerCase()}` as keyof CheckQuestion] as string;
+              const optionText = q[`option_${key.toLowerCase()}` as keyof PracticeQuestion] as string;
               const isCorrect = key === q.answer;
               const isSelected = key === selected;
 

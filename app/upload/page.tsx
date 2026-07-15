@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client';
 import Navbar from '@/components/Navbar';
 
 type Folder = { id: string; name: string; };
+type UnitOption = { unitId: string; unitName: string; subjectId: string; subjectName: string };
 
 export default function UploadPage() {
   const supabase = createClient();
@@ -15,7 +16,9 @@ export default function UploadPage() {
   const [selectedFolder, setSelectedFolder] = useState('');
   const [newFolderName, setNewFolderName] = useState('');
   const [showNewFolder, setShowNewFolder] = useState(false);
-  const [subject, setSubject] = useState('');
+  const [units, setUnits] = useState<UnitOption[]>([]);
+  const [selectedSubjectId, setSelectedSubjectId] = useState('');
+  const [selectedUnitId, setSelectedUnitId] = useState('');
   const [uploading, setUploading] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState('');
@@ -26,9 +29,41 @@ export default function UploadPage() {
       if (!user) return;
       const { data } = await supabase.from('folders').select('*').eq('user_id', user.id).order('created_at');
       if (data) setFolders(data);
+
+      const { data: examSetting } = await supabase
+        .from('user_exam_settings')
+        .select('exam_type, grade')
+        .eq('user_id', user.id)
+        .eq('is_active', true)
+        .maybeSingle();
+      if (!examSetting) return;
+      const scopeGrade = examSetting.exam_type === 'regular_test' ? (examSetting.grade ?? 0) : 0;
+
+      const { data: scopes } = await supabase
+        .from('unit_scopes')
+        .select('unit_id, units(id, name, subject_id, subjects(id, name))')
+        .eq('exam_type', examSetting.exam_type)
+        .eq('grade', scopeGrade);
+
+      const options: UnitOption[] = (scopes ?? [])
+        .filter(s => s.units)
+        .map(s => {
+          const unit = Array.isArray(s.units) ? s.units[0] : s.units;
+          const subject = Array.isArray(unit.subjects) ? unit.subjects[0] : unit.subjects;
+          return {
+            unitId: unit.id as string,
+            unitName: unit.name as string,
+            subjectId: (subject?.id as string) ?? '',
+            subjectName: (subject?.name as string) ?? '',
+          };
+        });
+      setUnits(options);
     }
     load();
   }, []);
+
+  const subjectOptions = Array.from(new Map(units.map(u => [u.subjectId, u.subjectName])).entries());
+  const unitOptions = units.filter(u => u.subjectId === selectedSubjectId);
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const newFiles = Array.from(e.target.files ?? []);
@@ -69,6 +104,8 @@ export default function UploadPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('ログインが必要です');
 
+      const selectedUnit = units.find(u => u.unitId === selectedUnitId);
+
       const timestamp = Date.now();
       await Promise.all(
         files.map(async (file, i) => {
@@ -81,7 +118,8 @@ export default function UploadPage() {
             title: (titles[i] || '').trim() || file.name.replace(/\.[^/.]+$/, ''),
             file_url: publicUrl,
             file_type: file.type,
-            subject: subject || null,
+            subject: selectedUnit?.subjectName || null,
+            unit_id: selectedUnit?.unitId || null,
             folder_id: selectedFolder || null,
           });
           if (insertError) {
@@ -108,7 +146,7 @@ export default function UploadPage() {
           <h2 className="text-xl font-semibold text-slate-900 mb-2">アップロード完了！</h2>
           <p className="text-slate-500 text-sm mb-6">{files.length}件の教材が保存されました。</p>
           <div className="flex gap-3">
-            <button onClick={() => { setFiles([]); setTitles([]); setDone(false); setSubject(''); }}
+            <button onClick={() => { setFiles([]); setTitles([]); setDone(false); setSelectedSubjectId(''); setSelectedUnitId(''); }}
               className="flex-1 border border-slate-200 rounded-xl py-3 text-sm text-slate-600">
               続けてアップロード
             </button>
@@ -189,12 +227,26 @@ export default function UploadPage() {
             )}
           </div>
 
-          {/* 科目 */}
+          {/* 科目・単元 */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">科目（任意）</label>
-            <input type="text" value={subject} onChange={e => setSubject(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              placeholder="例：解剖生理学" />
+            <label className="block text-sm font-medium text-slate-700 mb-2">科目・単元（任意）</label>
+            <p className="mb-2 text-xs text-slate-400">選択すると、この教材から生成した問題の正答率が単元の学習記録に反映されます。</p>
+            <div className="grid grid-cols-2 gap-2">
+              <select value={selectedSubjectId} onChange={e => { setSelectedSubjectId(e.target.value); setSelectedUnitId(''); }}
+                className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                <option value="">科目を選択</option>
+                {subjectOptions.map(([id, name]) => (
+                  <option key={id} value={id}>{name}</option>
+                ))}
+              </select>
+              <select value={selectedUnitId} onChange={e => setSelectedUnitId(e.target.value)} disabled={!selectedSubjectId}
+                className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:bg-slate-50 disabled:text-slate-400">
+                <option value="">単元を選択</option>
+                {unitOptions.map(u => (
+                  <option key={u.unitId} value={u.unitId}>{u.unitName}</option>
+                ))}
+              </select>
+            </div>
           </div>
 
           {error && <div className="bg-rose-50 text-rose-600 text-sm px-4 py-3 rounded-xl">{error}</div>}

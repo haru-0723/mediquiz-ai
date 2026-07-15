@@ -8,7 +8,7 @@ import ErrorBanner from '@/components/ErrorBanner';
 import ExplainButton from '@/components/ExplainButton';
 
 type Folder = { id: string; name: string; };
-type Material = { id: string; title: string; subject: string | null; folder_id: string | null; };
+type Material = { id: string; title: string; subject: string | null; folder_id: string | null; unit_id: string | null; };
 type Question = { question: string; options: string[]; answer: string; explanation: string; difficulty: string; };
 
 export default function GeneratePage() {
@@ -200,6 +200,7 @@ export default function GeneratePage() {
         questions.map(q => ({
           user_id: user.id,
           subject: selectedMaterials[0]?.subject ?? null,
+          unit_id: selectedMaterials[0]?.unit_id ?? null,
           question: q.question,
           option_a: q.options[0]?.replace(/^[A-D○×]\. /, '') ?? '',
           option_b: q.options[1]?.replace(/^[A-D○×]\. /, '') ?? '',
@@ -293,6 +294,16 @@ export default function GeneratePage() {
           total_questions: newResults.length,
           correct_count: correct,
         });
+
+        // 教材に単元が紐づいていれば、その単元の学習記録（正答率）にも反映する
+        const unitId = selectedMaterials[0]?.unit_id;
+        if (unitId) {
+          fetch('/api/diagnostic-submit', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ results: [{ unitId, correct, total: newResults.length }] }),
+          }).catch(() => {});
+        }
       }
       setPhase('result');
     }

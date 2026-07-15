@@ -18,6 +18,7 @@ type Question = {
   explanation: string | null;
   difficulty: string;
   folder_id: string | null;
+  unit_id: string | null;
 };
 
 type Folder = { id: string; name: string; };
@@ -98,6 +99,26 @@ export default function QuizPage() {
           total_questions: newResults.length,
           correct_count: correct,
         });
+
+        // 単元が紐づいている問題（教材アップロード時に科目・単元を選択したもの）は、
+        // その単元の学習記録（正答率）にも反映する
+        const unitTotals = new Map<string, { correct: number; total: number }>();
+        quizQuestions.forEach((question, i) => {
+          if (!question.unit_id) return;
+          const t = unitTotals.get(question.unit_id) ?? { correct: 0, total: 0 };
+          t.total += 1;
+          if (newResults[i]?.correct) t.correct += 1;
+          unitTotals.set(question.unit_id, t);
+        });
+        if (unitTotals.size > 0) {
+          fetch('/api/diagnostic-submit', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              results: Array.from(unitTotals.entries()).map(([unitId, r]) => ({ unitId, correct: r.correct, total: r.total })),
+            }),
+          }).catch(() => {});
+        }
       }
       window.scrollTo(0, 0);
       setPhase('result');

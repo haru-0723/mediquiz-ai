@@ -5,7 +5,7 @@ import Link from 'next/link';
 import {
   Stethoscope, Settings, GraduationCap, Award, Flame,
   CalendarCheck, RotateCcw, Target, Sparkles, BookMarked, Upload, ClipboardList,
-  BookOpen, Repeat, Trophy, History,
+  BookOpen, Repeat, Trophy, History, ClipboardCheck,
   AlertTriangle, Infinity as InfinityIcon, Lock,
 } from 'lucide-react';
 import LogoutButton from './LogoutButton';
@@ -14,10 +14,12 @@ import { dashboardHelp } from '@/lib/helpContent';
 import GuideBanner from './GuideBanner';
 import WeakAnalysisCard from './WeakAnalysisCard';
 import TodayUnitsSection from './TodayUnitsSection';
+import SubjectGoalsSection from './SubjectGoalsSection';
 import AddToHomeScreen from '@/components/AddToHomeScreen';
 import { getTitleInfo } from '@/lib/titleUtils';
 import { getEffectivePlan, getPlanExpiry } from '@/lib/planUtils';
-import { getTodayUnits } from '@/lib/recommendation/getTodayUnits';
+import { getTodayUnits, getJSTDateStr } from '@/lib/recommendation/getTodayUnits';
+import { getJSTMondayStr } from '@/lib/week';
 
 const EXAM_TYPE_LABEL: Record<string, string> = {
   regular_test: '定期テスト',
@@ -33,6 +35,7 @@ const FEATURE_CARDS = [
   { href: '/questions',icon: BookMarked,    title: 'マイ問題集',    desc: '自分の問題をフォルダ管理',      tint: 'bg-slate-100',  iconColor: 'text-slate-600' },
   { href: '/materials',icon: Upload,        title: '教材管理',      desc: 'PDFや画像をアップロード',        tint: 'bg-slate-100',  iconColor: 'text-slate-600' },
   { href: '/kokushi',  icon: ClipboardList, title: '国試モード',    desc: '国試形式の本格模試に挑戦',      tint: 'bg-teal-50',    iconColor: 'text-teal-600' },
+  { href: '/study-log',icon: ClipboardCheck,title: '学習を報告する', desc: 'このアプリ以外で勉強した内容を記録', tint: 'bg-emerald-50', iconColor: 'text-emerald-600' },
 ];
 
 const PLAN_LABEL: Record<string, string> = { free: '無料プラン', standard: '有料プラン', premium: 'プレミアム' };
@@ -51,7 +54,7 @@ export default async function DashboardPage() {
 
   const { data: activeExam } = await supabase
     .from('user_exam_settings')
-    .select('exam_type, exam_date')
+    .select('exam_type, exam_date, grade')
     .eq('user_id', user.id)
     .eq('is_active', true)
     .maybeSingle();
@@ -60,6 +63,13 @@ export default async function DashboardPage() {
 
   const examDaysUntil = Math.ceil((new Date(activeExam.exam_date).getTime() - Date.now()) / 86_400_000);
   const todayUnits = await getTodayUnits(user.id);
+  const scopeGrade = activeExam.exam_type === 'regular_test' ? (activeExam.grade ?? 0) : 0;
+
+  // 週次診断テスト（国試・CBT向け）の今週の受験状況
+  const isExamTrack = activeExam.exam_type === 'cbt' || activeExam.exam_type === 'kokushi';
+  const { data: thisWeekDiagnostic } = isExamTrack
+    ? await supabase.from('weekly_diagnostics').select('correct_count, questions_count').eq('user_id', user.id).eq('week_start', getJSTMondayStr()).maybeSingle()
+    : { data: null };
 
   const plan = getEffectivePlan(profile);
   const isAdmin = user.email === ADMIN_EMAIL;
@@ -97,6 +107,8 @@ export default async function DashboardPage() {
     { data: allSessions },
     { count: freeGenerateCount },
     { data: unitProgressRows },
+    { data: allSubjects },
+    { data: subjectGoalRows },
   ] = await Promise.all([
     supabase.from('quiz_sessions').select('*').eq('user_id', user.id).order('completed_at', { ascending: false }).limit(50),
     supabase.from('quiz_sessions').select('correct_count, total_questions').eq('user_id', user.id).gte('completed_at', weekStart),
@@ -104,12 +116,26 @@ export default async function DashboardPage() {
     isFreePlan
       ? supabase.from('generate_logs').select('*', { count: 'exact', head: true }).eq('user_id', user.id)
       : Promise.resolve({ count: null }),
-    supabase.from('user_unit_progress').select('answered_count, correct_count, units(name, subjects(name))').eq('user_id', user.id),
+    supabase.from('user_unit_progress').select('answered_count, correct_count, units(subject_id, name, subjects(id, name))').eq('user_id', user.id),
+    supabase.from('unit_scopes').select('units(subject_id, subjects(id, name, display_order))').eq('exam_type', activeExam.exam_type).eq('grade', scopeGrade),
+    supabase.from('user_subject_goals').select('subject_id, target_accuracy, baseline_accuracy, baseline_date').eq('user_id', user.id),
   ]);
 
-  // 単元別正答率を科目名でグルーピング（苦手分野分析のドリルダウン用）
+  // 現在の試験（CBT/国試/定期テスト）の出題範囲に含まれる科目だけを対象にする
+  type ScopedSubject = { id: string; name: string; display_order: number };
+  const scopedSubjectMap = new Map<string, ScopedSubject>();
+  for (const row of allSubjects ?? []) {
+    const unit = Array.isArray(row.units) ? row.units[0] : row.units;
+    if (!unit) continue;
+    const subject = Array.isArray(unit.subjects) ? unit.subjects[0] : unit.subjects;
+    if (subject && !scopedSubjectMap.has(subject.id)) scopedSubjectMap.set(subject.id, subject);
+  }
+  const scopedSubjects = Array.from(scopedSubjectMap.values()).sort((a, b) => a.display_order - b.display_order);
+
+  // 単元別正答率を科目名でグルーピング（苦手分野分析のドリルダウン用）＋ 科目別の集計（目標正答率用）
   type UnitStat = { unitName: string; accuracy: number; answered: number };
   const unitsBySubject: Record<string, UnitStat[]> = {};
+  const subjectTotals: Record<string, { correct: number; answered: number }> = {};
   for (const row of unitProgressRows ?? []) {
     if (row.answered_count === 0) continue;
     const unit = Array.isArray(row.units) ? row.units[0] : row.units;
@@ -122,7 +148,54 @@ export default async function DashboardPage() {
       accuracy: Math.round((row.correct_count / row.answered_count) * 100),
       answered: row.answered_count,
     });
+
+    if (unit.subject_id) {
+      if (!subjectTotals[unit.subject_id]) subjectTotals[unit.subject_id] = { correct: 0, answered: 0 };
+      subjectTotals[unit.subject_id].correct += row.correct_count;
+      subjectTotals[unit.subject_id].answered += row.answered_count;
+    }
   }
+
+  const goalBySubject = new Map((subjectGoalRows ?? []).map(g => [g.subject_id, g]));
+  const DEFAULT_TARGET_ACCURACY = 80;
+
+  // 開始地点（baseline）の正答率から最終目標（デフォルト80%）へ、試験日まで線形に
+  // 上げていく「今日の目標正答率」を算出する。開始地点が未記録でもデータがある科目は、
+  // 現在の正答率を暫定の開始地点（今日基準）として扱い、必ず今日の目標を表示する。
+  const todayStr = getJSTDateStr();
+  function computeTodayTarget(baseline: number, baselineDate: string, finalTarget: number, examDate: string): number {
+    const start = new Date(baselineDate).getTime();
+    const end = new Date(examDate).getTime();
+    const totalDays = (end - start) / 86_400_000;
+    if (totalDays <= 0) return finalTarget;
+    const elapsedDays = (Date.now() - start) / 86_400_000;
+    const ratio = Math.min(Math.max(elapsedDays / totalDays, 0), 1);
+    return Math.round(baseline + (finalTarget - baseline) * ratio);
+  }
+
+  const subjectGoals = scopedSubjects.map(s => {
+    const totals = subjectTotals[s.id];
+    const goalRow = goalBySubject.get(s.id);
+    const targetAccuracy = goalRow?.target_accuracy ?? DEFAULT_TARGET_ACCURACY;
+    const currentAccuracy = totals && totals.answered > 0 ? Math.round((totals.correct / totals.answered) * 100) : null;
+
+    // 開始地点：記録があればそれを、なければ現在値を今日基準の暫定開始地点にする
+    const baseline = goalRow?.baseline_accuracy ?? currentAccuracy;
+    const baselineDate = goalRow?.baseline_date ?? todayStr;
+    const todayTarget = baseline !== null
+      ? computeTodayTarget(baseline, baselineDate, targetAccuracy, activeExam.exam_date)
+      : targetAccuracy;
+
+    return {
+      subjectId: s.id,
+      subjectName: s.name,
+      currentAccuracy,
+      answeredCount: totals?.answered ?? 0,
+      targetAccuracy,
+      todayTarget,
+      onTrack: currentAccuracy !== null && currentAccuracy >= todayTarget,
+    };
+  });
 
   const FREE_GENERATE_LIMIT = 5;
   const freeGenerateRemaining = isFreePlan
@@ -302,6 +375,31 @@ export default async function DashboardPage() {
 
           {/* 今日やること */}
           <TodayUnitsSection units={todayUnits} />
+
+          {/* 週次診断テスト（国試・CBT向け） */}
+          {isExamTrack && (
+            <Link href="/weekly-check"
+              className={`flex items-center justify-between rounded-2xl border p-4 transition-colors sm:p-5 ${
+                thisWeekDiagnostic ? 'border-slate-200 bg-white hover:border-emerald-300' : 'border-emerald-300 bg-emerald-50 hover:bg-emerald-100'
+              }`}>
+              <div className="flex items-center gap-3">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-100">
+                  <Trophy className="h-5 w-5 text-emerald-600" strokeWidth={2} />
+                </span>
+                <div>
+                  <p className="text-sm font-semibold text-slate-900">今週の診断テスト（50問）</p>
+                  <p className="mt-0.5 text-xs text-slate-500">
+                    {thisWeekDiagnostic
+                      ? `受験済み：${thisWeekDiagnostic.correct_count}/${thisWeekDiagnostic.questions_count}問正解`
+                      : '全科目から50問。今週の実力を測りましょう'}
+                  </p>
+                </div>
+              </div>
+              <span className="whitespace-nowrap text-xs font-medium text-emerald-600">
+                {thisWeekDiagnostic ? 'もう一度 →' : '受ける →'}
+              </span>
+            </Link>
+          )}
 
           {/* グリーティング + ストリーク */}
           <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white">
@@ -517,6 +615,9 @@ export default async function DashboardPage() {
               })}
             </div>
           </section>
+
+          {/* 学習目標・到達度 */}
+          <SubjectGoalsSection goals={subjectGoals} />
 
           {/* 苦手分野分析 */}
           {plan !== 'standard' && plan !== 'premium' ? (

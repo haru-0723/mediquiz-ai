@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { ensureSubjectBaselines } from '@/lib/subjectBaseline';
 
 export async function POST(request: NextRequest) {
   try {
@@ -42,6 +43,8 @@ export async function POST(request: NextRequest) {
       last_studied_at: new Date().toISOString(),
     });
     if (upsertError) throw upsertError;
+
+    await ensureSubjectBaselines(supabase, user.id, [unitId]);
 
     const afterAccuracy = Math.round((newCorrect / newAnswered) * 100);
 

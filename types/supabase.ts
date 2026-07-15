@@ -7,8 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
@@ -54,21 +52,9 @@ export type Database = {
         Relationships: []
       }
       cbt_logs: {
-        Row: {
-          created_at: string | null
-          id: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          user_id?: string
-        }
+        Row: { created_at: string | null; id: string; user_id: string }
+        Insert: { created_at?: string | null; id?: string; user_id: string }
+        Update: { created_at?: string | null; id?: string; user_id?: string }
         Relationships: []
       }
       check_results: {
@@ -128,110 +114,36 @@ export type Database = {
           name?: string
           user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "exams_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       explain_cache: {
-        Row: {
-          created_at: string | null
-          explanation: string
-          id: string
-          question_hash: string
-        }
-        Insert: {
-          created_at?: string | null
-          explanation: string
-          id?: string
-          question_hash: string
-        }
-        Update: {
-          created_at?: string | null
-          explanation?: string
-          id?: string
-          question_hash?: string
-        }
+        Row: { created_at: string | null; explanation: string; id: string; question_hash: string }
+        Insert: { created_at?: string | null; explanation: string; id?: string; question_hash: string }
+        Update: { created_at?: string | null; explanation?: string; id?: string; question_hash?: string }
         Relationships: []
       }
       explain_logs: {
-        Row: {
-          created_at: string
-          id: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          user_id?: string
-        }
+        Row: { created_at: string; id: string; user_id: string }
+        Insert: { created_at?: string; id?: string; user_id: string }
+        Update: { created_at?: string; id?: string; user_id?: string }
         Relationships: []
       }
       folders: {
-        Row: {
-          created_at: string | null
-          id: string
-          name: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          name: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          name?: string
-          user_id?: string
-        }
+        Row: { created_at: string | null; id: string; name: string; user_id: string }
+        Insert: { created_at?: string | null; id?: string; name: string; user_id: string }
+        Update: { created_at?: string | null; id?: string; name?: string; user_id?: string }
         Relationships: []
       }
       generate_logs: {
-        Row: {
-          created_at: string | null
-          id: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          user_id?: string
-        }
+        Row: { created_at: string | null; id: string; user_id: string }
+        Insert: { created_at?: string | null; id?: string; user_id: string }
+        Update: { created_at?: string | null; id?: string; user_id?: string }
         Relationships: []
       }
       kokushi_logs: {
-        Row: {
-          created_at: string | null
-          id: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          user_id?: string
-        }
+        Row: { created_at: string | null; id: string; user_id: string }
+        Insert: { created_at?: string | null; id?: string; user_id: string }
+        Update: { created_at?: string | null; id?: string; user_id?: string }
         Relationships: []
       }
       materials: {
@@ -243,6 +155,7 @@ export type Database = {
           id: string
           subject: string | null
           title: string
+          unit_id: string | null
           user_id: string
         }
         Insert: {
@@ -253,6 +166,7 @@ export type Database = {
           id?: string
           subject?: string | null
           title: string
+          unit_id?: string | null
           user_id: string
         }
         Update: {
@@ -263,21 +177,15 @@ export type Database = {
           id?: string
           subject?: string | null
           title?: string
+          unit_id?: string | null
           user_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "materials_folder_id_fkey"
-            columns: ["folder_id"]
+            foreignKeyName: "materials_unit_id_fkey"
+            columns: ["unit_id"]
             isOneToOne: false
-            referencedRelation: "folders"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "materials_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "units"
             referencedColumns: ["id"]
           },
         ]
@@ -422,6 +330,7 @@ export type Database = {
           option_d: string
           question: string
           subject: string | null
+          unit_id: string | null
           user_id: string
         }
         Insert: {
@@ -441,6 +350,7 @@ export type Database = {
           option_d: string
           question: string
           subject?: string | null
+          unit_id?: string | null
           user_id: string
         }
         Update: {
@@ -460,14 +370,15 @@ export type Database = {
           option_d?: string
           question?: string
           subject?: string | null
+          unit_id?: string | null
           user_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "questions_folder_id_fkey"
-            columns: ["folder_id"]
+            foreignKeyName: "questions_unit_id_fkey"
+            columns: ["unit_id"]
             isOneToOne: false
-            referencedRelation: "folders"
+            referencedRelation: "units"
             referencedColumns: ["id"]
           },
         ]
@@ -549,13 +460,6 @@ export type Database = {
             referencedRelation: "materials"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "quiz_sessions_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
         ]
       }
       study_logs: {
@@ -594,45 +498,29 @@ export type Database = {
         ]
       }
       subjects: {
-        Row: {
-          display_order: number
-          id: string
-          name: string
-        }
-        Insert: {
-          display_order?: number
-          id?: string
-          name: string
-        }
-        Update: {
-          display_order?: number
-          id?: string
-          name?: string
-        }
+        Row: { display_order: number; id: string; name: string }
+        Insert: { display_order?: number; id?: string; name: string }
+        Update: { display_order?: number; id?: string; name?: string }
         Relationships: []
       }
+      today_dismissals: {
+        Row: { created_at: string; dismissed_on: string; unit_id: string; user_id: string }
+        Insert: { created_at?: string; dismissed_on?: string; unit_id: string; user_id: string }
+        Update: { created_at?: string; dismissed_on?: string; unit_id?: string; user_id?: string }
+        Relationships: [
+          {
+            foreignKeyName: "today_dismissals_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       today_questions: {
-        Row: {
-          created_at: string
-          date: string
-          department_type: string
-          id: string
-          questions: Json
-        }
-        Insert: {
-          created_at?: string
-          date: string
-          department_type: string
-          id?: string
-          questions?: Json
-        }
-        Update: {
-          created_at?: string
-          date?: string
-          department_type?: string
-          id?: string
-          questions?: Json
-        }
+        Row: { created_at: string; date: string; department_type: string; id: string; questions: Json }
+        Insert: { created_at?: string; date: string; department_type: string; id?: string; questions?: Json }
+        Update: { created_at?: string; date?: string; department_type?: string; id?: string; questions?: Json }
         Relationships: []
       }
       unit_question_bank: {
@@ -640,6 +528,7 @@ export type Database = {
           answer: string
           created_at: string
           difficulty: string
+          exam_type: string
           explanation: string
           id: string
           option_a: string
@@ -653,6 +542,7 @@ export type Database = {
           answer: string
           created_at?: string
           difficulty?: string
+          exam_type: string
           explanation: string
           id?: string
           option_a: string
@@ -666,6 +556,7 @@ export type Database = {
           answer?: string
           created_at?: string
           difficulty?: string
+          exam_type?: string
           explanation?: string
           id?: string
           option_a?: string
@@ -686,21 +577,9 @@ export type Database = {
         ]
       }
       unit_scopes: {
-        Row: {
-          exam_type: string
-          grade: number
-          unit_id: string
-        }
-        Insert: {
-          exam_type: string
-          grade?: number
-          unit_id: string
-        }
-        Update: {
-          exam_type?: string
-          grade?: number
-          unit_id?: string
-        }
+        Row: { exam_type: string; grade: number; importance: number; unit_id: string }
+        Insert: { exam_type: string; grade?: number; importance?: number; unit_id: string }
+        Update: { exam_type?: string; grade?: number; importance?: number; unit_id?: string }
         Relationships: [
           {
             foreignKeyName: "unit_scopes_unit_id_fkey"
@@ -712,24 +591,9 @@ export type Database = {
         ]
       }
       units: {
-        Row: {
-          display_order: number
-          id: string
-          name: string
-          subject_id: string
-        }
-        Insert: {
-          display_order?: number
-          id?: string
-          name: string
-          subject_id: string
-        }
-        Update: {
-          display_order?: number
-          id?: string
-          name?: string
-          subject_id?: string
-        }
+        Row: { display_order: number; id: string; name: string; subject_id: string }
+        Insert: { display_order?: number; id?: string; name: string; subject_id: string }
+        Update: { display_order?: number; id?: string; name?: string; subject_id?: string }
         Relationships: [
           {
             foreignKeyName: "units_subject_id_fkey"
@@ -783,16 +647,22 @@ export type Database = {
       }
       user_subject_goals: {
         Row: {
+          baseline_accuracy: number | null
+          baseline_date: string | null
           subject_id: string
           target_accuracy: number
           user_id: string
         }
         Insert: {
+          baseline_accuracy?: number | null
+          baseline_date?: string | null
           subject_id: string
           target_accuracy?: number
           user_id: string
         }
         Update: {
+          baseline_accuracy?: number | null
+          baseline_date?: string | null
           subject_id?: string
           target_accuracy?: number
           user_id?: string
@@ -853,22 +723,11 @@ export type Database = {
       }
       consume_generate_credit: { Args: { p_user_id: string }; Returns: boolean }
       consume_usage_quota: {
-        Args: {
-          p_limit: number
-          p_period: string
-          p_table: string
-          p_user_id: string
-        }
+        Args: { p_limit: number; p_period: string; p_table: string; p_user_id: string }
         Returns: string
       }
-      refund_generate_credit: {
-        Args: { p_user_id: string }
-        Returns: undefined
-      }
-      release_usage_quota: {
-        Args: { p_log_id: string; p_table: string }
-        Returns: undefined
-      }
+      refund_generate_credit: { Args: { p_user_id: string }; Returns: undefined }
+      release_usage_quota: { Args: { p_log_id: string; p_table: string }; Returns: undefined }
     }
     Enums: {
       [_ in never]: never

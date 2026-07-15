@@ -17,7 +17,7 @@ const EXAM_LABEL: Record<string, string> = {
   kokushi: '薬剤師国家試験',
 };
 
-type UnitTarget = { unitId: string; unitName: string; subjectName: string };
+type UnitTarget = { unitId: string; unitName: string; subjectName: string; subjectId: string };
 
 export type DiagnosticQuestion = {
   id: string;
@@ -84,24 +84,34 @@ export async function POST(request: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: 'ログインが必要です' }, { status: 401 });
 
-    const { examType } = await request.json();
+    const { examType, subjectId, count } = await request.json();
     if (examType !== 'cbt' && examType !== 'kokushi') {
       return NextResponse.json({ error: '不正な試験種別です' }, { status: 400 });
     }
+    const questionCount = Math.min(Math.max(Math.floor(Number(count) || DIAGNOSTIC_QUESTION_COUNT), 1), DIAGNOSTIC_QUESTION_COUNT);
 
     const { data: scopes } = await supabase
       .from('unit_scopes')
-      .select('unit_id, units(id, name, subjects(name))')
+      .select('unit_id, units(id, name, subject_id, subjects(name))')
       .eq('exam_type', examType)
       .eq('grade', 0);
 
-    const allTargets: UnitTarget[] = (scopes ?? [])
+    let allTargets: UnitTarget[] = (scopes ?? [])
       .filter(s => s.units)
       .map(s => {
         const unit = Array.isArray(s.units) ? s.units[0] : s.units;
         const subject = Array.isArray(unit.subjects) ? unit.subjects[0] : unit.subjects;
-        return { unitId: unit.id as string, unitName: unit.name as string, subjectName: (subject?.name as string) ?? '' };
+        return {
+          unitId: unit.id as string,
+          unitName: unit.name as string,
+          subjectId: unit.subject_id as string,
+          subjectName: (subject?.name as string) ?? '',
+        };
       });
+
+    if (typeof subjectId === 'string' && subjectId) {
+      allTargets = allTargets.filter(t => t.subjectId === subjectId);
+    }
 
     if (allTargets.length === 0) {
       return NextResponse.json({ error: '出題範囲がまだ準備されていません' }, { status: 404 });
@@ -114,6 +124,7 @@ export async function POST(request: NextRequest) {
     const { data: bankRows } = await supabase
       .from('unit_question_bank')
       .select('*')
+      .eq('exam_type', examType)
       .in('unit_id', candidateIds);
 
     const bankByUnit = new Map<string, NonNullable<typeof bankRows>>();
@@ -153,9 +164,9 @@ export async function POST(request: NextRequest) {
     }
 
     // バンクだけで足りていれば生成をスキップ
-    if (questions.length < DIAGNOSTIC_QUESTION_COUNT && missing.length > 0) {
+    if (questions.length < questionCount && missing.length > 0) {
       const admin = createAdminClient();
-      for (let i = 0; i < missing.length && questions.length < DIAGNOSTIC_QUESTION_COUNT; i += GENERATION_CONCURRENCY) {
+      for (let i = 0; i < missing.length && questions.length < questionCount; i += GENERATION_CONCURRENCY) {
         const batch = missing.slice(i, i + GENERATION_CONCURRENCY);
         const results = await Promise.all(batch.map(target => generateOne(examType, target)));
 
@@ -168,6 +179,7 @@ export async function POST(request: NextRequest) {
             .from('unit_question_bank')
             .insert(toInsert.map(({ target, q }) => ({
               unit_id: target.unitId,
+              exam_type: examType,
               question: q.question,
               option_a: q.option_a,
               option_b: q.option_b,
@@ -208,7 +220,7 @@ export async function POST(request: NextRequest) {
       throw new Error('問題を準備できませんでした');
     }
 
-    return NextResponse.json({ questions: shuffle(questions).slice(0, DIAGNOSTIC_QUESTION_COUNT) });
+    return NextResponse.json({ questions: shuffle(questions).slice(0, questionCount) });
   } catch (e) {
     console.error('[diagnostic-generate]', e);
     return NextResponse.json({ error: e instanceof Error ? e.message : '問題の準備に失敗しました' }, { status: 500 });

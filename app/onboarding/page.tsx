@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/client';
 import { Logo } from '@/components/brand/Logo';
 
 type ExamType = 'regular_test' | 'cbt' | 'kokushi';
-type Phase = 'department' | 'exam' | 'saving' | 'diagnosticIntro' | 'diagnosticQuiz' | 'diagnosticResult';
+type Phase = 'profile' | 'exam' | 'saving' | 'diagnosticIntro' | 'diagnosticQuiz' | 'diagnosticResult';
 
 const DEPARTMENT_OPTIONS = [
   { value: 'pharmacy', label: '薬学部', available: true },
@@ -44,11 +44,12 @@ export default function OnboardingPage() {
   const router = useRouter();
   const supabase = createClient();
 
-  const [phase, setPhase] = useState<Phase>('department');
+  const [phase, setPhase] = useState<Phase>('profile');
   const [department, setDepartment] = useState<string | null>(null);
+  const [university, setUniversity] = useState('');
+  const [grade, setGrade] = useState('');
 
   const [examType, setExamType] = useState<ExamType | null>(null);
-  const [grade, setGrade] = useState('');
   const [subjectId, setSubjectId] = useState('');
   const [examDate, setExamDate] = useState('');
   const [subjects, setSubjects] = useState<Subject[]>([]);
@@ -71,10 +72,12 @@ export default function OnboardingPage() {
     });
   }, [examType, subjects.length, supabase]);
 
+  const canSubmitProfile = !!department && !!grade;
+
   const canSubmitExam =
     !!examType &&
     !!examDate &&
-    (examType !== 'regular_test' || (!!grade && !!subjectId));
+    (examType !== 'regular_test' || !!subjectId);
 
   async function handleSaveExamSettings() {
     if (!canSubmitExam || !examType || !department) return;
@@ -86,15 +89,24 @@ export default function OnboardingPage() {
       if (!user) { router.push('/auth/login'); return; }
 
       await supabase.from('profiles').update({
+        university: university || null,
         department: DEPARTMENT_OPTIONS.find(d => d.value === department)?.label ?? null,
         target_exam: department,
+        grade: parseInt(grade, 10),
       }).eq('id', user.id);
+
+      // アクティブな試験は常に1件のみにする（既存のものは無効化してから新規登録）
+      await supabase.from('user_exam_settings')
+        .update({ is_active: false })
+        .eq('user_id', user.id)
+        .eq('is_active', true);
 
       const { error: insertError } = await supabase.from('user_exam_settings').insert({
         user_id: user.id,
         exam_type: examType,
         grade: examType === 'regular_test' ? parseInt(grade, 10) : null,
         subject_id: examType === 'regular_test' ? subjectId : null,
+        // 学部設定時に選んだ学年（grade）を、定期テストの範囲指定にもそのまま流用する
         exam_date: examDate,
         is_active: true,
       });
@@ -316,12 +328,32 @@ export default function OnboardingPage() {
       </header>
 
       <main className="mx-auto max-w-xl px-4 py-8 sm:py-12">
-        {phase === 'department' && (
+        {phase === 'profile' && (
           <>
-            <h1 className="text-xl font-bold text-slate-900">学部を選択してください</h1>
-            <p className="mt-1 text-sm text-slate-500">学部に合わせて出題内容を最適化します。</p>
+            <h1 className="text-xl font-bold text-slate-900">プロフィールを設定してください</h1>
+            <p className="mt-1 text-sm text-slate-500">学部・学年に合わせて出題内容を最適化します。</p>
 
-            <div className="mt-8 space-y-3">
+            <div className="mt-6 space-y-4 rounded-2xl border border-slate-200 bg-white p-5">
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-slate-500">大学名（任意）</label>
+                <input type="text" value={university} onChange={e => setUniversity(e.target.value)}
+                  placeholder="例：○○大学"
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-slate-500">学年</label>
+                <select value={grade} onChange={e => setGrade(e.target.value)}
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                  <option value="">選択してください</option>
+                  {[1, 2, 3, 4, 5, 6].map(g => (
+                    <option key={g} value={g}>{g}年生</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <p className="mb-3 mt-6 text-sm font-medium text-slate-700">学部</p>
+            <div className="space-y-3">
               {DEPARTMENT_OPTIONS.map(opt => (
                 <button
                   key={opt.value}
@@ -344,8 +376,8 @@ export default function OnboardingPage() {
             </div>
 
             <button
-              onClick={() => department && setPhase('exam')}
-              disabled={!department}
+              onClick={() => canSubmitProfile && setPhase('exam')}
+              disabled={!canSubmitProfile}
               className="mt-8 w-full rounded-xl bg-emerald-600 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-emerald-700 disabled:opacity-50"
             >
               次へ
@@ -355,7 +387,7 @@ export default function OnboardingPage() {
 
         {(phase === 'exam' || phase === 'saving') && (
           <>
-            <button onClick={() => setPhase('department')} className="mb-4 text-sm text-emerald-600 hover:underline">← 学部を選び直す</button>
+            <button onClick={() => setPhase('profile')} className="mb-4 text-sm text-emerald-600 hover:underline">← プロフィールを見直す</button>
             <h1 className="text-xl font-bold text-slate-900">目標の試験を設定しましょう</h1>
             <p className="mt-1 text-sm text-slate-500">
               設定した試験に合わせて、毎日の学習内容をAIが提案します。
@@ -384,27 +416,15 @@ export default function OnboardingPage() {
             </div>
 
             {examType === 'regular_test' && (
-              <div className="mt-6 space-y-4 rounded-2xl border border-slate-200 bg-white p-5">
-                <div>
-                  <label className="mb-1.5 block text-xs font-medium text-slate-500">学年</label>
-                  <select value={grade} onChange={e => setGrade(e.target.value)}
-                    className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
-                    <option value="">選択してください</option>
-                    {[1, 2, 3, 4, 5, 6].map(g => (
-                      <option key={g} value={g}>{g}年生</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="mb-1.5 block text-xs font-medium text-slate-500">科目</label>
-                  <select value={subjectId} onChange={e => setSubjectId(e.target.value)}
-                    className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
-                    <option value="">選択してください</option>
-                    {subjects.map(s => (
-                      <option key={s.id} value={s.id}>{s.name}</option>
-                    ))}
-                  </select>
-                </div>
+              <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-5">
+                <label className="mb-1.5 block text-xs font-medium text-slate-500">科目</label>
+                <select value={subjectId} onChange={e => setSubjectId(e.target.value)}
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                  <option value="">選択してください</option>
+                  {subjects.map(s => (
+                    <option key={s.id} value={s.id}>{s.name}</option>
+                  ))}
+                </select>
               </div>
             )}
 
