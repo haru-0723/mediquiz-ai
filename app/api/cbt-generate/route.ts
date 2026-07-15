@@ -3,13 +3,22 @@ import Anthropic from '@anthropic-ai/sdk';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getDepartmentType, getCBTSubjectInstruction, getSourceInstruction } from '@/lib/departmentUtils';
-import { extractQuestions, type RawQuestion } from '@/lib/questionUtils';
+import { extractQuestions, randomizeAnswerPosition, type RawQuestion } from '@/lib/questionUtils';
 import { getEffectivePlan } from '@/lib/planUtils';
 
 if (!process.env.ANTHROPIC_API_KEY) {
   throw new Error('ANTHROPIC_API_KEY is not set');
 }
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+
+function shuffle<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
 
 // batchCount 問を1回のAPI呼び出しで生成
 async function generateBatch(
@@ -95,24 +104,66 @@ export async function POST(request: NextRequest) {
       quotaLogId = newLogId as string;
     }
 
+    const deptType = getDepartmentType(profile?.department, profile?.target_exam);
+    const isCbt = deptType !== 'other';
+
+    // 半分は共有ストックから再利用し、半分だけ新規にAI生成する。
+    // 新規生成分はストックに追加され、使うほどストックが育って新規生成の
+    // 必要量が減っていく。
+    const bankScope = admin.from('exam_question_bank').select('*').eq('mode', 'cbt').eq('dept', deptType);
+    const { data: bankPool } = subject !== 'すべて' ? await bankScope.eq('subject', subject) : await bankScope;
+
+    const stockTarget = Math.floor(count / 2);
+    const stockPicked = shuffle(bankPool ?? []).slice(0, stockTarget);
+    const freshNeeded = count - stockPicked.length;
+
     // 10問ずつバッチに分割して順番に生成
     const BATCH_SIZE = 10;
-    const allRawQuestions: RawQuestion[] = [];
-    let remaining = count;
+    const freshRaw: RawQuestion[] = [];
+    let remaining = freshNeeded;
 
     while (remaining > 0) {
       const batchCount = Math.min(remaining, BATCH_SIZE);
       const batch = await generateBatch(subject, batchCount, profile?.department, profile?.target_exam);
-      allRawQuestions.push(...batch);
+      freshRaw.push(...batch);
       remaining -= batchCount;
     }
 
-    if (allRawQuestions.length === 0) {
+    if (stockPicked.length === 0 && freshRaw.length === 0) {
       throw new Error('問題を生成できませんでした');
     }
 
-    const deptType = getDepartmentType(profile?.department, profile?.target_exam);
-    const isCbt = deptType !== 'other';
+    // 新規生成分をストックに追加（今後のユーザーが再利用できるように）
+    if (freshRaw.length > 0) {
+      const { error: bankInsertError } = await admin.from('exam_question_bank').insert(freshRaw.map(q => ({
+        mode: 'cbt',
+        dept: deptType,
+        subject: q.subject || subject,
+        question: q.question,
+        option_a: q.option_a,
+        option_b: q.option_b,
+        option_c: q.option_c,
+        option_d: q.option_d,
+        answer: q.answer,
+        explanation: q.explanation,
+        difficulty: q.difficulty,
+      })));
+      if (bankInsertError) console.error('[cbt-generate] bank insert failed:', bankInsertError);
+    }
+
+    const stockAsRaw: RawQuestion[] = stockPicked.map(row => randomizeAnswerPosition({
+      question: row.question,
+      option_a: row.option_a,
+      option_b: row.option_b,
+      option_c: row.option_c,
+      option_d: row.option_d,
+      answer: row.answer,
+      explanation: row.explanation,
+      subject: row.subject,
+      difficulty: row.difficulty,
+    }));
+
+    const allRawQuestions: RawQuestion[] = shuffle([...stockAsRaw, ...freshRaw]);
 
     const questionsToSave = allRawQuestions.map((q: RawQuestion) => ({
       user_id: user.id,

@@ -92,6 +92,54 @@ export type Database = {
           },
         ]
       }
+      exam_question_bank: {
+        Row: {
+          answer: string
+          created_at: string
+          dept: string
+          difficulty: string
+          explanation: string
+          id: string
+          mode: string
+          option_a: string
+          option_b: string
+          option_c: string
+          option_d: string
+          question: string
+          subject: string
+        }
+        Insert: {
+          answer: string
+          created_at?: string
+          dept: string
+          difficulty?: string
+          explanation: string
+          id?: string
+          mode: string
+          option_a: string
+          option_b: string
+          option_c: string
+          option_d: string
+          question: string
+          subject: string
+        }
+        Update: {
+          answer?: string
+          created_at?: string
+          dept?: string
+          difficulty?: string
+          explanation?: string
+          id?: string
+          mode?: string
+          option_a?: string
+          option_b?: string
+          option_c?: string
+          option_d?: string
+          question?: string
+          subject?: string
+        }
+        Relationships: []
+      }
       exams: {
         Row: {
           created_at: string | null
