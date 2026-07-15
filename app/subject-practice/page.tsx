@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 
 type PracticeQuestion = {
@@ -25,6 +26,7 @@ const OPTION_KEYS = ['A', 'B', 'C', 'D'] as const;
 const PRACTICE_QUESTION_COUNT = 10;
 
 export default function SubjectPracticePage() {
+  const router = useRouter();
   const [subjectId, setSubjectId] = useState('');
   const [subjectName, setSubjectName] = useState('');
   const [examType, setExamType] = useState('');
@@ -147,14 +149,16 @@ export default function SubjectPracticePage() {
             <p className="text-3xl font-bold text-emerald-600">{correctCount}<span className="text-base font-medium text-slate-500">/{questions.length}問正解（{accuracy}%）</span></p>
 
             <div className="mt-8 space-y-2">
-              <Link href={`/subject/${subjectId}`}
+              <button
+                onClick={() => { router.push(`/subject/${subjectId}`); router.refresh(); }}
                 className="block w-full rounded-xl bg-emerald-600 py-3 text-sm font-semibold text-white transition-colors hover:bg-emerald-700">
                 単元別の結果を見る
-              </Link>
-              <Link href="/dashboard"
+              </button>
+              <button
+                onClick={() => { router.push('/dashboard'); router.refresh(); }}
                 className="block w-full rounded-xl border border-slate-200 py-3 text-sm text-slate-600 hover:bg-slate-50">
                 ダッシュボードへ戻る
-              </Link>
+              </button>
             </div>
           </div>
         </div>

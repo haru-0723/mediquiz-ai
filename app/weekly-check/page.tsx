@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import { createClient } from '@/lib/supabase/client';
 
@@ -24,6 +25,7 @@ type Phase = 'intro' | 'loading' | 'quiz' | 'result' | 'error';
 const OPTION_KEYS = ['A', 'B', 'C', 'D'] as const;
 
 export default function WeeklyCheckPage() {
+  const router = useRouter();
   const supabase = createClient();
   const [examType, setExamType] = useState<string>('');
   const [phase, setPhase] = useState<Phase>('intro');
@@ -180,9 +182,11 @@ export default function WeeklyCheckPage() {
             <p className="mb-6 text-sm text-slate-400">{questions.length}問中 {correctCount}問正解</p>
             <p className="text-4xl font-bold text-emerald-600">{accuracy}%</p>
             <p className="mt-4 text-sm text-slate-600">結果を各単元の正答率に反映しました。また来週チャレンジしましょう。</p>
-            <Link href="/dashboard" className="mt-8 block w-full rounded-xl bg-emerald-600 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-emerald-700">
+            <button
+              onClick={() => { router.push('/dashboard'); router.refresh(); }}
+              className="mt-8 block w-full rounded-xl bg-emerald-600 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-emerald-700">
               ダッシュボードへ
-            </Link>
+            </button>
           </div>
         </div>
       </div>

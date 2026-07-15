@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 
 type CheckQuestion = {
@@ -24,6 +25,7 @@ type Phase = 'loading' | 'quiz' | 'result' | 'error';
 const OPTION_KEYS = ['A', 'B', 'C', 'D'] as const;
 
 export default function UnitCheckPage() {
+  const router = useRouter();
   const [unitIds, setUnitIds] = useState<string[]>([]);
   const [phase, setPhase] = useState<Phase>('loading');
   const [questions, setQuestions] = useState<CheckQuestion[]>([]);
@@ -167,10 +169,11 @@ export default function UnitCheckPage() {
             </div>
             <p className="mt-4 text-xs text-slate-400">過去の記録と合算して、各単元の正答率を更新しました。</p>
 
-            <Link href="/dashboard"
+            <button
+              onClick={() => { router.push('/dashboard'); router.refresh(); }}
               className="mt-6 block w-full rounded-xl bg-emerald-600 py-3 text-sm font-semibold text-white transition-colors hover:bg-emerald-700">
               ダッシュボードへ戻る
-            </Link>
+            </button>
           </div>
         </div>
       </div>
