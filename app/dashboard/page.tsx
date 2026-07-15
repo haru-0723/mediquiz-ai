@@ -5,7 +5,7 @@ import Link from 'next/link';
 import {
   Stethoscope, Settings, GraduationCap, Award, Flame,
   CalendarCheck, RotateCcw, Target, Sparkles, BookMarked, Upload, ClipboardList,
-  BookOpen, Repeat, Trophy, History, ClipboardCheck,
+  BookOpen, Repeat, Trophy, History,
   AlertTriangle, Infinity as InfinityIcon, Lock,
 } from 'lucide-react';
 import LogoutButton from './LogoutButton';
@@ -27,15 +27,17 @@ const EXAM_TYPE_LABEL: Record<string, string> = {
   kokushi: '薬剤師国家試験',
 };
 
+// 「今日やること」（試験範囲ベースの推奨）とは別の、自由演習系のツール群。
+// 主要な学習ループはダッシュボード上部（今日やること・学習目標）が担うため、
+// ここは補助的な位置づけとして「演習メニュー」に統一している。
 const FEATURE_CARDS = [
-  { href: '/today',    icon: CalendarCheck, title: '今日の問題',    desc: '毎日5問で実力アップ',          tint: 'bg-emerald-50', iconColor: 'text-emerald-600' },
+  { href: '/today',    icon: CalendarCheck, title: '今日の5問',     desc: '自由演習・毎日更新',            tint: 'bg-emerald-50', iconColor: 'text-emerald-600' },
   { href: '/review',   icon: RotateCcw,     title: '復習モード',    desc: 'フォルダ・科目を選んで演習',    tint: 'bg-sky-50',     iconColor: 'text-sky-600' },
   { href: '/cbt',      icon: Target,        title: 'CBTモード',      desc: '医・薬・看護向けの模試形式',    tint: 'bg-sky-50',     iconColor: 'text-sky-600' },
   { href: '/generate', icon: Sparkles,      title: 'AI問題生成',    desc: '教材からAIが問題を自動作成',    tint: 'bg-teal-50',    iconColor: 'text-teal-600' },
   { href: '/questions',icon: BookMarked,    title: 'マイ問題集',    desc: '自分の問題をフォルダ管理',      tint: 'bg-slate-100',  iconColor: 'text-slate-600' },
   { href: '/materials',icon: Upload,        title: '教材管理',      desc: 'PDFや画像をアップロード',        tint: 'bg-slate-100',  iconColor: 'text-slate-600' },
   { href: '/kokushi',  icon: ClipboardList, title: '国試モード',    desc: '国試形式の本格模試に挑戦',      tint: 'bg-teal-50',    iconColor: 'text-teal-600' },
-  { href: '/study-log',icon: ClipboardCheck,title: '学習を報告する', desc: 'このアプリ以外で勉強した内容を記録', tint: 'bg-emerald-50', iconColor: 'text-emerald-600' },
 ];
 
 const PLAN_LABEL: Record<string, string> = { free: '無料プラン', standard: '有料プラン', premium: 'プレミアム' };
@@ -574,9 +576,10 @@ export default async function DashboardPage() {
             </div>
           )}
 
-          {/* 学習メニュー */}
+          {/* 演習メニュー（自由演習・補助ツール） */}
           <section>
-            <h2 className="mb-3 px-1 text-xs font-semibold uppercase tracking-wide text-slate-400">学習メニュー</h2>
+            <h2 className="mb-0.5 px-1 text-xs font-semibold uppercase tracking-wide text-slate-400">演習メニュー</h2>
+            <p className="mb-3 px-1 text-xs text-slate-400">「今日やること」とは別に、自由に演習したいときはこちら</p>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
               {FEATURE_CARDS.map(card => {
                 const Icon = card.icon;
