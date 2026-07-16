@@ -13,11 +13,11 @@ export function Hero() {
             看護・医学・薬学・福祉系の大学生向け
           </div>
           <h1 className="mt-5 text-pretty text-4xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
-            資料をアップロードするだけで
-            <span className="mt-1 block text-emerald-600">AIが問題を自動生成</span>
+            今日、何をやればいいか
+            <span className="mt-1 block text-emerald-600">AIが試験から逆算して教えます</span>
           </h1>
           <p className="mt-5 max-w-md text-pretty text-base leading-relaxed text-slate-600">
-            授業スライドやノートから、試験に出やすい問題を自動作成。CBT・国試モードで本番対策まで、これ一つで完結します。
+            試験日と目標正答率から、今日取り組むべき単元をAIが優先順位づけ。理解度チェックで弱点を可視化し、迷わず対策を続けられます。
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <Link
@@ -41,7 +41,7 @@ export function Hero() {
             </span>
             <span className="inline-flex items-center gap-1.5">
               <Check className="h-4 w-4 text-emerald-600" />
-              数分で問題集が完成
+              「今日やること」は無料で使い放題
             </span>
           </div>
         </div>
@@ -56,46 +56,32 @@ export function Hero() {
             </div>
             <div className="rounded-xl bg-slate-50 p-4">
               <div className="flex items-center justify-between">
-                <span className="rounded-md bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700">看護師国家試験</span>
-                <span className="text-xs text-slate-400">午後 問63</span>
+                <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">今日やること</span>
+                <span className="text-xs text-slate-400">試験まで あと45日</span>
               </div>
-              <p className="mt-3 text-xs leading-relaxed text-slate-500">
-                Aさん（72歳、男性）。慢性心不全の急性増悪で入院した。呼吸困難と両下腿の浮腫を認める。
-              </p>
-              <p className="mt-2 text-sm font-semibold leading-relaxed text-slate-800">
-                入院時のアセスメントで最も優先度が高いのはどれか。
-              </p>
-              <div className="mt-3 space-y-2">
-                {[
-                  { n: 1, label: '体重の増減', correct: false },
-                  { n: 2, label: '経皮的動脈血酸素飽和度〈SpO₂〉', correct: true },
-                  { n: 3, label: '1日の飲水量', correct: false },
-                  { n: 4, label: '排便の有無', correct: false },
-                ].map((o) => (
-                  <div
-                    key={o.n}
-                    className={`flex items-center gap-2.5 rounded-lg border px-3 py-2 text-sm ${
-                      o.correct
-                        ? 'border-emerald-300 bg-emerald-50 text-emerald-800'
-                        : 'border-slate-200 bg-white text-slate-600'
-                    }`}
-                  >
-                    <span
-                      className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full text-xs font-semibold ${
-                        o.correct ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-500'
-                      }`}
-                    >
-                      {o.correct ? <Check className="h-3 w-3" /> : o.n}
-                    </span>
-                    {o.label}
+              <div className="mt-3 rounded-xl border-2 border-emerald-400 bg-white p-3">
+                <div className="flex items-start gap-2.5">
+                  <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-emerald-600 text-xs font-bold text-white">1</span>
+                  <div className="min-w-0">
+                    <p className="text-[11px] text-slate-400">病態・薬物治療</p>
+                    <p className="text-sm font-bold text-slate-900">心不全・虚血性心疾患</p>
+                    <div className="mt-1.5 flex flex-wrap gap-1">
+                      <span className="rounded-full bg-rose-50 px-2 py-0.5 text-[10px] font-medium text-rose-600">正答率58%（目標80%）</span>
+                      <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-700">5日間未学習</span>
+                      <span className="rounded-full bg-purple-50 px-2 py-0.5 text-[10px] font-medium text-purple-700">試験で最重要</span>
+                    </div>
                   </div>
-                ))}
+                </div>
+                <div className="mt-2.5 rounded-lg bg-slate-50 px-3 py-2 text-[11px] leading-relaxed text-slate-500">
+                  正答率58%で目標の80%まであと22%。最後に勉強してから5日経っています。
+                </div>
+                <div className="mt-2.5 rounded-lg bg-emerald-600 py-2 text-center text-xs font-semibold text-white">
+                  この単元をやる →
+                </div>
               </div>
-              <div className="mt-3 flex items-start gap-1.5 rounded-lg bg-emerald-50 px-3 py-2">
-                <Check className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-emerald-600" />
-                <p className="text-xs leading-relaxed text-emerald-700">
-                  正解。急性増悪では呼吸状態とSpO₂の把握が最優先。解説つきで理解が深まります。
-                </p>
+              <div className="mt-2 flex items-center justify-between rounded-lg border border-slate-100 bg-white px-3 py-2">
+                <span className="truncate text-xs font-medium text-slate-600">薬理・自律神経系</span>
+                <span className="shrink-0 rounded-full bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium text-amber-700">要復習</span>
               </div>
             </div>
           </div>

@@ -6,14 +6,14 @@ import { PACKS, PACK_ORDER, ADDONS, ADDON_ORDER } from '@/lib/plans';
 import { Logo } from '@/components/brand/Logo';
 
 const FREE_FEATURES = [
+  { emoji: '🎯', text: '今日やること（優先順位づけ）：無制限' },
+  { emoji: '📊', text: '目標正答率・単元別の弱点分析：無制限' },
+  { emoji: '🧠', text: '理解度チェック・週次診断テスト：無制限' },
   { emoji: '✨', text: 'AI問題生成：通算5教材まで' },
   { emoji: '📝', text: '問題保存：30問まで' },
   { emoji: '🎯', text: 'CBT模試：月2回まで' },
   { emoji: '📝', text: '国試モード：月2回まで' },
   { emoji: '📤', text: '教材アップロード：3件まで' },
-  { emoji: '⚡', text: '問題演習' },
-  { emoji: '📚', text: 'マイ問題集（フォルダ管理）' },
-  { emoji: '📅', text: '試験日カウントダウン' },
 ];
 
 const PAID_FEATURES = [
@@ -70,6 +70,9 @@ export default function PricingPage() {
         <div className="text-center mb-10 sm:mb-12">
           <h1 className="text-2xl sm:text-3xl font-semibold text-slate-900 mb-3">料金プラン</h1>
           <p className="text-slate-500 text-sm sm:text-base">必要な期間だけ買える買い切り制。自動更新はありません。</p>
+          <p className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
+            🎯 「今日やること」「目標正答率」「理解度チェック」は無料プランでも使い放題
+          </p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-6 items-start">

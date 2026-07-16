@@ -1,9 +1,9 @@
-import { Upload, Bot, Trophy } from 'lucide-react';
+import { CalendarCheck, ListChecks, TrendingUp } from 'lucide-react';
 
 const STEPS = [
-  { icon: Upload, step: 'STEP 1', title: '資料をアップロード', desc: '授業スライドやノートをそのままアップロードするだけ。PDF・画像に対応。' },
-  { icon: Bot, step: 'STEP 2', title: 'AIが問題を自動生成', desc: '内容を読み取り、試験に出やすい4択問題を解説付きで自動作成します。' },
-  { icon: Trophy, step: 'STEP 3', title: '演習して実力アップ', desc: '繰り返し解いて知識を定着。苦手分野は自動で分析・復習できます。' },
+  { icon: CalendarCheck, step: 'STEP 1', title: '試験を設定', desc: '学部・学年・試験日を入力するだけ。定期テスト・CBT・国試に対応。' },
+  { icon: ListChecks, step: 'STEP 2', title: '今日やることが分かる', desc: '正答率・重要度・試験までの日数からAIが優先順位をつけて毎日更新します。' },
+  { icon: TrendingUp, step: 'STEP 3', title: '理解度チェックで定着', desc: '単元ごとに正答率を記録。目標までの差が「今日の目標」として見える化されます。' },
 ];
 
 export function HowItWorks() {

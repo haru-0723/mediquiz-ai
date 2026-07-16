@@ -9,7 +9,7 @@ export function CtaFooter() {
         <div className="relative overflow-hidden rounded-3xl bg-emerald-600 px-8 py-14 text-center">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.15),transparent_55%)]" />
           <h2 className="relative text-balance text-3xl font-bold tracking-tight text-white">今日から、学習を効率化しよう</h2>
-          <p className="relative mx-auto mt-3 max-w-md text-pretty text-emerald-50">登録は無料。数分でオリジナルの問題集が作れます。</p>
+          <p className="relative mx-auto mt-3 max-w-md text-pretty text-emerald-50">登録は無料。試験日を設定すれば、今日やることがすぐに分かります。</p>
           <Link
             href="/auth/signup"
             className="relative mt-8 inline-flex items-center justify-center gap-2 rounded-xl bg-white px-7 py-3 text-sm font-semibold text-emerald-700 shadow-sm transition-transform hover:scale-[1.02]"

@@ -1,12 +1,12 @@
-import { Sparkles, Target, BarChart3, FolderClosed, RefreshCw, Printer } from 'lucide-react';
+import { ListChecks, Target, BarChart3, ClipboardCheck, Trophy, Sparkles } from 'lucide-react';
 
 const FEATURES = [
-  { icon: Sparkles, tint: 'bg-emerald-50 text-emerald-600', title: 'AIが問題を自動生成', desc: '授業スライドをアップロードするだけで4択問題が完成します。' },
-  { icon: Target, tint: 'bg-sky-50 text-sky-600', title: 'CBT・国試モード', desc: '本番さながらの模試形式で、実力を正確に測れます。' },
-  { icon: BarChart3, tint: 'bg-amber-50 text-amber-600', title: '苦手分野を自動分析', desc: '正解率から苦手科目を特定し、効率的に復習できます。' },
-  { icon: FolderClosed, tint: 'bg-teal-50 text-teal-600', title: '問題をフォルダ管理', desc: '科目ごとに整理して、いつでも見返せます。' },
-  { icon: RefreshCw, tint: 'bg-indigo-50 text-indigo-600', title: '間違えた問題を復習', desc: '苦手な問題だけを集めて、繰り返し演習できます。' },
-  { icon: Printer, tint: 'bg-rose-50 text-rose-600', title: 'PDFで印刷', desc: '作成した問題集はPDFに書き出して紙でも使えます。' },
+  { icon: ListChecks, tint: 'bg-emerald-50 text-emerald-600', title: '今日やることが分かる', desc: '正答率・重要度・試験日から算出した優先順位で、毎日の学習に迷いません。' },
+  { icon: Target, tint: 'bg-sky-50 text-sky-600', title: '目標正答率から逆算', desc: '試験日までに必要な正答率を「今日の目標」として日々表示します。' },
+  { icon: BarChart3, tint: 'bg-amber-50 text-amber-600', title: '単元別の弱点分析', desc: '科目・単元ごとの正答率を記録し、苦手をピンポイントで把握できます。' },
+  { icon: ClipboardCheck, tint: 'bg-teal-50 text-teal-600', title: '理解度チェック・週次診断', desc: '単元ごとの3問チェックと、週1回の50問診断テストで実力を定点観測。' },
+  { icon: Trophy, tint: 'bg-indigo-50 text-indigo-600', title: 'CBT・国試モード', desc: '本番さながらの模試形式で、実力を正確に測れます。' },
+  { icon: Sparkles, tint: 'bg-rose-50 text-rose-600', title: 'AI問題生成', desc: '授業スライドをアップロードするだけで、自分専用の問題も作れます。' },
 ];
 
 export function Features() {
