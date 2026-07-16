@@ -18,7 +18,8 @@ import SubjectGoalsSection from './SubjectGoalsSection';
 import AddToHomeScreen from '@/components/AddToHomeScreen';
 import { getTitleInfo } from '@/lib/titleUtils';
 import { getEffectivePlan, getPlanExpiry } from '@/lib/planUtils';
-import { getTodayUnits, getJSTDateStr } from '@/lib/recommendation/getTodayUnits';
+import { getTodayUnits } from '@/lib/recommendation/getTodayUnits';
+import { computeTodayTarget } from '@/lib/recommendation/todayTarget';
 import { getJSTMondayStr } from '@/lib/week';
 
 const EXAM_TYPE_LABEL: Record<string, string> = {
@@ -161,31 +162,16 @@ export default async function DashboardPage() {
   const goalBySubject = new Map((subjectGoalRows ?? []).map(g => [g.subject_id, g]));
   const DEFAULT_TARGET_ACCURACY = 80;
 
-  // 開始地点（baseline）の正答率から最終目標（デフォルト80%）へ、試験日まで線形に
-  // 上げていく「今日の目標正答率」を算出する。開始地点が未記録でもデータがある科目は、
-  // 現在の正答率を暫定の開始地点（今日基準）として扱い、必ず今日の目標を表示する。
-  const todayStr = getJSTDateStr();
-  function computeTodayTarget(baseline: number, baselineDate: string, finalTarget: number, examDate: string): number {
-    const start = new Date(baselineDate).getTime();
-    const end = new Date(examDate).getTime();
-    const totalDays = (end - start) / 86_400_000;
-    if (totalDays <= 0) return finalTarget;
-    const elapsedDays = (Date.now() - start) / 86_400_000;
-    const ratio = Math.min(Math.max(elapsedDays / totalDays, 0), 1);
-    return Math.round(baseline + (finalTarget - baseline) * ratio);
-  }
-
   const subjectGoals = scopedSubjects.map(s => {
     const totals = subjectTotals[s.id];
     const goalRow = goalBySubject.get(s.id);
     const targetAccuracy = goalRow?.target_accuracy ?? DEFAULT_TARGET_ACCURACY;
     const currentAccuracy = totals && totals.answered > 0 ? Math.round((totals.correct / totals.answered) * 100) : null;
 
-    // 開始地点：記録があればそれを、なければ現在値を今日基準の暫定開始地点にする
+    // 開始地点：記録があればそれを、なければ現在値を暫定の開始地点にする
     const baseline = goalRow?.baseline_accuracy ?? currentAccuracy;
-    const baselineDate = goalRow?.baseline_date ?? todayStr;
     const todayTarget = baseline !== null
-      ? computeTodayTarget(baseline, baselineDate, targetAccuracy, activeExam.exam_date)
+      ? computeTodayTarget(baseline, targetAccuracy, examDaysUntil, activeExam.exam_type)
       : targetAccuracy;
 
     return {
