@@ -4,35 +4,17 @@ import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
-
-type CheckQuestion = {
-  id: string;
-  unitId: string;
-  unitName: string;
-  subjectName: string;
-  question: string;
-  option_a: string;
-  option_b: string;
-  option_c: string;
-  option_d: string;
-  answer: string;
-  explanation: string;
-  difficulty: string;
-};
+import QuizRunner, { type QuizQuestion, type QuizUnitTally } from '@/components/QuizRunner';
 
 type Phase = 'loading' | 'quiz' | 'result' | 'error';
-
-const OPTION_KEYS = ['A', 'B', 'C', 'D'] as const;
 
 export default function UnitCheckPage() {
   const router = useRouter();
   const [unitIds, setUnitIds] = useState<string[]>([]);
   const [phase, setPhase] = useState<Phase>('loading');
-  const [questions, setQuestions] = useState<CheckQuestion[]>([]);
-  const [current, setCurrent] = useState(0);
-  const [selected, setSelected] = useState<string | null>(null);
-  const [answered, setAnswered] = useState(false);
-  const [correctByUnit, setCorrectByUnit] = useState<Map<string, { correct: number; total: number }>>(new Map());
+  const [questions, setQuestions] = useState<QuizQuestion[]>([]);
+  const [resultTally, setResultTally] = useState<QuizUnitTally>(new Map());
+  const [resultTotalCorrect, setResultTotalCorrect] = useState(0);
   const [errorMsg, setErrorMsg] = useState('');
 
   const loadQuestions = useCallback(async (ids: string[]) => {
@@ -63,38 +45,21 @@ export default function UnitCheckPage() {
     loadQuestions(ids);
   }, [loadQuestions]);
 
-  function handleSelect(option: string) {
-    if (answered) return;
-    setSelected(option);
-    setAnswered(true);
-  }
-
-  async function handleNext() {
-    const q = questions[current];
-    const isCorrect = selected === q.answer;
-    const next = new Map(correctByUnit);
-    const prev = next.get(q.unitId) ?? { correct: 0, total: 0 };
-    next.set(q.unitId, { correct: prev.correct + (isCorrect ? 1 : 0), total: prev.total + 1 });
-    setCorrectByUnit(next);
-
-    if (current + 1 >= questions.length) {
-      try {
-        await fetch('/api/diagnostic-submit', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            results: Array.from(next.entries()).map(([unitId, r]) => ({ unitId, correct: r.correct, total: r.total })),
-          }),
-        });
-      } catch {
-        // 保存に失敗しても結果画面は表示する
-      }
-      setPhase('result');
-    } else {
-      setCurrent(c => c + 1);
-      setSelected(null);
-      setAnswered(false);
+  async function handleComplete(correctByUnit: QuizUnitTally, totalCorrect: number) {
+    setResultTally(correctByUnit);
+    setResultTotalCorrect(totalCorrect);
+    try {
+      await fetch('/api/diagnostic-submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          results: Array.from(correctByUnit.entries()).map(([unitId, r]) => ({ unitId, correct: r.correct, total: r.total })),
+        }),
+      });
+    } catch {
+      // 保存に失敗しても結果画面は表示する
     }
+    setPhase('result');
   }
 
   if (phase === 'loading') {
@@ -131,11 +96,10 @@ export default function UnitCheckPage() {
   }
 
   if (phase === 'result') {
-    const totalCorrect = Array.from(correctByUnit.values()).reduce((s, r) => s + r.correct, 0);
     const total = questions.length;
     // 単元ごとの結果ラベル
     const unitNameById = new Map(questions.map(q => [q.unitId, { unitName: q.unitName, subjectName: q.subjectName }]));
-    const perUnit = Array.from(correctByUnit.entries()).map(([unitId, r]) => ({
+    const perUnit = Array.from(resultTally.entries()).map(([unitId, r]) => ({
       unitId,
       ...(unitNameById.get(unitId) ?? { unitName: '', subjectName: '' }),
       ...r,
@@ -149,7 +113,7 @@ export default function UnitCheckPage() {
             <div className="mb-3 text-5xl">✅</div>
             <h1 className="mb-1 text-xl font-bold text-slate-900">理解度チェック完了</h1>
             <p className="mb-6 text-sm text-slate-400">{perUnit.length}単元 ・ {total}問</p>
-            <p className="text-3xl font-bold text-emerald-600">{totalCorrect}<span className="text-base font-medium text-slate-500">/{total}問正解</span></p>
+            <p className="text-3xl font-bold text-emerald-600">{resultTotalCorrect}<span className="text-base font-medium text-slate-500">/{total}問正解</span></p>
 
             <div className="mt-6 space-y-2 text-left">
               {perUnit.map(u => {
@@ -180,73 +144,10 @@ export default function UnitCheckPage() {
     );
   }
 
-  const q = questions[current];
   return (
     <div className="min-h-screen bg-slate-50">
       <Navbar />
-      <div className="mx-auto max-w-2xl p-4 sm:p-8">
-        <div className="mb-6 mt-2 flex items-center justify-between">
-          <div>
-            <p className="text-xs text-slate-400">{q.subjectName}・{q.unitName}</p>
-            <h1 className="text-base font-semibold text-slate-800">理解度チェック</h1>
-          </div>
-          <span className="text-sm text-slate-400">{current + 1} / {questions.length}</span>
-        </div>
-
-        <div className="mb-6 h-1.5 overflow-hidden rounded-full bg-slate-200">
-          <div className="h-full rounded-full bg-emerald-500 transition-all duration-300"
-            style={{ width: `${((current + (answered ? 1 : 0)) / questions.length) * 100}%` }} />
-        </div>
-
-        <div className="mb-4 rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
-          <p className="mb-5 text-base font-medium leading-relaxed text-slate-900 sm:text-lg">{q.question}</p>
-
-          <div className="space-y-2.5">
-            {OPTION_KEYS.map(key => {
-              const optionText = q[`option_${key.toLowerCase()}` as keyof CheckQuestion] as string;
-              const isCorrect = key === q.answer;
-              const isSelected = key === selected;
-
-              let bgClass = 'bg-slate-50 border-slate-200 hover:border-emerald-300 hover:bg-emerald-50 cursor-pointer';
-              if (answered) {
-                if (isCorrect) bgClass = 'bg-emerald-50 border-emerald-400 cursor-default';
-                else if (isSelected) bgClass = 'bg-rose-50 border-rose-400 cursor-default';
-                else bgClass = 'bg-slate-50 border-slate-200 cursor-default opacity-60';
-              }
-
-              return (
-                <button key={key} onClick={() => handleSelect(key)} disabled={answered}
-                  className={`w-full rounded-xl border px-4 py-3 text-left transition-all ${bgClass}`}>
-                  <div className="flex items-start gap-3">
-                    <span className={`flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full text-xs font-bold ${
-                      answered && isCorrect ? 'bg-emerald-500 text-white' :
-                      answered && isSelected ? 'bg-rose-400 text-white' :
-                      'bg-slate-200 text-slate-600'
-                    }`}>
-                      {key}
-                    </span>
-                    <span className="text-sm leading-relaxed text-slate-800">{optionText}</span>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-
-          {answered && (
-            <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
-              <p className="mb-1 text-xs font-semibold text-emerald-700">解説</p>
-              <p className="text-sm leading-relaxed text-slate-700">{q.explanation}</p>
-            </div>
-          )}
-        </div>
-
-        {answered && (
-          <button onClick={handleNext}
-            className="w-full rounded-xl bg-emerald-600 py-3 text-sm font-medium text-white transition-colors hover:bg-emerald-700">
-            {current + 1 >= questions.length ? '結果を見る →' : '次の問題へ →'}
-          </button>
-        )}
-      </div>
+      <QuizRunner title="理解度チェック" questions={questions} onComplete={handleComplete} />
     </div>
   );
 }
