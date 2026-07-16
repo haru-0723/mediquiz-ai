@@ -28,9 +28,9 @@ export type CheckQuestion = {
   difficulty: string;
 };
 
-function getCheckPrompt(examLabel: string, subjectName: string, unitName: string): string {
+function getCheckPrompt(examLabel: string, subjectName: string, unitName: string, count: number): string {
   return `あなたは薬学部生向けの${examLabel}対策問題を作成する専門家です。
-科目「${subjectName}」の単元「${unitName}」について、理解度を確認するための4択問題を1問作成してください。
+科目「${subjectName}」の単元「${unitName}」について、理解度を確認するための4択問題を${count}問作成してください。
 
 IMPORTANT: Return ONLY raw JSON. No explanation, no markdown, no code blocks.
 {"questions":[{"question":"問題文","option_a":"選択肢1","option_b":"選択肢2","option_c":"選択肢3","option_d":"選択肢4","answer":"A","explanation":"解説文","subject":"${subjectName}","difficulty":"medium"}]}
@@ -39,26 +39,28 @@ Rules:
 - answer must be: A, B, C, or D（文字のみ）
 - 問題文・選択肢・解説はすべて日本語
 - 「${unitName}」の内容から外れないこと
+- ${count}問は必ずそれぞれ異なる切り口（別の用語・別の機序・別の事例など）から出題し、内容が重複・類似しないこと
 - 選択肢A〜Dの文章の長さをできるだけ揃える
+- 正解はA・B・C・Dが均等になるように分散させる
 ${getSourceInstruction('pharmacy')}`;
 }
 
-async function generateOne(examLabel: string, unit: UnitInfo): Promise<RawQuestion | null> {
+async function generateBatch(examLabel: string, unit: UnitInfo, count: number): Promise<RawQuestion[]> {
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
     try {
       const response = await anthropic.messages.create({
         model: 'claude-sonnet-4-6',
-        max_tokens: 1024,
-        messages: [{ role: 'user', content: getCheckPrompt(examLabel, unit.subjectName, unit.unitName) }],
+        max_tokens: 2048,
+        messages: [{ role: 'user', content: getCheckPrompt(examLabel, unit.subjectName, unit.unitName, count) }],
       });
       const text = response.content[0].type === 'text' ? response.content[0].text.trim() : '';
-      const [q] = extractQuestions(text);
-      if (q) return q;
+      const qs = extractQuestions(text).slice(0, count);
+      if (qs.length > 0) return qs;
     } catch (e) {
       console.error('[unit-check-generate] attempt', attempt, 'failed for unit', unit.unitId, e);
     }
   }
-  return null;
+  return [];
 }
 
 export async function POST(request: NextRequest) {
@@ -139,8 +141,7 @@ export async function POST(request: NextRequest) {
       }));
 
       if (shortBy > 0) {
-        const generated = await Promise.all(Array.from({ length: shortBy }, () => generateOne(examLabel, unit)));
-        const toInsert = generated.filter((q): q is RawQuestion => q !== null);
+        const toInsert = await generateBatch(examLabel, unit, shortBy);
         if (toInsert.length > 0) {
           const { data: inserted } = await admin
             .from('unit_question_bank')
