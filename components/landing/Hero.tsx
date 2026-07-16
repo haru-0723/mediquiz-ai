@@ -13,8 +13,8 @@ export function Hero() {
             看護・医学・薬学・福祉系の大学生向け
           </div>
           <h1 className="mt-5 text-pretty text-4xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
-            今日、何をやればいいか
-            <span className="mt-1 block text-emerald-600">AIが試験から逆算して教えます</span>
+            今日何を勉強するか、
+            <span className="mt-1 block text-emerald-600">もう迷わない。</span>
           </h1>
           <p className="mt-5 max-w-md text-pretty text-base leading-relaxed text-slate-600">
             試験日と目標正答率から、今日取り組むべき単元をAIが優先順位づけ。理解度チェックで弱点を可視化し、迷わず対策を続けられます。
