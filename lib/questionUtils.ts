@@ -79,3 +79,14 @@ export function randomizeAnswerPosition<T extends RawQuestion>(q: T): T {
     answer: letters[order.indexOf(correctIndex)],
   };
 }
+
+// Fisher-Yatesシャッフル。問題バンクからの抽出・出題順のランダム化など
+// 複数の生成APIルートで共通して使う。
+export function shuffle<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}

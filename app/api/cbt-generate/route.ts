@@ -3,22 +3,13 @@ import Anthropic from '@anthropic-ai/sdk';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getDepartmentType, getCBTSubjectInstruction, getSourceInstruction } from '@/lib/departmentUtils';
-import { extractQuestions, randomizeAnswerPosition, type RawQuestion } from '@/lib/questionUtils';
+import { extractQuestions, randomizeAnswerPosition, shuffle, type RawQuestion } from '@/lib/questionUtils';
 import { getEffectivePlan } from '@/lib/planUtils';
 
 if (!process.env.ANTHROPIC_API_KEY) {
   throw new Error('ANTHROPIC_API_KEY is not set');
 }
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-
-function shuffle<T>(arr: T[]): T[] {
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
 
 // batchCount 問を1回のAPI呼び出しで生成
 async function generateBatch(

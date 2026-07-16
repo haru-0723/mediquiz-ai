@@ -3,7 +3,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getSourceInstruction } from '@/lib/departmentUtils';
-import { extractQuestions, randomizeAnswerPosition, type RawQuestion } from '@/lib/questionUtils';
+import { extractQuestions, randomizeAnswerPosition, shuffle, type RawQuestion } from '@/lib/questionUtils';
 import { getEffectivePlan } from '@/lib/planUtils';
 
 if (!process.env.ANTHROPIC_API_KEY) {
@@ -144,15 +144,6 @@ ${getSourceInstruction(dept === 'unset' ? null : dept)}
 - 選択肢は全て同じくらいの文字数・文体にする
 - 正解はA・B・C・Dが均等になるように分散させてください
 ${subjectInstruction}`;
-}
-
-function shuffle<T>(arr: T[]): T[] {
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
 }
 
 async function generateBatch(dept: KokushiDept, subject: string, batchCount: number): Promise<RawQuestion[]> {

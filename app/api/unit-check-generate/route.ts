@@ -3,7 +3,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getSourceInstruction } from '@/lib/departmentUtils';
-import { extractQuestions, randomizeAnswerPosition, type RawQuestion } from '@/lib/questionUtils';
+import { extractQuestions, randomizeAnswerPosition, shuffle, type RawQuestion } from '@/lib/questionUtils';
 
 if (!process.env.ANTHROPIC_API_KEY) throw new Error('ANTHROPIC_API_KEY is not set');
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -59,15 +59,6 @@ async function generateOne(examLabel: string, unit: UnitInfo): Promise<RawQuesti
     }
   }
   return null;
-}
-
-function shuffle<T>(arr: T[]): T[] {
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
 }
 
 export async function POST(request: NextRequest) {

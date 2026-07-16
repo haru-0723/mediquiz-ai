@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { getJSTDateStr } from '@/lib/recommendation/getTodayUnits';
 
 // 指定した単元群が属する科目について、まだ「開始地点」（実力チェックの正答率の
 // スナップショット）が記録されていなければ、現時点の累積正答率を開始地点として
@@ -55,7 +56,7 @@ export async function ensureSubjectBaselines(
     totals.set(subjectId, t);
   }
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = getJSTDateStr();
   await Promise.all(
     Array.from(totals.entries())
       .filter(([, t]) => t.answered > 0)
